@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,477 +7,1040 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FamilyWealth">
-<meta name="theme-color" content="#2C2C2C">
+<meta name="theme-color" content="#1A1A2E">
 <title>FamilyWealth</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#FAF7F2;color:#2C2C2C;-webkit-font-smoothing:antialiased}
-input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+html,body{height:100%;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;background:#F8F5F0;color:#1A1A2E;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+input,select,textarea,button{font-family:inherit}
+input[type=number]{-webkit-appearance:none;appearance:none}
+input[type=number]::-webkit-inner-spin-button{display:none}
 ::-webkit-scrollbar{display:none}
+select{-webkit-appearance:none}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes ld{from{width:0}to{width:100%}}
-@keyframes pl{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn 0.25s ease forwards}
+#splash{position:fixed;inset:0;background:#1A1A2E;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.4s ease}
+#splash.hidden{opacity:0;pointer-events:none}
+.leaf{font-size:60px;animation:pulse 1.4s ease infinite;margin-bottom:16px}
+.sp-title{font-size:28px;font-weight:800;color:#FAF7F2;letter-spacing:-0.5px;margin-bottom:4px}
+.sp-sub{font-size:11px;color:#A8C5AC;letter-spacing:2.5px;text-transform:uppercase;font-weight:600;margin-bottom:48px}
+.ld-track{width:60px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden}
+.ld-bar{height:100%;background:#7A9E7E;border-radius:2px;animation:ld 1.6s ease forwards}
+#app{min-height:100vh;max-width:480px;margin:0 auto;position:relative}
+.header{background:#1A1A2E;padding:48px 16px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,0.2)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.hdr-title{font-size:18px;font-weight:800;color:#FAF7F2;letter-spacing:-0.3px}
+.hdr-year{background:rgba(122,158,126,0.2);color:#A8C5AC;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid rgba(122,158,126,0.3)}
+.tab-bar{display:flex;overflow-x:auto;scrollbar-width:none;margin:0 -4px;-webkit-overflow-scrolling:touch}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{flex-shrink:0;padding:9px 12px;border:none;background:transparent;color:rgba(200,195,188,0.6);font-size:11px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.2s;letter-spacing:0.2px}
+.tab-btn.active{color:#E8D5A8;border-bottom:2px solid #C8A96E;font-weight:700}
+.content{padding:14px 13px 100px;-webkit-overflow-scrolling:touch}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid rgba(200,195,188,0.4);display:flex;padding:6px 0 22px;z-index:200;box-shadow:0 -4px 20px rgba(0,0,0,0.08)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:5px 2px;border:none;border-top:2px solid transparent;background:transparent;cursor:pointer;color:#C8C4BE;font-size:9px;font-weight:500;letter-spacing:0.2px;transition:all 0.2s;margin-top:-2px}
+.nav-btn.active{color:#4E7A52;border-top:2px solid #7A9E7E;font-weight:800}
+.toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%) translateY(10px);background:#1A1A2E;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:all 0.3s;z-index:999;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Cards */
+.card{background:#fff;border-radius:20px;padding:18px;margin-bottom:12px;box-shadow:0 2px 16px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04)}
+.card-hero{border-radius:22px;padding:22px 18px;margin-bottom:12px;position:relative;overflow:hidden}
+/* Form */
+.field{margin-bottom:10px}
+.field-half{flex:0 0 calc(50% - 4px)}
+.field-label{font-size:10px;font-weight:700;color:#6B6663;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.field-wrap{position:relative}
+.field-pre{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#6B6663;font-size:13px;pointer-events:none;z-index:1}
+.field-input{width:100%;padding:11px 10px 11px 24px;border:1.5px solid #C8C4BE;border-radius:10px;font-size:14px;color:#1A1A2E;background:#FDFCFA;outline:none;transition:border-color 0.2s,box-shadow 0.2s;-webkit-appearance:none;appearance:none}
+.field-input.no-pre{padding-left:12px}
+.field-input:focus{border-color:#7A9E7E;box-shadow:0 0 0 3px rgba(122,158,126,0.15)}
+.field-note{font-size:10px;color:#C8C4BE;margin-top:2px}
+select.field-input{background:#FDFCFA}
+textarea.field-input{resize:none;height:60px;no-pre:true}
+.flex-row{display:flex;flex-wrap:wrap;gap:8px}
+.divider{display:flex;align-items:center;gap:8px;margin:14px 0 10px;font-size:10px;color:#6B6663;font-weight:700;text-transform:uppercase;letter-spacing:0.7px}
+.divider-line{flex:1;height:1px;background:#C8C4BE}
+/* Rows */
+.data-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #F2EEE8}
+.data-row-label{font-size:13px;color:#6B6663}
+.data-row-sub{font-size:10px;color:#C8C4BE;margin-top:1px}
+.data-row-val{font-size:14px;font-weight:700;color:#1A1A2E}
+/* Progress */
+.pbar-track{height:5px;background:#F2EEE8;border-radius:5px;overflow:hidden;margin-top:4px}
+.pbar-fill{height:100%;border-radius:5px;transition:width 0.6s ease}
+/* Summary grid */
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.sum-cell{background:#fff;border-radius:12px;padding:10px;box-shadow:0 2px 10px rgba(0,0,0,0.05);text-align:center}
+.sum-label{font-size:9px;color:#6B6663;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px}
+.sum-val{font-size:15px;font-weight:700}
+/* Toggle */
+.toggle-bar{display:flex;background:#F2EEE8;border-radius:9px;padding:3px;gap:2px;margin-bottom:10px}
+.toggle-btn{flex:1;padding:7px 4px;border:none;border-radius:7px;font-family:inherit;font-size:12px;cursor:pointer;transition:all 0.2s;color:#6B6663;background:transparent;font-weight:500}
+.toggle-btn.active{background:#fff;color:#1A1A2E;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+/* Info box */
+.info-box{border-radius:12px;padding:11px 13px;margin-bottom:10px;display:flex;gap:10px;border-left:3px solid}
+.info-icon{font-size:17px;flex-shrink:0}
+.info-title{font-size:13px;font-weight:700;color:#1A1A2E;margin-bottom:2px}
+.info-text{font-size:12px;line-height:1.6}
+.info-good{background:#D4E8D6;border-color:#4E7A52}.info-good .info-text{color:#4E7A52}
+.info-warn{background:#FDF3E3;border-color:#D47C0F}.info-warn .info-text{color:#8B6E30}
+.info-alert{background:#FAE8E6;border-color:#C0392B}.info-alert .info-text{color:#C0392B}
+.info-info{background:#E0EDF5;border-color:#3D7EAA}.info-info .info-text{color:#3D7EAA}
+/* Badge */
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:0.3px}
+/* Buttons */
+.btn{width:100%;border:none;border-radius:12px;padding:13px 18px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:all 0.2s}
+.btn-outline{background:transparent;border:2px solid}
+/* Dark metrics panel */
+.dark-panel{background:#1A1A2E;border-radius:16px;padding:16px;margin-bottom:12px}
+.dark-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dark-cell{background:rgba(255,255,255,0.07);border-radius:10px;padding:9px 10px}
+.dark-cell-label{font-size:9px;color:#A8C5AC;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px}
+.dark-cell-val{font-size:14px;font-weight:700}
+/* Investment card */
+.inv-card{background:#fff;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04)}
+/* Alloc ring container */
+.alloc-wrap{display:flex;gap:12px;align-items:center}
+.alloc-legend{flex:1}
+.alloc-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.alloc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.alloc-label{font-size:11px;color:#6B6663;flex:1}
+.alloc-pct{font-size:11px;font-weight:700;color:#1A1A2E}
+/* History item */
+.hist-item{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:8px;box-shadow:0 2px 10px rgba(0,0,0,0.05);display:flex;align-items:center;gap:8px}
+/* Section header */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-size:15px;font-weight:700;color:#1A1A2E}
+.sec-icon{font-size:20px}
 </style>
 </head>
 <body>
-<div id="root"></div>
+
+<div id="splash">
+  <div class="leaf">🌿</div>
+  <div class="sp-title">FamilyWealth</div>
+  <div class="sp-sub">Family Finance Tracker</div>
+  <div class="ld-track"><div class="ld-bar"></div></div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="header">
+    <div class="hdr-top">
+      <div class="hdr-title">🌿 FamilyWealth</div>
+      <div class="hdr-year" id="hdr-year"></div>
+    </div>
+    <div class="tab-bar" id="tab-bar"></div>
+  </div>
+  <div class="content fade-in" id="content"></div>
+  <div class="bottom-nav" id="bottom-nav"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
 <script>
-const{useState,useEffect,useCallback}=React;
-const DB='fw_v5';
-const load=()=>{try{return JSON.parse(localStorage.getItem(DB))||{monthly:{},tax:{},networth:{},goals:{}}}catch{return{monthly:{},tax:{},networth:{},goals:{}}}};
-const save=db=>localStorage.setItem(DB,JSON.stringify(db));
-const C={cream:'#FAF7F2',sage:'#7A9E7E',sageD:'#4E7A52',sageL:'#A8C5AC',gold:'#C8A96E',dark:'#2C2C2C',gray:'#6B6B6B',lgray:'#D8D5CF',red:'#C0392B',blue:'#5B8FA8',white:'#FFFFFF',surf:'#F5F2EC',blush:'#E8A598'};
-const fF=n=>{if(!n||isNaN(n))return'$0';return(n<0?'\u2212$':'$')+Math.round(Math.abs(n)).toLocaleString()};
-const fm=n=>{if(!n||isNaN(n))return'$0';const a=Math.abs(n);const s=a>=1e6?'$'+(a/1e6).toFixed(1)+'M':a>=1000?'$'+(a/1000).toFixed(1)+'K':'$'+Math.round(a).toLocaleString();return(n<0?'\u2212':'')+s};
-const pc=n=>(!n||isNaN(n)||!isFinite(n))?'0%':Math.round(n)+'%';
+// ── UTILS ──
+const DB_KEY='fw_v6';
+const CY=new Date().getFullYear(), CM=new Date().getMonth()+1;
 const MF=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const mn=(m,f=false)=>(f?MF:MS)[parseInt(m)-1]||m;
+const mn=(m,f)=>(f?MF:MS)[parseInt(m)-1]||m;
 const nv=v=>parseFloat(v)||0;
-const CY=new Date().getFullYear();
-const CM=new Date().getMonth()+1;
+const fF=v=>{if(!v||isNaN(v))return'$0';return(v<0?'−$':'$')+Math.round(Math.abs(v)).toLocaleString();};
+const fS=v=>{if(!v||isNaN(v))return'$0';const a=Math.abs(v);const s=a>=1e6?'$'+(a/1e6).toFixed(2)+'M':a>=1e3?'$'+(a/1e3).toFixed(1)+'K':'$'+Math.round(a).toLocaleString();return(v<0?'−':'')+s;};
+const pc=v=>(!v||isNaN(v)||!isFinite(v))?'0%':Math.round(v)+'%';
+const pc1=v=>{const x=parseFloat(v);return(!x||isNaN(x)||!isFinite(x))?'0.0%':x.toFixed(1)+'%';};
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const yOpts=Array.from({length:8},(_,i)=>CY-3+i);
+const mOpts=MF.map((m,i)=>({v:i+1,l:m}));
 
-// UI
-const Card=({children,style={}})=>React.createElement('div',{style:{background:C.white,borderRadius:18,padding:18,marginBottom:12,boxShadow:'0 4px 20px rgba(0,0,0,0.07)',border:'1px solid rgba(0,0,0,0.05)',...style}},children);
-const CH=({title,icon})=>React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}},React.createElement('div',{style:{fontSize:16,fontWeight:700,color:C.dark}},title),React.createElement('span',{style:{fontSize:20}},icon));
-const MR=({label,sub,val,col})=>React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 0',borderBottom:`1px solid ${C.surf}`}},React.createElement('div',null,React.createElement('div',{style:{fontSize:13,color:C.gray}},label),sub&&React.createElement('div',{style:{fontSize:11,color:C.lgray}},sub)),React.createElement('div',{style:{fontSize:14,fontWeight:700,color:col||C.dark}},val));
-const PB=({p,col=C.sage})=>React.createElement('div',{style:{height:5,background:C.surf,borderRadius:3,overflow:'hidden',marginTop:5}},React.createElement('div',{style:{height:'100%',width:`${Math.min(100,Math.max(0,p||0))}%`,background:col,borderRadius:3,transition:'width 0.5s'}}));
-const ST=({children})=>React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,margin:'16px 0 10px',fontSize:11,color:C.gray,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.6px'}},children,React.createElement('div',{style:{flex:1,height:1,background:C.lgray}}));
-const Btn=({children,onClick,col=C.dark,style={}})=>React.createElement('button',{onClick,style:{background:col,color:'white',border:'none',borderRadius:12,padding:'13px 20px',fontFamily:'inherit',fontSize:14,fontWeight:700,cursor:'pointer',width:'100%',marginTop:6,...style}},children);
-const IC=({type,icon,title,text})=>{const m={good:['#E8F2EA',C.sageD],warn:['#FDF3E3','#8B6E30'],alert:['#FAE8E6',C.red],info:['#E0EDF5',C.blue]};const[bg,bd]=m[type]||m.info;return React.createElement('div',{style:{background:bg,borderLeft:`3px solid ${bd}`,borderRadius:12,padding:'12px 14px',marginBottom:10,display:'flex',gap:10}},React.createElement('span',{style:{fontSize:18}},icon),React.createElement('div',null,React.createElement('div',{style:{fontSize:13,fontWeight:700,color:C.dark,marginBottom:2}},title),React.createElement('div',{style:{fontSize:12,color:C.gray,lineHeight:1.5}},text)))};
+const CURRENCIES={USD:{l:'US Dollar',sym:'$',d:0},INR:{l:'Indian Rupee',sym:'₹',d:3.5},EUR:{l:'Euro',sym:'€',d:1.5},GBP:{l:'British Pound',sym:'£',d:2.0},AED:{l:'UAE Dirham',sym:'د.إ',d:0.2},SGD:{l:'Singapore Dollar',sym:'S$',d:0.8},CAD:{l:'Canadian Dollar',sym:'CA$',d:2.2},AUD:{l:'Australian Dollar',sym:'A$',d:2.8},JPY:{l:'Japanese Yen',sym:'¥',d:3.0},CNY:{l:'Chinese Yuan',sym:'¥',d:1.5},TRY:{l:'Turkish Lira',sym:'₺',d:28.0}};
+const INV_TYPES=['Private Lending','Real Estate','Plot / Land','Gold / Silver','Stocks / ETF','Mutual Fund','Crypto','Fixed Deposit','Bonds','Other'];
+const C={sage:'#7A9E7E',sageD:'#4E7A52',sageL:'#A8C5AC',gold:'#C8A96E',goldD:'#A07840',red:'#C0392B',blue:'#3D7EAA',purple:'#7B5EA7',amber:'#D47C0F',teal:'#2D9B8A',dark:'#1A1A2E',gray:'#6B6663',lgray:'#C8C4BE',surf:'#F2EEE8',white:'#FFFFFF',cream:'#FAF7F2'};
 
-function Fld({label,val,set,pre='$',type='number',note,half}){
-  const[foc,setFoc]=useState(false);
-  return React.createElement('div',{style:{marginBottom:10,flex:half?'0 0 calc(50% - 5px)':'1 1 100%'}},
-    React.createElement('div',{style:{fontSize:10,fontWeight:700,color:C.gray,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:4}},label),
-    React.createElement('div',{style:{position:'relative'}},
-      pre&&React.createElement('span',{style:{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:C.gray,fontSize:14,pointerEvents:'none'}},pre),
-      React.createElement('input',{type,value:val,onChange:e=>set(e.target.value),inputMode:type==='number'?'decimal':'text',
-        onFocus:()=>setFoc(true),onBlur:()=>setFoc(false),
-        style:{width:'100%',padding:pre?'11px 10px 11px 24px':'11px 12px',border:`1.5px solid ${foc?C.sage:C.lgray}`,borderRadius:10,fontSize:14,color:C.dark,background:'#FFFDF9',boxSizing:'border-box',outline:'none',boxShadow:foc?'0 0 0 3px rgba(122,158,126,0.12)':'none',transition:'all 0.2s',WebkitAppearance:'none'}})
-    ),
-    note&&React.createElement('div',{style:{fontSize:10,color:C.lgray,marginTop:2}},note)
-  );
+function calcRealReturn(nom,depr){
+  const n=(nom||0)/100,d=(depr||0)/100;
+  if(!d||!isFinite(n))return nom||0;
+  const r=((1+n)/(1+d)-1)*100;
+  return isFinite(r)?r:0;
 }
 
-function Sel({label,val,set,opts}){
-  return React.createElement('div',{style:{marginBottom:10}},
-    label&&React.createElement('div',{style:{fontSize:10,fontWeight:700,color:C.gray,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:4}},label),
-    React.createElement('select',{value:val,onChange:e=>set(e.target.value),style:{width:'100%',padding:'11px 12px',border:`1.5px solid ${C.lgray}`,borderRadius:10,fontSize:14,color:C.dark,background:'#FFFDF9',outline:'none',WebkitAppearance:'none',boxSizing:'border-box'}},
-      opts.map(o=>React.createElement('option',{key:o.v,value:o.v},o.l))
-    )
-  );
+// ── STORAGE ──
+function loadDB(){try{const d=JSON.parse(localStorage.getItem(DB_KEY));return{monthly:{},tax:{},networth:{},goals:{},investments:[],...(d||{})};}catch{return{monthly:{},tax:{},networth:{},goals:{},investments:[]};}}
+function saveDB(db){try{localStorage.setItem(DB_KEY,JSON.stringify(db));}catch(e){console.error('Save failed',e);}}
+let DB=loadDB();
+
+// ── STATE ──
+let curTab='dashboard';
+let toastTimer=null;
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-const yOpts=Array.from({length:6},(_,i)=>({v:String(CY-2+i),l:String(CY-2+i)}));
-const mOpts=MF.map((m,i)=>({v:String(i+1),l:m}));
+// ── RENDER ENGINE ──
+function render(){
+  document.getElementById('content').innerHTML='';
+  document.getElementById('content').className='content fade-in';
+  void document.getElementById('content').offsetWidth;
+  document.getElementById('content').className='content fade-in';
 
-function Dashboard({db}){
-  const nwK=Object.keys(db.networth).sort().reverse();
-  const mK=Object.keys(db.monthly).sort().reverse();
-  const tK=Object.keys(db.tax).sort().reverse();
-  const nw=nwK[0]?db.networth[nwK[0]]:null;
-  const pnw=nwK[1]?db.networth[nwK[1]]:null;
-  const lm=mK[0]?db.monthly[mK[0]]:null;
-  const lt=tK[0]?db.tax[tK[0]]:null;
+  const tabs=[{id:'dashboard',l:'Home'},{id:'monthly',l:'Monthly'},{id:'tax',l:'Tax'},{id:'networth',l:'Worth'},{id:'investments',l:'Invest'},{id:'history',l:'History'},{id:'insights',l:'Insights'}];
+  document.getElementById('hdr-year').textContent=CY;
+  document.getElementById('tab-bar').innerHTML=tabs.map(t=>`<button class="tab-btn${curTab===t.id?' active':''}" onclick="setTab('${t.id}')">${t.l}</button>`).join('');
+  document.getElementById('bottom-nav').innerHTML=tabs.map(t=>`<button class="nav-btn${curTab===t.id?' active':''}" onclick="setTab('${t.id}')">${t.l}</button>`).join('');
+
+  const el=document.getElementById('content');
+  if(curTab==='dashboard')renderDashboard(el);
+  else if(curTab==='monthly')renderMonthly(el);
+  else if(curTab==='tax')renderTax(el);
+  else if(curTab==='networth')renderNetWorth(el);
+  else if(curTab==='investments')renderInvestments(el);
+  else if(curTab==='history')renderHistory(el);
+  else if(curTab==='insights')renderInsights(el);
+  bindAll();
+}
+
+function setTab(t){curTab=t;render();}
+
+// ── HTML HELPERS ──
+function card(inner,style=''){return`<div class="card"${style?` style="${style}"`:''}>${inner}</div>`;}
+function secHdr(title,icon){return`<div class="sec-hdr"><div class="sec-title">${esc(title)}</div>${icon?`<span class="sec-icon">${icon}</span>`:''}</div>`;}
+function dataRow(label,val,col='',sub='',bold=false){return`<div class="data-row"><div><div class="data-row-label">${esc(label)}</div>${sub?`<div class="data-row-sub">${esc(sub)}</div>`:''}</div><div class="data-row-val"${col?` style="color:${col}"`:''}${bold?' style="font-size:15px;font-weight:800"':''}>${esc(val)}</div></div>`;}
+function pbar(p,col){return`<div class="pbar-track"><div class="pbar-fill" style="width:${Math.min(100,Math.max(0,p||0))}%;background:${col}"></div></div>`;}
+function divider(label){return`<div class="divider">${esc(label)}<div class="divider-line"></div></div>`;}
+function infoBox(type,icon,title,text){return`<div class="info-box info-${type}">${icon?`<span class="info-icon">${icon}</span>`:''}<div>${title?`<div class="info-title">${esc(title)}</div>`:''}<div class="info-text">${esc(text)}</div></div></div>`;}
+function badge(text,col){return`<span class="badge" style="background:${col}22;color:${col}">${esc(text)}</span>`;}
+function sumCell(label,val,col){return`<div class="sum-cell"><div class="sum-label">${esc(label)}</div><div class="sum-val" style="color:${col}">${esc(val)}</div></div>`;}
+
+function field(id,label,val,pre='$',type='number',note='',half=false,ph='0'){
+  const cls=half?'field field-half':'field';
+  const inputCls='field-input'+(pre?'':' no-pre');
+  return`<div class="${cls}">
+    <div class="field-label">${esc(label)}</div>
+    <div class="field-wrap">
+      ${pre?`<span class="field-pre">${esc(pre)}</span>`:''}
+      <input class="${inputCls}" id="${id}" type="${type}" value="${esc(String(val))}" inputmode="${type==='number'?'decimal':'text'}" placeholder="${esc(ph)}">
+    </div>
+    ${note?`<div class="field-note">${esc(note)}</div>`:''}
+  </div>`;
+}
+
+function selField(id,label,val,opts,half=false){
+  const cls=half?'field field-half':'field';
+  const optHtml=opts.map(o=>`<option value="${esc(String(o.v))}"${String(o.v)===String(val)?' selected':''}>${esc(o.l)}</option>`).join('');
+  return`<div class="${cls}">
+    ${label?`<div class="field-label">${esc(label)}</div>`:''}
+    <select class="field-input no-pre" id="${id}">${optHtml}</select>
+  </div>`;
+}
+
+function btn(id,text,col,outline=false){
+  if(outline)return`<button class="btn btn-outline" id="${id}" style="border-color:${col};color:${col}">${esc(text)}</button>`;
+  return`<button class="btn" id="${id}" style="background:${col};color:#fff">${esc(text)}</button>`;
+}
+
+function toggleBar(id,opts,active){
+  return`<div class="toggle-bar" id="${id}">${opts.map(o=>`<button class="toggle-btn${o.v===active?' active':''}" data-val="${o.v}" onclick="handleToggle('${id}',this,'${o.v}')">${esc(o.l)}</button>`).join('')}</div>`;
+}
+
+let toggleState={};
+function handleToggle(barId,el,val){
+  toggleState[barId]=val;
+  el.closest('.toggle-bar').querySelectorAll('.toggle-btn').forEach(b=>b.classList.toggle('active',b.dataset.val===val));
+  // Re-render expenses section if it's expMode
+  if(barId==='expMode'){
+    const breakdown=document.getElementById('breakdown-section');
+    const total=document.getElementById('total-section');
+    if(breakdown&&total){breakdown.style.display=val==='breakdown'?'block':'none';total.style.display=val==='total'?'block':'none';}
+  }
+}
+
+// Allocation ring SVG
+function allocRingSVG(slices,size=90){
+  const valid=slices.filter(s=>s.p>0&&!isNaN(s.p)&&isFinite(s.p));
+  if(!valid.length)return'';
+  const tot=valid.reduce((s,v)=>s+v.p,0);if(!tot)return'';
+  const norm=valid.map(s=>({...s,p:(s.p/tot)*100}));
+  let cum=0,paths='';
+  const r=42,cx=50,cy=50;
+  const toRad=p=>(p/100)*Math.PI*2-Math.PI/2;
+  for(const s of norm){
+    const start=cum,end=cum+s.p;cum=end;
+    const x1=Math.cos(toRad(start)),y1=Math.sin(toRad(start));
+    const x2=Math.cos(toRad(end)),y2=Math.sin(toRad(end));
+    const large=s.p>50?1:0;
+    if(isNaN(x1)||isNaN(y1)||isNaN(x2)||isNaN(y2))continue;
+    paths+=`<path d="M ${cx+r*x1} ${cy+r*y1} A ${r} ${r} 0 ${large} 1 ${cx+r*x2} ${cy+r*y2} L ${cx} ${cy} Z" fill="${s.c}" stroke="white" stroke-width="1.5"/>`;
+  }
+  return`<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="flex-shrink:0">${paths}<circle cx="50" cy="50" r="28" fill="white"/></svg>`;
+}
+
+// Mini bar chart HTML
+function miniBarHTML(data,colFn,labelFn,valFn,height=60){
+  if(!data||!data.length)return'';
+  const vals=data.map(valFn).map(v=>isNaN(v)||!isFinite(v)?0:Math.max(0,v));
+  const max=Math.max(...vals,1);
+  return`<div style="display:flex;align-items:flex-end;height:${height}px;gap:3px">${data.map((d,i)=>{
+    const h=Math.max(5,(vals[i]/max)*100);
+    return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%;justify-content:flex-end">
+      <div style="width:100%;height:${h}%;background:${colFn(d,i)};border-radius:3px 3px 0 0;transition:height 0.5s"></div>
+      <div style="font-size:8px;color:#6B6663;white-space:nowrap">${esc(labelFn(d,i))}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ──────────────────────────────────────────
+// DASHBOARD
+// ──────────────────────────────────────────
+function renderDashboard(el){
+  const nwK=Object.keys(DB.networth).sort().reverse();
+  const mK=Object.keys(DB.monthly).sort().reverse();
+  const tK=Object.keys(DB.tax).sort().reverse();
+  const nw=nwK[0]?DB.networth[nwK[0]]:null;
+  const pnw=nwK[1]?DB.networth[nwK[1]]:null;
+  const lm=mK[0]?DB.monthly[mK[0]]:null;
+  const lt=tK[0]?DB.tax[tK[0]]:null;
   const diff=nw&&pnw?nw.netWorth-pnw.netWorth:null;
-  const chart=nwK.slice(0,7).reverse().map(k=>db.networth[k]);
-  const maxNW=chart.length?Math.max(...chart.map(d=>d.netWorth),1):1;
-  return React.createElement('div',null,
-    React.createElement('div',{style:{background:`linear-gradient(135deg,${C.dark},#3a3a3a)`,borderRadius:22,padding:'22px 18px',marginBottom:12,position:'relative',overflow:'hidden'}},
-      React.createElement('div',{style:{position:'absolute',top:-30,right:-30,width:120,height:120,borderRadius:'50%',background:'rgba(122,158,126,0.2)'}}),
-      React.createElement('div',{style:{position:'absolute',bottom:-25,left:-15,width:90,height:90,borderRadius:'50%',background:'rgba(200,169,110,0.15)'}}),
-      React.createElement('div',{style:{position:'relative',zIndex:1}},
-        React.createElement('div',{style:{fontSize:10,letterSpacing:'1.8px',textTransform:'uppercase',color:C.sageL,marginBottom:5,fontWeight:600}},'Total Family Net Worth'),
-        React.createElement('div',{style:{fontSize:34,fontWeight:800,color:'white',lineHeight:1,marginBottom:4}},nw?fF(nw.netWorth):'$0'),
-        diff!==null?React.createElement('div',{style:{fontSize:12,color:diff>=0?'#A8D5AC':C.blush,fontWeight:600}},(diff>=0?'\u25b2 ':'\u25bc ')+fF(Math.abs(diff))+' since last entry'):React.createElement('div',{style:{fontSize:12,color:C.sageL}},'Enter assets in Net Worth tab \u2192'),
-        React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:16}},
-          [['Annual Income',lt?fm((lt.p1W2||0)+(lt.p2W2||0)):'$0'],['Monthly Savings',lm?fm(lm.totalSaved):'$0'],['Savings Rate',lm?pc(lm.savingsRate):'0%'],['Cash Flow',lm?fm(lm.cashflow):'$0']].map(([l,v])=>
-            React.createElement('div',{key:l,style:{background:'rgba(255,255,255,0.09)',borderRadius:10,padding:10}},
-              React.createElement('div',{style:{fontSize:9,color:C.lgray,marginBottom:3,textTransform:'uppercase',letterSpacing:'0.5px'}},l),
-              React.createElement('div',{style:{fontSize:16,fontWeight:700,color:'white'}},v)
-            )
-          )
-        )
-      )
-    ),
-    chart.length>0&&React.createElement(Card,null,
-      React.createElement(CH,{title:'Net Worth Trend',icon:'\ud83d\udcc8'}),
-      React.createElement('div',{style:{display:'flex',alignItems:'flex-end',height:70,gap:3}},
-        chart.map((d,i)=>{const h=Math.max(8,(d.netWorth/maxNW)*100);const last=i===chart.length-1;return React.createElement('div',{key:d.key,style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3,height:'100%',justifyContent:'flex-end'}},React.createElement('div',{style:{width:'100%',height:`${h}%`,background:last?C.sage:C.sageL,borderRadius:'3px 3px 0 0',opacity:last?1:0.65}}),React.createElement('div',{style:{fontSize:8,color:C.gray,whiteSpace:'nowrap'}},mn(d.month)));})
-      )
-    ),
-    lt&&React.createElement(Card,null,
-      React.createElement(CH,{title:'Income Summary',icon:'\ud83d\udcb0'}),
-      React.createElement(MR,{label:'W2 Income Combined',val:fF((lt.p1W2||0)+(lt.p2W2||0)),col:C.sageD}),
-      React.createElement(MR,{label:'Other Income',val:fF(lt.otherIncome||0),col:C.sageD}),
-      React.createElement(MR,{label:'Pre-Tax Deductions',val:'\u2212'+fF(lt.pretax||0),col:C.blue}),
-      React.createElement(MR,{label:'Est. Federal Tax',val:'\u2212'+fF(lt.fedTax||0),col:C.red}),
-      React.createElement(MR,{label:'Net Annual Take-Home',val:fF(((lt.p1W2||0)+(lt.p2W2||0)+(lt.otherIncome||0))-(lt.fedTax||0)-((lt.stateP1||0)+(lt.stateP2||0))),col:C.sageD})
-    ),
-    lm&&React.createElement(Card,null,
-      React.createElement(CH,{title:mn(lm.month,true)+' '+lm.year+' Snapshot',icon:'\ud83d\udcc5'}),
-      React.createElement(MR,{label:'Take-Home Income',val:fF(lm.totalIncome),col:C.sageD}),
-      React.createElement(MR,{label:'Total Expenses',val:fF(lm.totalExpenses),col:C.red}),
-      React.createElement(MR,{label:'Saved & Invested',val:fF(lm.totalSaved),col:C.blue}),
-      React.createElement(MR,{label:'Net Cash Flow',val:fF(lm.cashflow),col:lm.cashflow>=0?C.sageD:C.red}),
-      React.createElement(MR,{label:'Savings Rate',val:pc(lm.savingsRate),col:lm.savingsRate>=20?C.sageD:lm.savingsRate>=10?C.blue:C.red})
-    ),
-    !lt&&!lm&&!nw&&React.createElement(Card,null,React.createElement('div',{style:{textAlign:'center',padding:'20px 0',color:C.lgray,fontSize:14}},'Start by entering data in Monthly, Tax, or Net Worth tabs'))
-  );
+  const nwChart=nwK.slice(0,8).reverse().map(k=>DB.networth[k]);
+  const taxChart=tK.slice(0,5).reverse().map(k=>DB.tax[k]);
+  const invs=DB.investments||[];
+  let html='';
+
+  // Hero
+  const gross=lt?(lt.p1W2||0)+(lt.p2W2||0)+(lt.otherIncome||0):0;
+  const afterTax=lt?gross-(lt.fedTax||0)-((lt.stateP1||0)+(lt.stateP2||0)):0;
+  html+=`<div class="card-hero" style="background:linear-gradient(145deg,#1A1A2E 0%,#2D2D4A 100%)">
+    <div style="position:absolute;top:-20px;right:-20px;width:130px;height:130px;border-radius:50%;background:rgba(200,169,110,0.12)"></div>
+    <div style="position:absolute;bottom:-30px;left:-10px;width:100px;height:100px;border-radius:50%;background:rgba(122,158,126,0.1)"></div>
+    <div style="position:relative;z-index:1">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#A8C5AC;margin-bottom:6px;font-weight:600">Total Family Net Worth</div>
+      <div style="font-size:36px;font-weight:800;color:#FAF7F2;line-height:1;margin-bottom:4px;letter-spacing:-0.5px">${nw?fF(nw.netWorth):'$0'}</div>
+      ${diff!==null?`<div style="font-size:12px;color:${diff>=0?'#A8D5AC':'#F0A8A0'};font-weight:600;margin-bottom:14px">${diff>=0?'▲':'▼'} ${fF(Math.abs(diff))} since last snapshot</div>`:`<div style="font-size:12px;color:#A8C5AC;margin-bottom:14px">Add a Net Worth snapshot to track growth →</div>`}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${[['Gross Income',lt?fS(gross):'—'],['After Tax',lt?fS(afterTax):'—'],['Monthly Savings',lm?fS(lm.totalSaved):'—'],['Savings Rate',lm?pc1(lm.savingsRate):'—']].map(([l,v])=>`
+          <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:10px 12px">
+            <div style="font-size:9px;color:#A8C5AC;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px">${l}</div>
+            <div style="font-size:15px;font-weight:700;color:#FAF7F2">${v}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+
+  // NW Trend + Alloc
+  if(nwChart.length>0||nw){
+    const allocSlices=nw?[
+      {p:nw.totalAssets>0?((nw.retirement||0)/nw.totalAssets)*100:0,c:C.sage,l:'Retirement'},
+      {p:nw.totalAssets>0?((nw.realEstate||0)/nw.totalAssets)*100:0,c:C.gold,l:'Real Estate'},
+      {p:nw.totalAssets>0?((nw.liquid||0)/nw.totalAssets)*100:0,c:C.blue,l:'Liquid'},
+      {p:nw.totalAssets>0?((nw.investments||0)/nw.totalAssets)*100:0,c:C.purple,l:'Invest'},
+      {p:nw.totalAssets>0?((nw.otherAssets||0)/nw.totalAssets)*100:0,c:C.amber,l:'Other'},
+    ].filter(s=>s.p>0.5):[];
+    html+=card(`
+      <div class="sec-hdr"><div class="sec-title">Net Worth Trend</div><span class="sec-icon">📈</span></div>
+      ${nwChart.length>0?miniBarHTML(nwChart,(d,i)=>i===nwChart.length-1?C.sage:C.sageL+'99',d=>mn(d.month),d=>Math.max(0,nv(d.netWorth)),65):''}
+      ${allocSlices.length>0?`
+        <div style="font-size:11px;font-weight:700;color:#6B6663;text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 10px">Asset Allocation</div>
+        <div class="alloc-wrap">
+          ${allocRingSVG(allocSlices,84)}
+          <div class="alloc-legend">${allocSlices.map(s=>`
+            <div class="alloc-row">
+              <div class="alloc-dot" style="background:${s.c}"></div>
+              <div class="alloc-label">${esc(s.l)}</div>
+              <div class="alloc-pct">${pc(s.p)}</div>
+            </div>`).join('')}
+          </div>
+        </div>`:''}
+    `);
+  }
+
+  // Income vs Tax
+  if(taxChart.length>0){
+    const maxG=Math.max(...taxChart.map(t=>(t.p1W2||0)+(t.p2W2||0)+(t.otherIncome||0)),1);
+    html+=card(`
+      <div class="sec-hdr"><div class="sec-title">Income & Tax History</div><span class="sec-icon">💰</span></div>
+      <div style="display:flex;align-items:flex-end;height:72px;gap:4px;margin-bottom:8px">
+        ${taxChart.map((t,i)=>{
+          const gross=(t.p1W2||0)+(t.p2W2||0)+(t.otherIncome||0);
+          const hG=Math.max(4,(gross/maxG)*66);
+          const hT=Math.max(0,((t.fedTax||0)/maxG)*66);
+          const last=i===taxChart.length-1;
+          return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%;justify-content:flex-end">
+            <div style="width:100%;position:relative;height:${hG}px;flex-shrink:0">
+              <div style="position:absolute;bottom:0;left:0;right:0;height:${hG}px;background:${last?C.sageL:C.surf};border-radius:3px 3px 0 0"></div>
+              <div style="position:absolute;bottom:0;left:0;right:0;height:${hT}px;background:${last?'rgba(192,57,43,0.6)':'rgba(192,57,43,0.3)'}"></div>
+            </div>
+            <div style="font-size:8px;color:#6B6663">${t.year}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:12px;font-size:11px;color:#6B6663;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:2px;background:${C.sageL}"></div>Gross Income</div>
+        <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:2px;background:rgba(192,57,43,0.6)"></div>Tax Paid</div>
+      </div>
+      ${lt?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        ${[['Gross',fS(gross),C.dark],['Tax Paid',fS((lt.fedTax||0)+(lt.stateP1||0)+(lt.stateP2||0)),C.red],['After Tax',fS(afterTax),C.sageD]].map(([l,v,c])=>`
+          <div style="background:#F2EEE8;border-radius:10px;padding:8px 10px;text-align:center">
+            <div style="font-size:9px;color:#6B6663;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px">${l}</div>
+            <div style="font-size:13px;font-weight:700;color:${c}">${v}</div>
+          </div>`).join('')}
+      </div>`:''}
+    `);
+  }
+
+  // Investments snapshot
+  if(invs.length>0){
+    const totalUSD=invs.reduce((s,i)=>s+(i.amountUSD||0),0);
+    const avgReal=invs.reduce((s,i)=>s+(i.realReturnPct||0),0)/invs.length;
+    html+=card(`
+      <div class="sec-hdr"><div class="sec-title">Investment Portfolio</div><span class="sec-icon">🌐</span></div>
+      ${dataRow('Total Portfolio (USD)',fF(totalUSD),C.sageD)}
+      ${dataRow('Avg Real Return','After currency risk','')}
+      <div style="font-size:20px;font-weight:800;color:${avgReal>=8?C.sageD:avgReal>=4?C.goldD:C.red};margin-bottom:8px">${pc1(avgReal)}</div>
+      ${invs.slice(0,4).map(inv=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F2EEE8">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#1A1A2E">${esc(inv.name||'Investment')}</div>
+            <div style="font-size:10px;color:#6B6663">${esc(inv.type)}${inv.currency&&inv.currency!=='USD'?' · '+inv.currency:''}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;font-weight:700">${fF(inv.amountUSD||0)}</div>
+            ${badge(pc1(inv.realReturnPct||0)+' real',(inv.realReturnPct||0)>=8?C.sageD:(inv.realReturnPct||0)>=4?C.goldD:C.red)}
+          </div>
+        </div>`).join('')}
+      ${invs.length>4?`<div style="text-align:center;font-size:11px;color:#6B6663;margin-top:8px">+${invs.length-4} more · see Investments tab</div>`:''}
+    `);
+  }
+
+  if(lm){
+    html+=card(`
+      <div class="sec-hdr"><div class="sec-title">${mn(lm.month,true)} ${lm.year}</div><span class="sec-icon">📅</span></div>
+      ${dataRow('Take-Home Income',fF(lm.totalIncome),C.sageD)}
+      ${dataRow('Total Expenses',fF(lm.totalExpenses),C.red)}
+      ${dataRow('Saved & Invested',fF(lm.totalSaved),C.blue)}
+      ${dataRow('Net Cash Flow',fF(lm.cashflow),lm.cashflow>=0?C.sageD:C.red)}
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;color:#6B6663">Savings Rate</span>
+          <span style="font-size:12px;font-weight:700;color:${lm.savingsRate>=20?C.sageD:lm.savingsRate>=10?C.gold:C.red}">${pc1(lm.savingsRate)}</span>
+        </div>
+        ${pbar(lm.savingsRate,lm.savingsRate>=20?C.sageD:lm.savingsRate>=10?C.gold:C.red)}
+      </div>
+    `);
+  }
+
+  if(!lt&&!lm&&!nw&&!invs.length){
+    html+=card('<div style="text-align:center;padding:24px 0;color:#C8C4BE;font-size:14px">Start by entering data in Monthly, Tax, Net Worth, or Investments tabs 👆</div>');
+  }
+  el.innerHTML=html;
 }
 
-function Monthly({db,setDb,toast}){
-  const[mo,setMo]=useState(String(CM));
-  const[yr,setYr]=useState(String(CY));
+// ──────────────────────────────────────────
+// MONTHLY
+// ──────────────────────────────────────────
+let monthState={mo:String(CM),yr:String(CY),expMode:'breakdown'};
+
+function renderMonthly(el){
+  const mo=monthState.mo, yr=monthState.yr;
   const key=`${yr}-${String(mo).padStart(2,'0')}`;
-  const ex=db.monthly[key];
-  const def={p1:0,p2:0,rental:0,div:0,oi:0,cs:0,k:0,br:0,s5:0,hs:0,fd:0,tr:0,ins:0,ut:0,cc:0,hc:0,sb:0,rm:0,dn:0,tv:0,ps:0,db:0,ox:0,notes:''};
-  const[f,setF]=useState(def);
-  const up=k=>v=>setF(p=>({...p,[k]:v}));
-  useEffect(()=>{setF(ex?{p1:ex.p1||0,p2:ex.p2||0,rental:ex.rental||0,div:ex.div||0,oi:ex.oi||0,cs:ex.cs||0,k:ex.k||0,br:ex.br||0,s5:ex.s5||0,hs:ex.hs||0,fd:ex.fd||0,tr:ex.tr||0,ins:ex.ins||0,ut:ex.ut||0,cc:ex.cc||0,hc:ex.hc||0,sb:ex.sb||0,rm:ex.rm||0,dn:ex.dn||0,tv:ex.tv||0,ps:ex.ps||0,db:ex.db||0,ox:ex.ox||0,notes:ex.notes||''}:def);},[key]);
+  const ex=DB.monthly[key];
+  const f=ex||{p1:0,p2:0,rental:0,div:0,oi:0,cs:0,k:0,br:0,s5:0,hs:0,fd:0,tr:0,ins:0,ut:0,cc:0,hc:0,sb:0,rm:0,dn:0,tv:0,ps:0,db:0,ox:0,tex:0,notes:''};
+  toggleState['expMode']=ex&&(ex.tex||0)>0?'total':(monthState.expMode||'breakdown');
+  const expMode=toggleState['expMode']||'breakdown';
+
   const ti=nv(f.p1)+nv(f.p2)+nv(f.rental)+nv(f.div)+nv(f.oi);
   const ts=nv(f.cs)+nv(f.k)+nv(f.br)+nv(f.s5);
-  const te=nv(f.hs)+nv(f.fd)+nv(f.tr)+nv(f.ins)+nv(f.ut)+nv(f.cc)+nv(f.hc)+nv(f.sb)+nv(f.rm)+nv(f.dn)+nv(f.tv)+nv(f.ps)+nv(f.db)+nv(f.ox);
-  const cf=ti-ts-te;const sr=ti>0?(ts/ti)*100:0;
-  const src=sr>=20?C.sageD:sr>=10?C.blue:C.red;
-  const sv=()=>{const d={...f,month:mo,year:yr,key,totalIncome:ti,totalSaved:ts,totalExpenses:te,cashflow:cf,savingsRate:sr};const nb={...db,monthly:{...db.monthly,[key]:d}};setDb(nb);save(nb);toast('\u2713 Saved '+mn(mo,true)+' '+yr);};
-  return React.createElement('div',null,
-    React.createElement('div',{style:{display:'flex',gap:8,marginBottom:12}},
-      React.createElement('div',{style:{flex:1}},React.createElement(Sel,{label:'Month',val:mo,set:setMo,opts:mOpts})),
-      React.createElement('div',{style:{flex:1}},React.createElement(Sel,{label:'Year',val:yr,set:setYr,opts:yOpts}))
-    ),
-    ex&&React.createElement('div',{style:{background:'#FDF3E3',borderRadius:10,padding:'9px 12px',marginBottom:10,fontSize:12,color:'#8B6E30'}},'\u270f\ufe0f Editing existing entry for '+mn(mo,true)+' '+yr),
-    React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:12}},
-      [['Income',fF(ti),C.sageD],['Expenses',fF(te),C.red],['Saved',fF(ts),C.blue],['Cash Flow',fF(cf),cf>=0?C.sageD:C.red]].map(([l,v,c])=>
-        React.createElement('div',{key:l,style:{background:C.white,borderRadius:10,padding:'9px 10px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)',textAlign:'center'}},
-          React.createElement('div',{style:{fontSize:9,color:C.gray,marginBottom:2,textTransform:'uppercase',letterSpacing:'0.5px'}},l),
-          React.createElement('div',{style:{fontSize:15,fontWeight:700,color:c}},v)
-        )
-      )
-    ),
-    React.createElement('div',{style:{background:C.white,borderRadius:10,padding:'9px 12px',marginBottom:12,boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}},
-      React.createElement('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},React.createElement('span',{style:{fontSize:12,color:C.gray}},'Savings Rate'),React.createElement('span',{style:{fontSize:12,fontWeight:700,color:src}},pc(sr))),
-      React.createElement(PB,{p:sr,col:src})
-    ),
-    React.createElement(Card,null,
-      React.createElement(ST,null,'\ud83d\udcb5 Take-Home Income'),
-      React.createElement(Fld,{label:'Person 1 Take-Home',val:f.p1,set:up('p1')}),
-      React.createElement(Fld,{label:'Person 2 Take-Home',val:f.p2,set:up('p2')}),
-      React.createElement(Fld,{label:'Rental Net Income',val:f.rental,set:up('rental')}),
-      React.createElement(Fld,{label:'Dividends / Interest',val:f.div,set:up('div')}),
-      React.createElement(Fld,{label:'Other Income',val:f.oi,set:up('oi')}),
-      React.createElement(ST,null,'\ud83c\udfe6 Savings & Investments'),
-      React.createElement(Fld,{label:'Cash Saved / Emergency Fund',val:f.cs,set:up('cs')}),
-      React.createElement(Fld,{label:'401k / IRA',val:f.k,set:up('k')}),
-      React.createElement(Fld,{label:'Brokerage / Stocks',val:f.br,set:up('br')}),
-      React.createElement(Fld,{label:'529 / Education',val:f.s5,set:up('s5')}),
-      React.createElement(ST,null,'\ud83c\udfe0 Expenses'),
-      React.createElement('div',{style:{display:'flex',flexWrap:'wrap',gap:8}},
-        React.createElement(Fld,{label:'Housing',val:f.hs,set:up('hs'),half:true}),
-        React.createElement(Fld,{label:'Food & Groceries',val:f.fd,set:up('fd'),half:true}),
-        React.createElement(Fld,{label:'Transportation',val:f.tr,set:up('tr'),half:true}),
-        React.createElement(Fld,{label:'Insurance',val:f.ins,set:up('ins'),half:true}),
-        React.createElement(Fld,{label:'Utilities',val:f.ut,set:up('ut'),half:true}),
-        React.createElement(Fld,{label:'Childcare',val:f.cc,set:up('cc'),half:true}),
-        React.createElement(Fld,{label:'Healthcare',val:f.hc,set:up('hc'),half:true}),
-        React.createElement(Fld,{label:'Subscriptions',val:f.sb,set:up('sb'),half:true}),
-        React.createElement(Fld,{label:'Rental Maintenance',val:f.rm,set:up('rm'),half:true}),
-        React.createElement(Fld,{label:'Dining Out',val:f.dn,set:up('dn'),half:true}),
-        React.createElement(Fld,{label:'Travel',val:f.tv,set:up('tv'),half:true}),
-        React.createElement(Fld,{label:'Personal & Shopping',val:f.ps,set:up('ps'),half:true}),
-        React.createElement(Fld,{label:'Debt Payments',val:f.db,set:up('db'),half:true}),
-        React.createElement(Fld,{label:'Other',val:f.ox,set:up('ox'),half:true})
-      ),
-      React.createElement('div',{style:{marginBottom:10}},
-        React.createElement('div',{style:{fontSize:10,fontWeight:700,color:C.gray,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:4}},'Notes'),
-        React.createElement('textarea',{value:f.notes,onChange:e=>up('notes')(e.target.value),rows:2,placeholder:'Notable events this month...',style:{width:'100%',padding:'10px 12px',border:`1.5px solid ${C.lgray}`,borderRadius:10,fontSize:13,resize:'none',boxSizing:'border-box',outline:'none',background:'#FFFDF9',fontFamily:'inherit'}})
-      ),
-      React.createElement(Btn,{onClick:sv,col:C.sage},'\u2713 Save This Month')
-    )
-  );
+  const teB=nv(f.hs)+nv(f.fd)+nv(f.tr)+nv(f.ins)+nv(f.ut)+nv(f.cc)+nv(f.hc)+nv(f.sb)+nv(f.rm)+nv(f.dn)+nv(f.tv)+nv(f.ps)+nv(f.db)+nv(f.ox);
+  const te=expMode==='total'?nv(f.tex):teB;
+  const autoSaved=ti>te?ti-te:0;
+  const effSaved=ts>0?ts:autoSaved;
+  const cf=ti-effSaved-te;
+  const sr=ti>0?(effSaved/ti)*100:0;
+  const src=sr>=20?C.sageD:sr>=10?C.gold:C.red;
+
+  let html='';
+  html+=`<div style="display:flex;gap:8px;margin-bottom:12px">
+    ${selField('m-mo','Month',mo,mOpts.map(o=>({v:o.v,l:o.l})),'true')}
+    ${selField('m-yr','Year',yr,yOpts.map(y=>({v:y,l:y})),'true')}
+  </div>`;
+  if(ex)html+=infoBox('warn','✏️','',`Editing existing entry for ${mn(mo,true)} ${yr}`);
+  html+=`<div class="sum-grid">
+    ${sumCell('Income',fF(ti),C.sageD)}${sumCell('Expenses',fF(te),C.red)}
+    ${sumCell('Saved',fF(effSaved),C.blue)}${sumCell('Cash Flow',fF(cf),cf>=0?C.sageD:C.red)}
+  </div>
+  <div class="card" style="padding:10px 14px;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span style="font-size:12px;color:#6B6663">Savings Rate</span>
+      <span style="font-size:12px;font-weight:700;color:${src}">${pc1(sr)}</span>
+    </div>
+    ${pbar(sr,src)}
+  </div>`;
+
+  html+=card(`
+    ${divider('💵 Take-Home Income')}
+    ${field('m-p1','Person 1 Take-Home',f.p1)}
+    ${field('m-p2','Person 2 Take-Home',f.p2)}
+    <div class="flex-row">
+      ${field('m-rental','Rental Net Income',f.rental,'$','number','',true)}
+      ${field('m-div','Dividends / Interest',f.div,'$','number','',true)}
+      ${field('m-oi','Other Income',f.oi,'$','number','',true)}
+    </div>
+    ${divider('🏦 Savings & Investments')}
+    ${ts===0&&ti>0&&te>0?infoBox('good','ℹ️','',`Auto-calculated: ${fF(autoSaved)} saved this month. Fill buckets below to track where it went.`):''}
+    <div class="flex-row">
+      ${field('m-cs','Cash / Emergency',f.cs,'$','number','',true)}
+      ${field('m-k','401k / IRA',f.k,'$','number','',true)}
+      ${field('m-br','Brokerage / Stocks',f.br,'$','number','',true)}
+      ${field('m-s5','529 / Education',f.s5,'$','number','',true)}
+    </div>
+    ${divider('🏠 Expenses')}
+    ${toggleBar('expMode',[{v:'breakdown',l:'Breakdown'},{v:'total',l:'Total Only'}],expMode)}
+    <div id="total-section" style="display:${expMode==='total'?'block':'none'}">
+      ${field('m-tex','Total Monthly Expenses',f.tex)}
+    </div>
+    <div id="breakdown-section" style="display:${expMode==='breakdown'?'block':'none'}">
+      <div class="flex-row">
+        ${field('m-hs','Housing',f.hs,'$','number','',true)}
+        ${field('m-fd','Groceries',f.fd,'$','number','',true)}
+        ${field('m-tr','Transportation',f.tr,'$','number','',true)}
+        ${field('m-ins','Insurance',f.ins,'$','number','',true)}
+        ${field('m-ut','Utilities',f.ut,'$','number','',true)}
+        ${field('m-cc','Childcare',f.cc,'$','number','',true)}
+        ${field('m-hc','Healthcare',f.hc,'$','number','',true)}
+        ${field('m-sb','Subscriptions',f.sb,'$','number','',true)}
+        ${field('m-rm','Rental Maint.',f.rm,'$','number','',true)}
+        ${field('m-dn','Dining Out',f.dn,'$','number','',true)}
+        ${field('m-tv','Travel',f.tv,'$','number','',true)}
+        ${field('m-ps','Personal',f.ps,'$','number','',true)}
+        ${field('m-db','Debt Payments',f.db,'$','number','',true)}
+        ${field('m-ox','Other',f.ox,'$','number','',true)}
+      </div>
+      ${teB>0?`<div style="background:#F2EEE8;border-radius:8px;padding:7px 12px;margin-bottom:6px;display:flex;justify-content:space-between"><span style="font-size:12px;color:#6B6663">Breakdown total</span><span style="font-size:12px;font-weight:700">${fF(teB)}</span></div>`:''}
+    </div>
+    <div class="field">
+      <div class="field-label">Notes</div>
+      <textarea class="field-input no-pre" id="m-notes" rows="2" placeholder="Notable events...">${esc(f.notes||'')}</textarea>
+
+```
+</div>
+${btn('m-save','✓ Save This Month',C.sage)}
+```
+
+`);
+el.innerHTML=html;
 }
 
-function Tax({db,setDb,toast}){
-  const[yr,setYr]=useState(String(CY));
-  const ex=db.tax[yr];
-  const def={p1W2:0,p2W2:0,p1E:'',p2E:'',k1:0,k2:0,h1:0,h2:0,op:0,ira:0,i99:0,ri:0,rx:0,dv:0,int:0,cg:0,rsu:0,itm:0,ch:0,ce:0,si:0,f1:0,f2:0,s1:0,s2:0,ep:0,st:'mfj',notes:''};
-  const[f,setF]=useState(def);
-  const up=k=>v=>setF(p=>({...p,[k]:v}));
-  useEffect(()=>{setF(ex||def);},[yr]);
-  const w2=nv(f.p1W2)+nv(f.p2W2);
-  const pt=nv(f.k1)+nv(f.k2)+nv(f.h1)+nv(f.h2)+nv(f.op)+nv(f.ira);
-  const oi=nv(f.i99)+(nv(f.ri)-nv(f.rx))+nv(f.dv)+nv(f.int)+nv(f.cg)+nv(f.rsu);
-  const agi=w2-pt+oi-nv(f.si);
-  const sd={mfj:29200,single:14600,hoh:21900,mfs:14600}[f.st]||29200;
-  const ded=Math.max(sd,nv(f.itm));
-  const tax=Math.max(0,agi-ded);
-  const bk=f.st==='mfj'?[[23200,.1],[71100,.12],[106750,.22],[182850,.24],[103550,.32],[243750,.35],[Infinity,.37]]:[[11600,.1],[35550,.12],[53375,.22],[91950,.24],[51775,.32],[365625,.35],[Infinity,.37]];
-  let ft=0,rem=tax;for(const[l,r]of bk){const x=Math.min(rem,l);ft+=x*r;rem-=x;if(rem<=0)break;}
-  const ctc=Math.min(nv(f.ch)*2000,ft);const nft=Math.max(0,ft-ctc);
-  const wh=nv(f.f1)+nv(f.f2)+nv(f.s1)+nv(f.s2)+nv(f.ep);
-  const ref=wh-nft;const er=(w2+oi)>0?(nft/(w2+oi))*100:0;
-  const sv=()=>{const d={...f,year:yr,w2Total:w2,pretax:pt,otherIncome:oi,agi,deduction:ded,taxable:tax,fedTax:nft,ctc,withheld:wh,refund:ref,effRate:er,stateP1:nv(f.s1),stateP2:nv(f.s2)};const nb={...db,tax:{...db.tax,[yr]:d}};setDb(nb);save(nb);toast('\u2713 Tax data saved for '+yr);};
-  const TL=({l,v,c})=>React.createElement('div',{style:{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:`1px solid ${C.surf}`,fontSize:13}},React.createElement('span',{style:{color:C.gray}},l),React.createElement('span',{style:{fontWeight:700,color:c||C.dark}},v));
-  return React.createElement('div',null,
-    React.createElement('div',{style:{marginBottom:12}},React.createElement(Sel,{label:'Tax Year',val:yr,set:setYr,opts:yOpts})),
-    React.createElement(Card,null,
-      React.createElement(ST,null,'\ud83d\udcc4 W2 Wages'),
-      React.createElement(Fld,{label:'Person 1 W2 Gross (Box 1)',val:f.p1W2,set:up('p1W2')}),
-      React.createElement(Fld,{label:'Person 1 Employer',val:f.p1E,set:up('p1E'),pre:'',type:'text'}),
-      React.createElement(Fld,{label:'Person 2 W2 Gross (Box 1)',val:f.p2W2,set:up('p2W2')}),
-      React.createElement(Fld,{label:'Person 2 Employer',val:f.p2E,set:up('p2E'),pre:'',type:'text'}),
-      React.createElement(ST,null,'\ud83c\udfdb\ufe0f Pre-Tax Deductions'),
-      React.createElement('div',{style:{display:'flex',flexWrap:'wrap',gap:8}},
-        React.createElement(Fld,{label:'401k P1',val:f.k1,set:up('k1'),half:true}),
-        React.createElement(Fld,{label:'401k P2',val:f.k2,set:up('k2'),half:true}),
-        React.createElement(Fld,{label:'HSA P1',val:f.h1,set:up('h1'),half:true}),
-        React.createElement(Fld,{label:'HSA P2',val:f.h2,set:up('h2'),half:true})
-      ),
-      React.createElement(Fld,{label:'IRA (Traditional)',val:f.ira,set:up('ira')}),
-      React.createElement(Fld,{label:'Other Pre-Tax (FSA, health premiums)',val:f.op,set:up('op')}),
-      React.createElement(ST,null,'\ud83d\udcb9 Other Taxable Income'),
-      React.createElement('div',{style:{display:'flex',flexWrap:'wrap',gap:8}},
-        React.createElement(Fld,{label:'1099/Self-Employment',val:f.i99,set:up('i99'),half:true}),
-        React.createElement(Fld,{label:'Rental Income (gross)',val:f.ri,set:up('ri'),half:true}),
-        React.createElement(Fld,{label:'Rental Expenses',val:f.rx,set:up('rx'),half:true}),
-        React.createElement(Fld,{label:'Dividends',val:f.dv,set:up('dv'),half:true}),
-        React.createElement(Fld,{label:'Interest Income',val:f.int,set:up('int'),half:true}),
-        React.createElement(Fld,{label:'Capital Gains',val:f.cg,set:up('cg'),half:true}),
-        React.createElement(Fld,{label:'RSU / Stock Vested',val:f.rsu,set:up('rsu'),half:true})
-      ),
-      React.createElement(ST,null,'\u2702\ufe0f Deductions & Credits'),
-      React.createElement(Sel,{label:'Filing Status',val:f.st,set:up('st'),opts:[{v:'mfj',l:'Married Filing Jointly'},{v:'single',l:'Single'},{v:'hoh',l:'Head of Household'},{v:'mfs',l:'Married Filing Separately'}]}),
-      React.createElement(Fld,{label:'Itemized Deductions',val:f.itm,set:up('itm'),note:'Standard deduction: $'+sd.toLocaleString()+' for your status'}),
-      React.createElement(Fld,{label:'Qualifying Children (x$2,000 CTC)',val:f.ch,set:up('ch'),pre:''}),
-      React.createElement(Fld,{label:'Student Loan Interest',val:f.si,set:up('si')}),
-      React.createElement(Fld,{label:'Dependent Care Expenses',val:f.ce,set:up('ce')}),
-      React.createElement(ST,null,'\ud83d\udcb8 Taxes Withheld'),
-      React.createElement('div',{style:{display:'flex',flexWrap:'wrap',gap:8}},
-        React.createElement(Fld,{label:'Federal Withheld P1',val:f.f1,set:up('f1'),half:true}),
-        React.createElement(Fld,{label:'Federal Withheld P2',val:f.f2,set:up('f2'),half:true}),
-        React.createElement(Fld,{label:'State Withheld P1',val:f.s1,set:up('s1'),half:true}),
-        React.createElement(Fld,{label:'State Withheld P2',val:f.s2,set:up('s2'),half:true})
-      ),
-      React.createElement(Fld,{label:'Estimated Tax Payments',val:f.ep,set:up('ep')}),
-      React.createElement('div',{style:{marginBottom:10}},
-        React.createElement('div',{style:{fontSize:10,fontWeight:700,color:C.gray,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:4}},'Tax Strategy Notes'),
-        React.createElement('textarea',{value:f.notes,onChange:e=>up('notes')(e.target.value),rows:2,placeholder:'Roth conversion? Backdoor IRA? Tax-loss harvest?',style:{width:'100%',padding:'10px 12px',border:`1.5px solid ${C.lgray}`,borderRadius:10,fontSize:13,resize:'none',boxSizing:'border-box',outline:'none',background:'#FFFDF9',fontFamily:'inherit'}})
-      ),
-      React.createElement(Btn,{onClick:sv},'Save Tax Year '+yr)
-    ),
-    React.createElement(Card,null,
-      React.createElement(CH,{title:yr+' Tax Summary',icon:'\ud83e\uddee'}),
-      React.createElement(TL,{l:'Combined W2 Gross',v:fF(w2),c:C.sageD}),
-      React.createElement(TL,{l:'Pre-Tax Deductions',v:'\u2212'+fF(pt),c:C.blue}),
-      React.createElement(TL,{l:'Other Income',v:fF(oi),c:C.sageD}),
-      React.createElement(TL,{l:'Adjusted Gross Income',v:fF(agi)}),
-      React.createElement(TL,{l:'Deduction ('+( nv(f.itm)>sd?'itemized':'standard')+')',v:'\u2212'+fF(ded),c:C.blue}),
-      React.createElement(TL,{l:'Taxable Income',v:fF(tax)}),
-      React.createElement(TL,{l:'Est. Federal Tax',v:fF(ft),c:C.red}),
-      React.createElement(TL,{l:'Child Tax Credit',v:ctc>0?'+'+fF(ctc):'$0',c:C.sageD}),
-      React.createElement(TL,{l:'Net Federal Tax',v:fF(nft),c:C.red}),
-      React.createElement(TL,{l:'Total Withheld',v:fF(wh)}),
-      React.createElement('div',{style:{display:'flex',justifyContent:'space-between',padding:'10px 0 4px',fontSize:15,fontWeight:800}},React.createElement('span',null,ref>=0?'Est. Refund \ud83c\udf89':'Est. Owed \u26a0\ufe0f'),React.createElement('span',{style:{color:ref>=0?C.sageD:C.red}},(ref>=0?'+':'\u2212')+fF(Math.abs(ref)))),
-      React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:13,paddingBottom:4}},React.createElement('span',{style:{color:C.gray}},'Effective Tax Rate'),React.createElement('span',{style:{fontWeight:700}},er.toFixed(1)+'%')),
-      React.createElement('div',{style:{fontSize:11,color:C.lgray,padding:'8px 10px',background:C.surf,borderRadius:8,marginTop:6}},'\u26a0\ufe0f Estimates only \u2014 consult a tax professional.')
-    )
-  );
+function saveMonthly(){
+const mo=document.getElementById(‘m-mo’).value;
+const yr=document.getElementById(‘m-yr’).value;
+const expMode=toggleState[‘expMode’]||‘breakdown’;
+const g=id=>{const el=document.getElementById(id);return el?nv(el.value):0;};
+const gs=id=>{const el=document.getElementById(id);return el?el.value:’’;};
+const ti=g(‘m-p1’)+g(‘m-p2’)+g(‘m-rental’)+g(‘m-div’)+g(‘m-oi’);
+const ts=g(‘m-cs’)+g(‘m-k’)+g(‘m-br’)+g(‘m-s5’);
+const teB=g(‘m-hs’)+g(‘m-fd’)+g(‘m-tr’)+g(‘m-ins’)+g(‘m-ut’)+g(‘m-cc’)+g(‘m-hc’)+g(‘m-sb’)+g(‘m-rm’)+g(‘m-dn’)+g(‘m-tv’)+g(‘m-ps’)+g(‘m-db’)+g(‘m-ox’);
+const tex=g(‘m-tex’);
+const te=expMode===‘total’?tex:teB;
+const autoSaved=ti>te?ti-te:0;
+const effSaved=ts>0?ts:autoSaved;
+const cf=ti-effSaved-te;
+const sr=ti>0?(effSaved/ti)*100:0;
+const key=`${yr}-${String(mo).padStart(2,'0')}`;
+DB.monthly[key]={p1:g(‘m-p1’),p2:g(‘m-p2’),rental:g(‘m-rental’),div:g(‘m-div’),oi:g(‘m-oi’),cs:g(‘m-cs’),k:g(‘m-k’),br:g(‘m-br’),s5:g(‘m-s5’),hs:g(‘m-hs’),fd:g(‘m-fd’),tr:g(‘m-tr’),ins:g(‘m-ins’),ut:g(‘m-ut’),cc:g(‘m-cc’),hc:g(‘m-hc’),sb:g(‘m-sb’),rm:g(‘m-rm’),dn:g(‘m-dn’),tv:g(‘m-tv’),ps:g(‘m-ps’),db:g(‘m-db’),ox:g(‘m-ox’),tex,notes:gs(‘m-notes’),month:mo,year:yr,key,totalIncome:ti,totalSaved:effSaved,totalExpenses:te,cashflow:cf,savingsRate:sr};
+saveDB(DB);monthState={mo,yr,expMode};toast(`✓ Saved ${mn(mo,true)} ${yr}`);render();
 }
 
-function NetWorth({db,setDb,toast}){
-  const[mo,setMo]=useState(String(CM));
-  const[yr,setYr]=useState(String(CY));
-  const key=`${yr}-${String(mo).padStart(2,'0')}`;
-  const ex=db.networth[key];
-  const da={ck:0,em:0,k4:0,ro:0,ti:0,br:0,s5:0,hm:0,rp:0,bz:0,cr:0,vc:0,oa:0};
-  const dl={mg:0,rm:0,au:0,st:0,cc:0,ot:0};
-  const[a,setA]=useState(da);const[l,setL]=useState(dl);
-  const ua=k=>v=>setA(p=>({...p,[k]:v}));const ul=k=>v=>setL(p=>({...p,[k]:v}));
-  useEffect(()=>{if(ex){setA(ex.assets||da);setL(ex.liabilities||dl);}else{setA(da);setL(dl);}},[key]);
-  const ta=Object.values(a).reduce((s,v)=>s+nv(v),0);
-  const tl=Object.values(l).reduce((s,v)=>s+nv(v),0);
-  const nw=ta-tl;
-  const ret=nv(a.k4)+nv(a.ro)+nv(a.ti);const re=nv(a.hm)+nv(a.rp);const liq=nv(a.ck)+nv(a.em);const inv=Math.max(0,ta-ret-re-liq);
-  const allocs=ta>0?[['Retirement',ret,C.sage],['Real Estate',re,C.blush],['Liquid',liq,C.gold],['Investments',inv,C.blue]]:[];
-  const sv=()=>{const d={month:mo,year:yr,key,assets:a,liabilities:l,totalAssets:ta,totalLiabilities:tl,netWorth:nw,retirement:ret,realEstate:re,liquid:liq};const nb={...db,networth:{...db.networth,[key]:d}};setDb(nb);save(nb);toast('\u2713 Net worth saved '+mn(mo,true)+' '+yr);};
-  return React.createElement('div',null,
-    React.createElement('div',{style:{display:'flex',gap:8,marginBottom:12}},
-      React.createElement('div',{style:{flex:1}},React.createElement(Sel,{label:'Month',val:mo,set:setMo,opts:mOpts})),
-      React.createElement('div',{style:{flex:1}},React.createElement(Sel,{label:'Year',val:yr,set:setYr,opts:yOpts}))
-    ),
-    React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,marginBottom:12}},
-      [['Assets',fF(ta),C.sageD],['Liabilities',fF(tl),C.red],['Net Worth',fF(nw),nw>=0?C.sageD:C.red]].map(([l,v,c])=>
-        React.createElement('div',{key:l,style:{background:C.white,borderRadius:10,padding:'9px 6px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)',textAlign:'center'}},
-          React.createElement('div',{style:{fontSize:8,color:C.gray,marginBottom:2,textTransform:'uppercase',letterSpacing:'0.5px'}},l),
-          React.createElement('div',{style:{fontSize:13,fontWeight:700,color:c}},v)
-        )
-      )
-    ),
-    React.createElement(Card,null,
-      React.createElement(ST,null,'\ud83d\udcc8 Assets'),
-      React.createElement('div',{style:{display:'flex',flexWrap:'wrap',gap:8}},
-        React.createElement(Fld,{label:'Checking & Savings',val:a.ck,set:ua('ck'),half:true}),
-        React.createElement(Fld,{label:'Emergency Fund',val:a.em,set:ua('em'),half:true}),
-        React.createElement(Fld,{label:'401k / 403b / 457',val:a.k4,set:ua('k4'),half:true}),
-        React.createElement(Fld,{label:'Roth IRA',val:a.ro,set:ua('ro'),half:true}),
-        React.createElement(Fld,{label:'Traditional IRA',val:a.ti,set:ua('ti'),half:true}),
-        React.createElement(Fld,{label:'Brokerage',val:a.br,set:ua('br'),half:true}),
-        React.createElement(Fld,{label:'529 Education',val:a.s5,set:ua('s5'),half:true}),
-        React.createElement(Fld,{label:'Primary Home',val:a.hm,set:ua('hm'),half:true}),
-        React.createElement(Fld,{label:'Rental Property',val:a.rp,set:ua('rp'),half:true}),
-        React.createElement(Fld,{label:'Business Equity',val:a.bz,set:ua('bz'),half:true}),
-        React.createElement(Fld,{label:'Crypto / Alts',val:a.cr,set:ua('cr'),half:true}),
-        React.createElement(Fld,{label:'Vehicles',val:a.vc,set:ua('vc'),half:true}),
-        React.createElement(Fld,{label:'Other Assets',val:a.oa,set:ua('oa'),half:true})
-      ),
-      React.createElement(ST,null,'\ud83d\udcc9 Liabilities'),
-      React.createElement('div',{style:{display:'flex',flexWrap:'wrap',gap:8}},
-        React.createElement(Fld,{label:'Primary Mortgage',val:l.mg,set:ul('mg'),half:true}),
-        React.createElement(Fld,{label:'Rental Mortgage',val:l.rm,set:ul('rm'),half:true}),
-        React.createElement(Fld,{label:'Auto Loans',val:l.au,set:ul('au'),half:true}),
-        React.createElement(Fld,{label:'Student Loans',val:l.st,set:ul('st'),half:true}),
-        React.createElement(Fld,{label:'Credit Cards',val:l.cc,set:ul('cc'),half:true}),
-        React.createElement(Fld,{label:'Other Debts',val:l.ot,set:ul('ot'),half:true})
-      ),
-      allocs.length>0&&React.createElement('div',null,
-        React.createElement(ST,null,'\ud83e\uded6 Allocation'),
-        allocs.map(([label,val,col])=>{const p=ta>0?(val/ta)*100:0;return React.createElement('div',{key:label,style:{display:'flex',alignItems:'center',gap:8,marginBottom:7}},React.createElement('div',{style:{fontSize:11,color:C.gray,width:80}},label),React.createElement('div',{style:{flex:1,height:7,background:C.surf,borderRadius:3,overflow:'hidden'}},React.createElement('div',{style:{height:'100%',width:`${p}%`,background:col,borderRadius:3,transition:'width 0.5s'}})),React.createElement('div',{style:{fontSize:11,fontWeight:700,color:C.dark,width:32,textAlign:'right'}},Math.round(p)+'%'));})
-      ),
-      React.createElement(Btn,{onClick:sv,col:C.sage},'\u2713 Save Net Worth Snapshot')
-    )
-  );
+// ──────────────────────────────────────────
+// TAX
+// ──────────────────────────────────────────
+let taxState={yr:String(CY)};
+
+function renderTax(el){
+const yr=taxState.yr;
+const f=DB.tax[yr]||{p1W2:0,p2W2:0,p1E:’’,p2E:’’,k1:0,k2:0,h1:0,h2:0,op:0,ira:0,i99:0,ri:0,rx:0,dv:0,int:0,cg:0,rsu:0,itm:0,ch:0,si:0,f1:0,f2:0,s1:0,s2:0,ep:0,st:‘mfj’,notes:’’};
+const w2=nv(f.p1W2)+nv(f.p2W2);
+const pt=nv(f.k1)+nv(f.k2)+nv(f.h1)+nv(f.h2)+nv(f.op)+nv(f.ira);
+const oi=nv(f.i99)+(nv(f.ri)-nv(f.rx))+nv(f.dv)+nv(f.int)+nv(f.cg)+nv(f.rsu);
+const agi=w2-pt+oi-nv(f.si);
+const sd={mfj:29200,single:14600,hoh:21900,mfs:14600}[f.st]||29200;
+const ded=Math.max(sd,nv(f.itm));
+const taxable=Math.max(0,agi-ded);
+const bk=f.st===‘mfj’?[[23200,.1],[71100,.12],[106750,.22],[182850,.24],[103550,.32],[243750,.35],[1e12,.37]]:[[11600,.1],[35550,.12],[53375,.22],[91950,.24],[51775,.32],[365625,.35],[1e12,.37]];
+let ft=0,rem=taxable;for(const[l,r]of bk){const x=Math.min(rem,l);ft+=x*r;rem-=x;if(rem<=0)break;}
+const ctc=Math.min(nv(f.ch)*2000,ft);const nft=Math.max(0,ft-ctc);
+const wh=nv(f.f1)+nv(f.f2)+nv(f.s1)+nv(f.s2)+nv(f.ep);
+const ref=wh-nft;const er=(w2+oi)>0?(nft/(w2+oi))*100:0;
+
+let html=`<div style="margin-bottom:12px">${selField('t-yr','Tax Year',yr,yOpts.map(y=>({v:y,l:y})))}</div>`;
+html+=card(` ${divider('📄 W2 Wages')} ${field('t-p1w2','Person 1 W2 Gross',f.p1W2)} ${field('t-p1e','Person 1 Employer',f.p1E||'','','text','')} ${field('t-p2w2','Person 2 W2 Gross',f.p2W2)} ${field('t-p2e','Person 2 Employer',f.p2E||'','','text','')} ${divider('🏛️ Pre-Tax Deductions')} <div class="flex-row"> ${field('t-k1','401k P1',f.k1,'$','number','',true)}${field('t-k2','401k P2',f.k2,'$','number','',true)} ${field('t-h1','HSA P1',f.h1,'$','number','',true)}${field('t-h2','HSA P2',f.h2,'$','number','',true)} </div> ${field('t-ira','IRA (Traditional)',f.ira)} ${field('t-op','Other Pre-Tax (FSA, premiums)',f.op)} ${divider('💹 Other Taxable Income')} <div class="flex-row"> ${field('t-i99','1099/Self-Employment',f.i99,'$','number','',true)} ${field('t-ri','Rental Income (gross)',f.ri,'$','number','',true)} ${field('t-rx','Rental Expenses',f.rx,'$','number','',true)} ${field('t-dv','Dividends',f.dv,'$','number','',true)} ${field('t-int','Interest Income',f.int,'$','number','',true)} ${field('t-cg','Capital Gains',f.cg,'$','number','',true)} ${field('t-rsu','RSU / Stock Vested',f.rsu,'$','number','',true)} </div> ${divider('✂️ Deductions & Credits')} ${selField('t-st','Filing Status',f.st,[{v:'mfj',l:'Married Filing Jointly'},{v:'single',l:'Single'},{v:'hoh',l:'Head of Household'},{v:'mfs',l:'Married Filing Separately'}])} ${field('t-itm','Itemized Deductions',f.itm,'$','number',`Standard: $${sd.toLocaleString()} for your status`)} ${field('t-ch','Qualifying Children (×$2,000 CTC)',f.ch,'','number','')} ${field('t-si','Student Loan Interest',f.si)} ${divider('💸 Taxes Withheld')} <div class="flex-row"> ${field('t-f1','Federal P1',f.f1,'$','number','',true)}${field('t-f2','Federal P2',f.f2,'$','number','',true)} ${field('t-s1','State P1',f.s1,'$','number','',true)}${field('t-s2','State P2',f.s2,'$','number','',true)} </div> ${field('t-ep','Estimated Tax Payments',f.ep)} <div class="field"><div class="field-label">Tax Strategy Notes</div> <textarea class="field-input no-pre" id="t-notes" rows="2" placeholder="Roth conversion? Backdoor IRA?">${esc(f.notes||'')}</textarea> </div> ${btn('t-save','Save Tax Year '+yr,C.dark)} `);
+html+=card(` <div class="sec-hdr"><div class="sec-title">${yr} Tax Summary</div><span class="sec-icon">🧮</span></div> ${dataRow('Combined W2 Gross',fF(w2),C.sageD)} ${dataRow('Pre-Tax Deductions','−'+fF(pt),C.blue)} ${dataRow('Other Income',fF(oi),C.sageD)} ${dataRow('Adjusted Gross Income',fF(agi))} ${dataRow(`Deduction (${nv(f.itm)>sd?‘itemized’:‘standard’})`,'−'+fF(ded),C.blue)} ${dataRow('Taxable Income',fF(taxable))} ${dataRow('Est. Federal Tax',fF(ft),C.red)} ${dataRow('Child Tax Credit',ctc>0?'+'+fF(ctc):'$0',C.sageD)} ${dataRow('Net Federal Tax',fF(nft),C.red)} ${dataRow('Total Withheld',fF(wh))} <div style="display:flex;justify-content:space-between;padding:10px 0 4px;font-size:15px;font-weight:800"> <span>${ref>=0?'Est. Refund 🎉':'Est. Owed ⚠️'}</span> <span style="color:${ref>=0?C.sageD:C.red}">${ref>=0?'+':'−'}${fF(Math.abs(ref))}</span> </div> <div style="display:flex;justify-content:space-between;font-size:13px;padding-bottom:4px"> <span style="color:#6B6663">Effective Tax Rate</span><span style="font-weight:700">${er.toFixed(1)}%</span> </div> <div style="font-size:11px;color:#C8C4BE;background:#F2EEE8;padding:8px 10px;border-radius:8px;margin-top:6px">⚠️ Estimates only — consult a tax professional.</div> `);
+el.innerHTML=html;
 }
 
-function History({db,setDb,toast}){
-  const[tab,setTab]=useState('monthly');
-  const del=(type,key)=>{if(!confirm('Delete this entry?'))return;const nb={...db,[type]:{...db[type]}};delete nb[type][key];setDb(nb);save(nb);toast('Deleted');};
-  const exp=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='familywealth-'+new Date().toISOString().split('T')[0]+'.json';a.click();URL.revokeObjectURL(url);toast('\u2713 Exported!');};
-  const imp=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.monthly!==undefined||d.tax!==undefined){if(confirm('Merge with existing data?')){const m={monthly:{...db.monthly,...(d.monthly||{})},tax:{...db.tax,...(d.tax||{})},networth:{...db.networth,...(d.networth||{})},goals:{...db.goals,...(d.goals||{})}};setDb(m);save(m);toast('\u2713 Imported!');}}}catch{alert('Invalid file.');}};r.readAsText(file);e.target.value='';};
-  const mK=Object.keys(db.monthly).sort().reverse();
-  const tK=Object.keys(db.tax).sort().reverse();
-  const nwK=Object.keys(db.networth).sort().reverse();
-  const HI=({left,right,onDel})=>React.createElement('div',{style:{background:C.white,borderRadius:12,padding:'12px 14px',marginBottom:8,boxShadow:'0 2px 8px rgba(0,0,0,0.06)',display:'flex',alignItems:'center',gap:8}},React.createElement('div',{style:{flex:1}},left),React.createElement('div',{style:{textAlign:'right'}},right),React.createElement('button',{onClick:onDel,style:{background:'none',border:'none',fontSize:15,cursor:'pointer',color:C.lgray,padding:'2px 6px'}},'\ud83d\uddd1'));
-  const empty=msg=>React.createElement('div',{style:{textAlign:'center',padding:'30px 0',color:C.lgray,fontSize:13}},msg);
-  return React.createElement('div',null,
-    React.createElement('div',{style:{display:'flex',background:C.surf,borderRadius:10,padding:3,marginBottom:14,gap:3}},
-      [['monthly','Monthly'],['tax','Tax Years'],['networth','Net Worth']].map(([id,l])=>React.createElement('button',{key:id,onClick:()=>setTab(id),style:{flex:1,padding:'8px 4px',border:'none',borderRadius:8,fontFamily:'inherit',fontSize:12,fontWeight:tab===id?700:500,color:tab===id?C.dark:C.gray,background:tab===id?C.white:'transparent',cursor:'pointer',boxShadow:tab===id?'0 2px 6px rgba(0,0,0,0.08)':'none',transition:'all 0.2s'}},l))
-    ),
-    tab==='monthly'&&(mK.length===0?empty('No monthly entries yet'):mK.map(k=>{const d=db.monthly[k];return React.createElement(HI,{key:k,left:React.createElement('div',null,React.createElement('div',{style:{fontSize:13,fontWeight:700,color:C.dark}},mn(d.month,true)+' '+d.year),React.createElement('div',{style:{fontSize:11,color:C.gray}},'Income: '+fF(d.totalIncome)+' \u00b7 Exp: '+fF(d.totalExpenses)),d.notes&&React.createElement('div',{style:{fontSize:10,color:C.lgray,fontStyle:'italic'}},d.notes.substring(0,35)+(d.notes.length>35?'\u2026':''))),right:React.createElement('div',null,React.createElement('div',{style:{fontSize:14,fontWeight:700,color:d.cashflow>=0?C.sageD:C.red}},fF(d.cashflow)),React.createElement('div',{style:{fontSize:10,color:C.gray}},'Saved: '+pc(d.savingsRate))),onDel:()=>del('monthly',k)});})),
-    tab==='tax'&&(tK.length===0?empty('No tax year data yet'):tK.map(k=>{const d=db.tax[k];return React.createElement(HI,{key:k,left:React.createElement('div',null,React.createElement('div',{style:{fontSize:13,fontWeight:700,color:C.dark}},'Tax Year '+d.year),React.createElement('div',{style:{fontSize:11,color:C.gray}},'W2: '+fF(d.w2Total)+' \u00b7 AGI: '+fF(d.agi)),React.createElement('div',{style:{fontSize:11,color:C.gray}},'Eff Rate: '+(d.effRate||0).toFixed(1)+'%')),right:React.createElement('div',null,React.createElement('div',{style:{fontSize:14,fontWeight:700,color:(d.refund||0)>=0?C.sageD:C.red}},((d.refund||0)>=0?'+':'\u2212')+fF(Math.abs(d.refund||0))),React.createElement('div',{style:{fontSize:10,color:C.gray}},(d.refund||0)>=0?'Refund':'Owed')),onDel:()=>del('tax',k)});})),
-    tab==='networth'&&(nwK.length===0?empty('No snapshots yet'):nwK.map((k,i)=>{const d=db.networth[k];const prev=i<nwK.length-1?db.networth[nwK[i+1]]:null;const diff=prev?d.netWorth-prev.netWorth:null;return React.createElement(HI,{key:k,left:React.createElement('div',null,React.createElement('div',{style:{fontSize:13,fontWeight:700,color:C.dark}},mn(d.month,true)+' '+d.year),React.createElement('div',{style:{fontSize:11,color:C.gray}},'Assets: '+fF(d.totalAssets)+' \u00b7 Debt: '+fF(d.totalLiabilities)),diff!==null&&React.createElement('div',{style:{fontSize:11,color:diff>=0?C.sageD:C.red}},(diff>=0?'\u25b2 ':'\u25bc ')+fF(Math.abs(diff))+' vs prior')),right:React.createElement('div',null,React.createElement('div',{style:{fontSize:14,fontWeight:700,color:C.sageD}},fF(d.netWorth)),React.createElement('div',{style:{fontSize:10,color:C.gray}},'Net Worth')),onDel:()=>del('networth',k)});})),
-    React.createElement(Card,{style:{marginTop:8}},
-      React.createElement(CH,{title:'Backup & Restore',icon:'\ud83d\udcbe'}),
-      React.createElement('p',{style:{fontSize:12,color:C.gray,marginBottom:12,lineHeight:1.5}},'All data lives only on your device. Export regularly.'),
-      React.createElement('div',{style:{display:'flex',gap:8}},
-        React.createElement(Btn,{onClick:exp,col:C.dark,style:{width:'auto',flex:1,padding:'11px 14px',fontSize:13}},'\u2b07\ufe0f Export JSON'),
-        React.createElement('label',{style:{flex:1,background:C.white,color:C.gray,border:`1.5px solid ${C.lgray}`,borderRadius:12,padding:'11px 14px',fontSize:13,fontWeight:700,cursor:'pointer',textAlign:'center'}},'\u2b06\ufe0f Import',React.createElement('input',{type:'file',accept:'.json',style:{display:'none'},onChange:imp}))
-      )
-    )
-  );
+function saveTax(){
+const yr=document.getElementById(‘t-yr’).value;
+const g=id=>{const el=document.getElementById(id);return el?nv(el.value):0;};
+const gs=id=>{const el=document.getElementById(id);return el?el.value:’’;};
+const w2=g(‘t-p1w2’)+g(‘t-p2w2’);
+const pt=g(‘t-k1’)+g(‘t-k2’)+g(‘t-h1’)+g(‘t-h2’)+g(‘t-op’)+g(‘t-ira’);
+const oi=g(‘t-i99’)+(g(‘t-ri’)-g(‘t-rx’))+g(‘t-dv’)+g(‘t-int’)+g(‘t-cg’)+g(‘t-rsu’);
+const si=g(‘t-si’);
+const agi=w2-pt+oi-si;
+const st=gs(‘t-st’);
+const sd={mfj:29200,single:14600,hoh:21900,mfs:14600}[st]||29200;
+const ded=Math.max(sd,g(‘t-itm’));
+const taxable=Math.max(0,agi-ded);
+const bk=st===‘mfj’?[[23200,.1],[71100,.12],[106750,.22],[182850,.24],[103550,.32],[243750,.35],[1e12,.37]]:[[11600,.1],[35550,.12],[53375,.22],[91950,.24],[51775,.32],[365625,.35],[1e12,.37]];
+let ft=0,rem=taxable;for(const[l,r]of bk){const x=Math.min(rem,l);ft+=x*r;rem-=x;if(rem<=0)break;}
+const ctc=Math.min(g(‘t-ch’)*2000,ft);const nft=Math.max(0,ft-ctc);
+const wh=g(‘t-f1’)+g(‘t-f2’)+g(‘t-s1’)+g(‘t-s2’)+g(‘t-ep’);
+const ref=wh-nft;const er=(w2+oi)>0?(nft/(w2+oi))*100:0;
+DB.tax[yr]={p1W2:g(‘t-p1w2’),p2W2:g(‘t-p2w2’),p1E:gs(‘t-p1e’),p2E:gs(‘t-p2e’),k1:g(‘t-k1’),k2:g(‘t-k2’),h1:g(‘t-h1’),h2:g(‘t-h2’),op:g(‘t-op’),ira:g(‘t-ira’),i99:g(‘t-i99’),ri:g(‘t-ri’),rx:g(‘t-rx’),dv:g(‘t-dv’),int:g(‘t-int’),cg:g(‘t-cg’),rsu:g(‘t-rsu’),itm:g(‘t-itm’),ch:g(‘t-ch’),si,f1:g(‘t-f1’),f2:g(‘t-f2’),s1:g(‘t-s1’),s2:g(‘t-s2’),ep:g(‘t-ep’),st,notes:gs(‘t-notes’),year:yr,w2Total:w2,pretax:pt,otherIncome:oi,agi,deduction:ded,taxable,fedTax:nft,ctc,withheld:wh,refund:ref,effRate:er,stateP1:g(‘t-s1’),stateP2:g(‘t-s2’)};
+saveDB(DB);taxState={yr};toast(`✓ Tax ${yr} saved`);render();
 }
 
-function Insights({db,setDb}){
-  const mK=Object.keys(db.monthly).sort().reverse();
-  const tK=Object.keys(db.tax).sort().reverse();
-  const nwK=Object.keys(db.networth).sort().reverse();
-  const lm=mK[0]?db.monthly[mK[0]]:null;const lt=tK[0]?db.tax[tK[0]]:null;const lnw=nwK[0]?db.networth[nwK[0]]:null;
-  const r3=mK.slice(0,3).map(k=>db.monthly[k]);
-  const avgSR=r3.length?r3.reduce((s,d)=>s+d.savingsRate,0)/r3.length:0;
-  const avgExp=r3.length?r3.reduce((s,d)=>s+d.totalExpenses,0)/r3.length:0;
-  const ins=[];
-  if(r3.length>0){if(avgSR>=40)ins.push({type:'good',icon:'\ud83d\ude80',title:'FIRE-Track Savings Rate!',text:`Averaging ${avgSR.toFixed(0)}% — exceptional pace!`});else if(avgSR>=20)ins.push({type:'good',icon:'\u2705',title:'Healthy Savings Rate',text:`${avgSR.toFixed(0)}% avg savings rate. Push toward 30%+ to accelerate.`});else if(avgSR>=10)ins.push({type:'warn',icon:'\u26a0\ufe0f',title:'Room to Save More',text:`At ${avgSR.toFixed(0)}%, try cutting one expense category to reach 20%.`});else ins.push({type:'alert',icon:'\ud83d\udd34',title:'Savings Rate Below 10%',text:'Review your largest expenses to find savings opportunities.'});if(r3.length>=3){const cf=r3.map(d=>d.cashflow);if(cf[0]>cf[1]&&cf[1]>cf[2])ins.push({type:'good',icon:'\ud83d\udcc8',title:'3 Months Improving Cash Flow!',text:'Fantastic momentum!'});else if(cf[0]<0)ins.push({type:'alert',icon:'\ud83d\udcc9',title:'Negative Cash Flow',text:'Spent more than earned last month. Review discretionary spending.'});}}
-  if(lt){const w2=lt.w2Total||0;const rc=(lt.k1||0)+(lt.k2||0)+(lt.ira||0);const rr=w2>0?(rc/w2)*100:0;if(rr<15)ins.push({type:'info',icon:'\ud83c\udfdb\ufe0f',title:'Boost Retirement Contributions',text:`At ${rr.toFixed(0)}% you're below the 15% target. Maxing 401k also cuts taxes.`});if((lt.refund||0)>2000)ins.push({type:'info',icon:'\ud83d\udca1',title:'Large Refund = IRS Interest-Free Loan',text:'Adjust W4 to keep more each paycheck instead.'});}
-  if(lnw&&avgExp>0){const mos=(lnw.liquid||0)/avgExp;if(mos<3)ins.push({type:'warn',icon:'\ud83c\udd98',title:'Build Emergency Fund',text:`${mos.toFixed(1)} months liquid. Aim for 3\u20136 months.`});else if(mos>=6)ins.push({type:'good',icon:'\ud83d\udee1\ufe0f',title:'Emergency Fund Solid!',text:`${mos.toFixed(1)} months protected!`});}
-  const[gf,setGf]=useState({s:String(db.goals?.savings||''),nw:String(db.goals?.nw||''),iv:String(db.goals?.invest||'')});
-  const sg=k=>v=>{const ng={...gf,[k]:v};setGf(ng);const nb={...db,goals:{savings:nv(ng.s),nw:nv(ng.nw),invest:nv(ng.iv)}};setDb(nb);save(nb);};
-  const ymK=Object.keys(db.monthly).filter(k=>k.startsWith(CY+'-'));
-  const ytdS=ymK.reduce((s,k)=>s+(db.monthly[k].totalSaved||0),0);
-  const ytdI=ymK.reduce((s,k)=>s+((db.monthly[k].k||0)+(db.monthly[k].br||0)+(db.monthly[k].s5||0)),0);
-  const[fe,setFe]=useState('');const[fr,setFr]=useState('7');
-  const fn=nv(fe)*25;const ci=lnw?lnw.netWorth:0;const fp=fn>0?Math.min(100,(ci/fn)*100):0;
-  const as=mK.length?mK.slice(0,6).reduce((s,k)=>s+(db.monthly[k].totalSaved||0),0)/Math.min(6,mK.length):0;
-  let fy='\u2014';if(as>0&&fn>0&&ci<fn){const r=(nv(fr)||7)/100/12,t=fn-ci;const y=Math.ceil(Math.log(1+(t*r)/as)/Math.log(1+r)/12);fy=y>0&&y<100?y+' years':'\u2014';}else if(ci>=fn&&fn>0)fy='Already there! \ud83c\udf89';
-  const dti=lt&&lm?((lm.db||0)/((lt.w2Total||1)/12))*100:0;
-  const rr2=lt&&(lt.w2Total||0)>0?(((lt.k1||0)+(lt.k2||0)+(lt.ira||0))/(lt.w2Total))*100:0;
-  const hr=lt&&lm&&(lt.w2Total||0)>0?((lm.hs||0)*12/lt.w2Total)*100:0;
-  const src=avgSR>=20?C.sageD:avgSR>=10?C.blue:C.red;
-  return React.createElement('div',null,
-    ins.length===0?React.createElement('div',{style:{textAlign:'center',padding:'24px 0 8px',color:C.lgray,fontSize:13}},'Add data in Monthly, Tax & Net Worth tabs to unlock insights!'):ins.map((i,idx)=>React.createElement(IC,{key:idx,...i})),
-    React.createElement(Card,null,
-      React.createElement(CH,{title:'Financial Benchmarks',icon:'\ud83c\udfaf'}),
-      React.createElement(MR,{label:'Savings Rate',sub:'Goal: 20%+ | FIRE: 40%+',val:avgSR>0?pc(avgSR):'\u2014',col:src}),
-      React.createElement(MR,{label:'Emergency Fund',sub:'Goal: 3\u20136 months',val:lnw&&avgExp>0?((lnw.liquid||0)/avgExp).toFixed(1)+' mo':'\u2014',col:lnw&&avgExp>0&&(lnw.liquid||0)/avgExp>=6?C.sageD:lnw&&avgExp>0&&(lnw.liquid||0)/avgExp>=3?C.blue:C.red}),
-      React.createElement(MR,{label:'Debt-to-Income',sub:'Goal: below 36%',val:dti>0?pc(dti):'\u2014',col:dti<=20?C.sageD:dti<=36?C.blue:C.red}),
-      React.createElement(MR,{label:'Retirement Rate',sub:'Goal: 15%+ of gross',val:rr2>0?pc(rr2):'\u2014',col:rr2>=15?C.sageD:rr2>=10?C.blue:C.red}),
-      React.createElement(MR,{label:'Housing Cost Ratio',sub:'Goal: below 28% gross',val:hr>0?pc(hr):'\u2014',col:hr<=28?C.sageD:hr<=35?C.blue:C.red})
-    ),
-    React.createElement(Card,null,
-      React.createElement(CH,{title:'Annual Goals',icon:'\ud83c\udfc6'}),
-      [['Annual Savings Goal','s',ytdS,C.sage],['Year-End Net Worth Goal','nw',lnw?lnw.netWorth:0,C.gold],['Investment Contribution Goal','iv',ytdI,C.blush]].map(([l,k,cur,col])=>
-        React.createElement('div',{key:k,style:{marginBottom:14}},
-          React.createElement(Fld,{label:l,val:gf[k],set:sg(k)}),
-          nv(gf[k])>0&&React.createElement('div',null,
-            React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:11,color:C.gray,marginTop:-6,marginBottom:3}},React.createElement('span',null,fF(cur)+' of '+fF(nv(gf[k]))),React.createElement('span',{style:{fontWeight:700}},pc(Math.min(100,(cur/nv(gf[k]))*100)))),
-            React.createElement(PB,{p:(cur/nv(gf[k]))*100,col})
-          )
-        )
-      )
-    ),
-    React.createElement(Card,null,
-      React.createElement(CH,{title:'FIRE Calculator',icon:'\ud83d\udd25'}),
-      React.createElement('p',{style:{fontSize:12,color:C.gray,marginBottom:12,lineHeight:1.5}},'FIRE Number = 25\u00d7 annual expenses (4% withdrawal rule)'),
-      React.createElement(Fld,{label:'Target Annual Retirement Expenses',val:fe,set:setFe}),
-      React.createElement(Fld,{label:'Expected Annual Return (%)',val:fr,set:setFr,pre:'%'}),
-      fn>0&&React.createElement('div',null,React.createElement(MR,{label:'Your FIRE Number',val:fF(fn),col:C.sageD}),React.createElement(MR,{label:'Current Net Worth',val:fF(ci)}),React.createElement(MR,{label:'Progress to FIRE',val:pc(fp),col:C.sageD}),React.createElement(PB,{p:fp}),React.createElement(MR,{label:'Est. Years to FIRE',val:fy,col:C.blue}),React.createElement('div',{style:{fontSize:10,color:C.lgray,marginTop:6}},'Based on avg '+fF(as)+'/mo savings at '+fr+'% return'))
-    )
-  );
+// ──────────────────────────────────────────
+// INVESTMENTS
+// ──────────────────────────────────────────
+let invEditId=null, invAdding=false;
+
+function renderInvestments(el){
+const invs=DB.investments||[];
+if(invAdding||invEditId!==null){renderInvForm(el);return;}
+
+let html=’’;
+if(!invs.length)html+=infoBox(‘info’,‘🌐’,‘Track All Your Investments’,‘Add private loans, real estate, gold, stocks, FDs — including foreign investments with automatic currency risk adjustment.’);
+
+if(invs.length){
+const totalUSD=invs.reduce((s,i)=>s+(i.amountUSD||0),0);
+const byType={};invs.forEach(i=>{byType[i.type]=(byType[i.type]||0)+(i.amountUSD||0);});
+html+=card(` <div class="sec-hdr"><div class="sec-title">Portfolio Summary</div><span class="sec-icon">📊</span></div> ${dataRow('Total Portfolio (USD)',fF(totalUSD),C.sageD,'')} <div style="margin-top:8px">${Object.entries(byType).map(([type,amt])=>`
+<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F2EEE8">
+<span style="font-size:12px;color:#6B6663">${esc(type)}</span>
+<div style="display:flex;gap:8px;align-items:center">
+<span style="font-size:11px;color:#C8C4BE">${pc(totalUSD>0?(amt/totalUSD)*100:0)}</span>
+<span style="font-size:12px;font-weight:700">${fF(amt)}</span>
+</div>
+</div>`).join('')} </div> `);
 }
 
-const TABS=[{id:'dashboard',l:'Home',ic:'\ud83c\udfe0'},{id:'monthly',l:'Monthly',ic:'\ud83d\udcc5'},{id:'tax',l:'Tax',ic:'\ud83e\udde7'},{id:'networth',l:'Worth',ic:'\ud83d\udcc8'},{id:'history',l:'History',ic:'\ud83d\udccb'},{id:'insights',l:'Insights',ic:'\ud83d\udca1'}];
+invs.forEach(inv=>{
+const m=inv.metrics||{};
+const realCol=(inv.realReturnPct||0)>=8?C.sageD:(inv.realReturnPct||0)>=4?C.goldD:C.red;
+html+=`<div class="inv-card"> <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"> <div> <div style="font-size:15px;font-weight:700">${esc(inv.name||'Unnamed')}</div> <div style="display:flex;gap:6px;margin-top:3px"> ${badge(inv.type,C.blue)} ${inv.currency&&inv.currency!=='USD'?badge(inv.currency,C.purple):''} </div> </div> <div style="display:flex;gap:6px"> <button onclick="editInv(${inv.id})" style="background:#F2EEE8;border:none;border-radius:8px;padding:6px 10px;font-size:12px;color:#6B6663;cursor:pointer;font-family:inherit">Edit</button> <button onclick="deleteInv(${inv.id})" style="background:#FAE8E6;border:none;border-radius:8px;padding:6px 10px;font-size:12px;color:#C0392B;cursor:pointer;font-family:inherit">Del</button> </div> </div> <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"> ${[['Amount (USD)',fF(inv.amountUSD||0),C.dark],['Nominal',pc1(inv.nominalReturnPct||0),C.goldD],inv.currency!=='USD'?['Currency Drag','−'+pc1((CURRENCIES[inv.currency]||{d:0}).d),C.red]:null,['Real Return',pc1(inv.realReturnPct||0),realCol]].filter(Boolean).map(([l,v,c])=>`
+<div style="background:#F2EEE8;border-radius:10px;padding:8px 10px">
+<div style="font-size:9px;color:#6B6663;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px">${l}</div>
+<div style="font-size:13px;font-weight:700;color:${c}">${v}</div>
+</div>`).join('')} </div> ${inv.type==='Real Estate'&&m.cashflow!==undefined?`
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+${[[‘Monthly CF’,fF(m.cashflow||0),(m.cashflow||0)>=0?C.sageD:C.red],[‘Cap Rate’,pc1(m.capRate||0),C.goldD]].map(([l,v,c])=>` <div style="background:#F2EEE8;border-radius:10px;padding:8px 10px"> <div style="font-size:9px;color:#6B6663;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px">${l}</div> <div style="font-size:13px;font-weight:700;color:${c}">${v}</div> </div>`).join(’’)}
+</div>`:''} ${inv.notes?`<div style="font-size:11px;color:#6B6663;margin-top:8px;font-style:italic">${esc(inv.notes)}</div>`:''} </div>`;
+});
 
-function App(){
-  const[tab,setTab]=useState('dashboard');
-  const[db,setDb]=useState(load);
-  const[msg,setMsg]=useState('');
-  const[showT,setShowT]=useState(false);
-  const[splash,setSplash]=useState(true);
-  useEffect(()=>{setTimeout(()=>setSplash(false),1600);},[]);
-  const toast=useCallback(m=>{setMsg(m);setShowT(true);setTimeout(()=>setShowT(false),2500);},[]);
-  if(splash)return React.createElement('div',{style:{position:'fixed',inset:0,background:C.dark,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',zIndex:9999}},
-    React.createElement('style',null,'@keyframes ld{from{width:0}to{width:100%}} @keyframes pl{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}'),
-    React.createElement('div',{style:{fontSize:64,animation:'pl 1.2s ease infinite',marginBottom:16}},'\ud83c\udf3f'),
-    React.createElement('div',{style:{fontSize:28,fontWeight:800,color:'#FAF7F2',marginBottom:5}},'FamilyWealth'),
-    React.createElement('div',{style:{fontSize:11,color:C.sage,letterSpacing:'2px',textTransform:'uppercase',fontWeight:600,marginBottom:44}},'Family Finance Tracker'),
-    React.createElement('div',{style:{width:56,height:3,background:'rgba(255,255,255,0.1)',borderRadius:2,overflow:'hidden'}},React.createElement('div',{style:{height:'100%',background:C.sage,borderRadius:2,animation:'ld 1.5s ease forwards'}}))
-  );
-  return React.createElement('div',{style:{background:C.cream,minHeight:'100vh',maxWidth:480,margin:'0 auto',fontFamily:'-apple-system,BlinkMacSystemFont,sans-serif',position:'relative'}},
-    React.createElement('div',{style:{background:C.dark,padding:'44px 18px 0',position:'sticky',top:0,zIndex:100}},
-      React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}},
-        React.createElement('div',null,React.createElement('div',{style:{fontSize:20,fontWeight:800,color:'#FAF7F2'}},'\ud83c\udf3f FamilyWealth'),React.createElement('div',{style:{fontSize:10,color:C.sageL,letterSpacing:'1.5px',textTransform:'uppercase',fontWeight:600}},'Personal Finance Tracker')),
-        React.createElement('div',{style:{background:C.sage,color:'white',fontSize:12,fontWeight:700,padding:'5px 13px',borderRadius:20}},CY)
-      ),
-      React.createElement('div',{style:{display:'flex',gap:2,overflowX:'auto',scrollbarWidth:'none'}},
-        TABS.map(t=>React.createElement('button',{key:t.id,onClick:()=>setTab(t.id),style:{flexShrink:0,padding:'9px 13px',border:'none',background:'transparent',color:tab===t.id?'#E8D5A8':C.lgray,fontFamily:'inherit',fontSize:12,fontWeight:600,cursor:'pointer',borderBottom:tab===t.id?`2px solid ${C.gold}`:'2px solid transparent',whiteSpace:'nowrap',transition:'all 0.2s'}},t.l))
-      )
-    ),
-    React.createElement('div',{style:{padding:'14px 13px 90px',WebkitOverflowScrolling:'touch'}},
-      tab==='dashboard'&&React.createElement(Dashboard,{db}),
-      tab==='monthly'&&React.createElement(Monthly,{db,setDb,toast}),
-      tab==='tax'&&React.createElement(Tax,{db,setDb,toast}),
-      tab==='networth'&&React.createElement(NetWorth,{db,setDb,toast}),
-      tab==='history'&&React.createElement(History,{db,setDb,toast}),
-      tab==='insights'&&React.createElement(Insights,{db,setDb})
-    ),
-    React.createElement('div',{style:{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:480,background:C.white,borderTop:`1px solid ${C.lgray}`,display:'flex',padding:'7px 0 22px',zIndex:200,boxShadow:'0 -4px 16px rgba(0,0,0,0.08)'}},
-      TABS.map(t=>React.createElement('button',{key:t.id,onClick:()=>setTab(t.id),style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'3px 0',border:'none',background:'transparent',cursor:'pointer',color:tab===t.id?C.sageD:C.lgray,fontFamily:'inherit',fontSize:9,fontWeight:tab===t.id?800:500,transition:'all 0.2s'}},React.createElement('span',{style:{fontSize:19}},t.ic),t.l))
-    ),
-    React.createElement('div',{style:{position:'fixed',bottom:80,left:'50%',transform:`translateX(-50%) translateY(${showT?0:16}px)`,background:C.dark,color:'white',padding:'11px 20px',borderRadius:20,fontSize:13,fontWeight:600,opacity:showT?1:0,transition:'all 0.3s',zIndex:999,pointerEvents:'none',whiteSpace:'nowrap'}},msg)
-  );
+html+=btn(‘inv-add’,’+ Add Investment’,C.sage);
+el.innerHTML=html;
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+function editInv(id){invEditId=id;invAdding=false;render();}
+function deleteInv(id){if(!confirm(‘Delete this investment?’))return;DB.investments=(DB.investments||[]).filter(i=>i.id!==id);saveDB(DB);toast(‘Deleted’);render();}
+
+function renderInvForm(el){
+const invs=DB.investments||[];
+const inv=invEditId!==null?invs.find(i=>i.id===invEditId):null;
+const f=inv||{id:Date.now(),name:’’,type:‘Private Lending’,currency:‘USD’,amountUSD:0,amountLocal:0,exchangeRate:1,nominalReturnPct:0,termYears:1,startDate:’’,maturityDate:’’,notes:’’,propertyValue:0,monthlyRent:0,mortgageBalance:0,monthlyMortgage:0,propertyTax:0,maintenancePct:1.5,weightOz:0,pricePerOz:0,interestRate:0,principalUSD:0};
+const type=toggleState[‘inv-type’]||f.type;
+const cur=CURRENCIES[f.currency]||CURRENCIES.USD;
+const isForeign=f.currency!==‘USD’;
+
+let html=’’;
+html+=card(` <div class="sec-hdr"><div class="sec-title">${inv?'Edit Investment':'New Investment'}</div><span class="sec-icon">🌐</span></div> ${field('i-name','Investment Name',f.name||'','','text','','','')} ${selField('i-type','Type',f.type,INV_TYPES.map(t=>({v:t,l:t})))} ${divider('💱 Currency & Amount')} ${selField('i-cur','Currency',f.currency,Object.entries(CURRENCIES).map(([k,v])=>({v:k,l:`${k} — ${v.l}`})))} ${isForeign?infoBox('info','📉','Currency Risk',`${f.currency} historically depreciates ~${cur.d}% per year vs USD. Your real USD return will be reduced accordingly.`):''} `);
+
+const isRE=f.type===‘Real Estate’;
+const isGold=f.type===‘Gold / Silver’;
+const isLend=f.type===‘Private Lending’;
+const isPlot=f.type===‘Plot / Land’;
+
+if(isLend){
+html+=card(` ${divider('🤝 Lending Details')} ${isForeign?`<div class="flex-row">
+${field(‘i-alocal’,`Principal (${f.currency})`,f.amountLocal||0,cur.sym,‘number’,’’,true)}
+${field(‘i-exrate’,‘Exchange Rate’,f.exchangeRate||1,’’,‘number’,‘e.g. 83.5’,true)}
+</div>`:`${field(‘i-princ’,‘Principal Amount’,f.principalUSD||0)}`} <div class="flex-row"> ${field('i-rate','Interest Rate % (annual)',f.interestRate||0,'%','number','',true)} ${field('i-term','Term (years)',f.termYears||1,'','number','',true)} </div> ${field('i-start','Start Date',f.startDate||'','','text','e.g. Jan 2024')} ${field('i-maturity','Maturity Date',f.maturityDate||'','','text','e.g. Dec 2025')} `);
+} else if(isRE){
+html+=card(` ${divider('🏠 Property Details')} ${isForeign?`<div class="flex-row">
+${field(‘i-pval’,`Property Value (${f.currency})`,f.propertyValue||0,cur.sym,‘number’,’’,true)}
+${field(‘i-exrate’,‘Exchange Rate’,f.exchangeRate||1,’’,‘number’,‘e.g. 83.5’,true)}
+</div>`:`${field(‘i-pval’,‘Property Value’,f.propertyValue||0)}`} <div class="flex-row"> ${field('i-rent','Monthly Rent',f.monthlyRent||0,'$','number','',true)} ${field('i-mtg','Monthly Mortgage',f.monthlyMortgage||0,'$','number','',true)} ${field('i-mtgbal','Mortgage Balance',f.mortgageBalance||0,'$','number','',true)} ${field('i-ptax','Annual Property Tax',f.propertyTax||0,'$','number','',true)} ${field('i-maint','Maintenance % (annual)',f.maintenancePct||1.5,'%','number','',true)} </div> `);
+} else if(isPlot){
+html+=card(` ${divider('🌍 Plot / Land Details')} ${isForeign?`<div class="flex-row">
+${field(‘i-alocal’,`Purchase Price (${f.currency})`,f.amountLocal||0,cur.sym,‘number’,’’,true)}
+${field(‘i-exrate’,‘Exchange Rate’,f.exchangeRate||1,’’,‘number’,‘83.5’,true)}
+</div>`:`${field(‘i-ausd’,‘Current Value’,f.amountUSD||0)}`} ${field('i-nom','Expected Annual Appreciation %',f.nominalReturnPct||0,'%')} `);
+} else if(isGold){
+html+=card(`${divider('🥇 Gold / Silver Details')} <div class="flex-row"> ${field('i-wt','Weight (troy oz)',f.weightOz||0,'oz','number','',true)} ${field('i-poz','Price per oz (USD)',f.pricePerOz||0,'$','number','~2300',true)} </div> ${field('i-nom','Expected Annual Return %',f.nominalReturnPct||0,'%','number','Historically gold ~3-5% annually')}`);
+} else {
+html+=card(` ${divider('💰 Amount & Return')} ${isForeign?`<div class="flex-row">
+${field(‘i-alocal’,`Amount (${f.currency})`,f.amountLocal||0,cur.sym,‘number’,’’,true)}
+${field(‘i-exrate’,‘Exchange Rate’,f.exchangeRate||1,’’,‘number’,‘83.5’,true)}
+</div>`:`${field(‘i-ausd’,‘Amount (USD)’,f.amountUSD||0)}`} ${field('i-nom','Expected Annual Return %',f.nominalReturnPct||0,'%')} `);
+}
+
+html+=card(`${field('i-notes','Notes',f.notes||'','','text','Any additional context...')} <div style="display:flex;gap:8px"> ${btn('i-save','✓ Save Investment',C.sage)} ${btn('i-cancel','Cancel',C.gray,true)} </div>`);
+el.innerHTML=html;
+}
+
+function saveInvestment(){
+const g=id=>{const el=document.getElementById(id);return el?nv(el.value):0;};
+const gs=id=>{const el=document.getElementById(id);return el?el.value.trim():’’;};
+const type=gs(‘i-type’)||‘Other’;
+const currency=gs(‘i-cur’)||‘USD’;
+const cur=CURRENCIES[currency]||CURRENCIES.USD;
+const isForeign=currency!==‘USD’;
+const nom=g(‘i-nom’)||g(‘i-rate’);
+const depr=isForeign?cur.d:0;
+const isLend=type===‘Private Lending’;
+const isRE=type===‘Real Estate’;
+const isGold=type===‘Gold / Silver’;
+const isPlot=type===‘Plot / Land’;
+
+let amtUSD=0, nomReturn=nom, metrics={};
+
+if(isLend){
+amtUSD=isForeign?g(‘i-alocal’)/Math.max(g(‘i-exrate’),1):g(‘i-princ’);
+nomReturn=g(‘i-rate’);
+} else if(isRE){
+const pv=g(‘i-pval’);
+amtUSD=isForeign?pv/Math.max(g(‘i-exrate’),1):pv;
+const mr=g(‘i-rent’),mm=g(‘i-mtg’),pt=g(‘i-ptax’)/12,maint=(pv*(g(‘i-maint’)/100))/12;
+const noi=mr-pt-maint,cf=noi-mm;
+const capRate=pv>0?(noi*12/pv)*100:0;
+nomReturn=pv>0?(cf*12/pv)*100:0;
+metrics={cashflow:cf,capRate,equity:pv-g(‘i-mtgbal’),noi:noi*12};
+} else if(isGold){
+amtUSD=g(‘i-wt’)*g(‘i-poz’);
+nomReturn=g(‘i-nom’);
+} else if(isPlot){
+amtUSD=isForeign?g(‘i-alocal’)/Math.max(g(‘i-exrate’),1):g(‘i-ausd’);
+nomReturn=g(‘i-nom’);
+} else {
+amtUSD=isForeign?g(‘i-alocal’)/Math.max(g(‘i-exrate’),1):g(‘i-ausd’);
+nomReturn=g(‘i-nom’);
+}
+
+const realReturn=calcRealReturn(nomReturn,depr);
+const invs=DB.investments||[];
+const existingInv=invEditId!==null?invs.find(i=>i.id===invEditId):null;
+const saved={
+id:existingInv?existingInv.id:Date.now(),
+name:gs(‘i-name’),type,currency,
+amountLocal:isForeign?g(‘i-alocal’):0,
+exchangeRate:g(‘i-exrate’)||1,
+amountUSD,nominalReturnPct:nomReturn,realReturnPct:realReturn,
+currentValueUSD:amtUSD,metrics,
+interestRate:isLend?g(‘i-rate’):0,
+principalUSD:isLend&&!isForeign?g(‘i-princ’):0,
+propertyValue:isRE?g(‘i-pval’):0,
+monthlyRent:isRE?g(‘i-rent’):0,
+mortgageBalance:isRE?g(‘i-mtgbal’):0,
+monthlyMortgage:isRE?g(‘i-mtg’):0,
+propertyTax:isRE?g(‘i-ptax’):0,
+maintenancePct:isRE?g(‘i-maint’):1.5,
+weightOz:isGold?g(‘i-wt’):0,
+pricePerOz:isGold?g(‘i-poz’):0,
+termYears:isLend?g(‘i-term’):0,
+startDate:isLend?gs(‘i-start’):’’,
+maturityDate:isLend?gs(‘i-maturity’):’’,
+notes:gs(‘i-notes’)
+};
+
+if(invEditId!==null){const idx=invs.findIndex(i=>i.id===invEditId);if(idx>=0)invs[idx]=saved;else invs.push(saved);}
+else invs.push(saved);
+DB.investments=invs;saveDB(DB);invEditId=null;invAdding=false;toast(‘✓ Investment saved’);render();
+}
+
+// ──────────────────────────────────────────
+// NET WORTH
+// ──────────────────────────────────────────
+let nwState={mo:String(CM),yr:String(CY)};
+
+function renderNetWorth(el){
+const mo=nwState.mo,yr=nwState.yr;
+const key=`${yr}-${String(mo).padStart(2,'0')}`;
+const ex=DB.networth[key];
+const a=ex?ex.assets:{ck:0,em:0,k4:0,ro:0,ti:0,br:0,s5:0,hm:0,rp:0,bz:0,cr:0,vc:0,oa:0};
+const l=ex?ex.liabilities:{mg:0,rm:0,au:0,st:0,cc:0,ot:0};
+
+const invs=DB.investments||[];
+const invRE=invs.filter(i=>i.type===‘Real Estate’||i.type===‘Plot / Land’).reduce((s,i)=>s+(i.amountUSD||0),0);
+const invGold=invs.filter(i=>i.type===‘Gold / Silver’).reduce((s,i)=>s+(i.amountUSD||0),0);
+const invLend=invs.filter(i=>i.type===‘Private Lending’).reduce((s,i)=>s+(i.amountUSD||0),0);
+const invOther=invs.filter(i=>![‘Real Estate’,‘Plot / Land’,‘Gold / Silver’,‘Private Lending’].includes(i.type)).reduce((s,i)=>s+(i.amountUSD||0),0);
+const invRELiab=invs.filter(i=>i.type===‘Real Estate’).reduce((s,i)=>s+(nv(i.mortgageBalance)||0),0);
+
+const ta=Object.values(a).reduce((s,v)=>s+nv(v),0)+invRE+invGold+invLend+invOther;
+const tl=Object.values(l).reduce((s,v)=>s+nv(v),0)+invRELiab;
+const nwVal=ta-tl;
+const retirement=nv(a.k4)+nv(a.ro)+nv(a.ti);
+const realEstate=nv(a.hm)+nv(a.rp)+invRE;
+const liquid=nv(a.ck)+nv(a.em);
+const investments=nv(a.br)+nv(a.s5)+invGold+invLend+invOther;
+const otherAssets=nv(a.bz)+nv(a.cr)+nv(a.vc)+nv(a.oa);
+
+const allocSlices=[
+{p:ta>0?(retirement/ta)*100:0,c:C.sage,l:‘Retirement’},
+{p:ta>0?(realEstate/ta)*100:0,c:C.gold,l:‘Real Estate’},
+{p:ta>0?(liquid/ta)*100:0,c:C.blue,l:‘Liquid’},
+{p:ta>0?(investments/ta)*100:0,c:C.purple,l:‘Investments’},
+{p:ta>0?(otherAssets/ta)*100:0,c:C.amber,l:‘Other’},
+].filter(s=>s.p>0.5);
+
+let html=`<div style="display:flex;gap:8px;margin-bottom:12px">
+${selField(‘nw-mo’,‘Month’,mo,mOpts.map(o=>({v:o.v,l:o.l})),‘true’)}
+${selField(‘nw-yr’,‘Year’,yr,yOpts.map(y=>({v:y,l:y})),‘true’)}
+
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+    ${[['Assets',fF(ta),C.sageD],['Liabilities',fF(tl),C.red],['Net Worth',fF(nwVal),nwVal>=0?C.sageD:C.red]].map(([l,v,c])=>`
+      <div style="background:#fff;border-radius:12px;padding:9px 6px;box-shadow:0 2px 8px rgba(0,0,0,0.05);text-align:center">
+        <div style="font-size:8px;color:#6B6663;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">${l}</div>
+        <div style="font-size:13px;font-weight:700;color:${c}">${v}</div>
+      </div>`).join('')}
+  </div>`;
+
+if(invs.length>0)html+=infoBox(‘good’,‘🔗’,‘Investments auto-included’,`${invs.length} investment(s) worth ${fF(invRE+invGold+invLend+invOther)} automatically included from your Investments tab.`);
+
+html+=card(` ${divider('📈 Manual Assets')} <div class="flex-row"> ${field('nw-ck','Checking & Savings',a.ck||0,'$','number','',true)} ${field('nw-em','Emergency Fund',a.em||0,'$','number','',true)} ${field('nw-k4','401k / 403b / 457',a.k4||0,'$','number','',true)} ${field('nw-ro','Roth IRA',a.ro||0,'$','number','',true)} ${field('nw-ti','Traditional IRA',a.ti||0,'$','number','',true)} ${field('nw-br','Brokerage',a.br||0,'$','number','',true)} ${field('nw-s5','529 Education',a.s5||0,'$','number','',true)} ${field('nw-hm','Primary Home',a.hm||0,'$','number','',true)} ${field('nw-rp','Rental Property',a.rp||0,'$','number','',true)} ${field('nw-bz','Business Equity',a.bz||0,'$','number','',true)} ${field('nw-cr','Crypto',a.cr||0,'$','number','',true)} ${field('nw-vc','Vehicles',a.vc||0,'$','number','',true)} ${field('nw-oa','Other Assets',a.oa||0,'$','number','',true)} </div> ${divider('📉 Liabilities')} <div class="flex-row"> ${field('nw-mg','Primary Mortgage',l.mg||0,'$','number','',true)} ${field('nw-rm','Rental Mortgage',l.rm||0,'$','number','',true)} ${field('nw-au','Auto Loans',l.au||0,'$','number','',true)} ${field('nw-st','Student Loans',l.st||0,'$','number','',true)} ${field('nw-cc','Credit Cards',l.cc||0,'$','number','',true)} ${field('nw-ot','Other Debts',l.ot||0,'$','number','',true)} </div> ${allocSlices.length>0?`
+${divider(‘🥧 Allocation’)}
+<div class="alloc-wrap" style="margin-bottom:12px">
+${allocRingSVG(allocSlices,88)}
+<div class="alloc-legend">${allocSlices.map(s=>`<div class="alloc-row"> <div class="alloc-dot" style="background:${s.c}"></div> <div class="alloc-label">${esc(s.l)}</div> <div class="alloc-pct">${pc(s.p)}</div> </div> <div class="pbar-track" style="height:3px;margin-bottom:3px"><div class="pbar-fill" style="width:${Math.min(100,s.p)}%;background:${s.c}"></div></div>`).join(’’)}</div>
+</div>`:''} ${btn('nw-save','✓ Save Net Worth Snapshot',C.sage)} `);
+el.innerHTML=html;
+}
+
+function saveNetWorth(){
+const mo=document.getElementById(‘nw-mo’).value;
+const yr=document.getElementById(‘nw-yr’).value;
+const g=id=>{const el=document.getElementById(id);return el?nv(el.value):0;};
+const a={ck:g(‘nw-ck’),em:g(‘nw-em’),k4:g(‘nw-k4’),ro:g(‘nw-ro’),ti:g(‘nw-ti’),br:g(‘nw-br’),s5:g(‘nw-s5’),hm:g(‘nw-hm’),rp:g(‘nw-rp’),bz:g(‘nw-bz’),cr:g(‘nw-cr’),vc:g(‘nw-vc’),oa:g(‘nw-oa’)};
+const l={mg:g(‘nw-mg’),rm:g(‘nw-rm’),au:g(‘nw-au’),st:g(‘nw-st’),cc:g(‘nw-cc’),ot:g(‘nw-ot’)};
+const invs=DB.investments||[];
+const invRE=invs.filter(i=>i.type===‘Real Estate’||i.type===‘Plot / Land’).reduce((s,i)=>s+(i.amountUSD||0),0);
+const invGold=invs.filter(i=>i.type===‘Gold / Silver’).reduce((s,i)=>s+(i.amountUSD||0),0);
+const invLend=invs.filter(i=>i.type===‘Private Lending’).reduce((s,i)=>s+(i.amountUSD||0),0);
+const invOther=invs.filter(i=>![‘Real Estate’,‘Plot / Land’,‘Gold / Silver’,‘Private Lending’].includes(i.type)).reduce((s,i)=>s+(i.amountUSD||0),0);
+const invRELiab=invs.filter(i=>i.type===‘Real Estate’).reduce((s,i)=>s+(nv(i.mortgageBalance)||0),0);
+const ta=Object.values(a).reduce((s,v)=>s+nv(v),0)+invRE+invGold+invLend+invOther;
+const tl=Object.values(l).reduce((s,v)=>s+nv(v),0)+invRELiab;
+const nwVal=ta-tl;
+const retirement=nv(a.k4)+nv(a.ro)+nv(a.ti);
+const realEstate=nv(a.hm)+nv(a.rp)+invRE;
+const liquid=nv(a.ck)+nv(a.em);
+const investments=nv(a.br)+nv(a.s5)+invGold+invLend+invOther;
+const otherAssets=nv(a.bz)+nv(a.cr)+nv(a.vc)+nv(a.oa);
+const key=`${yr}-${String(mo).padStart(2,'0')}`;
+DB.networth[key]={month:mo,year:yr,key,assets:a,liabilities:l,totalAssets:ta,totalLiabilities:tl,netWorth:nwVal,retirement,realEstate,liquid,investments,otherAssets};
+saveDB(DB);nwState={mo,yr};toast(`✓ Net worth saved ${mn(mo,true)} ${yr}`);render();
+}
+
+// ──────────────────────────────────────────
+// HISTORY
+// ──────────────────────────────────────────
+let histTab=‘monthly’;
+
+function renderHistory(el){
+const mK=Object.keys(DB.monthly).sort().reverse();
+const tK=Object.keys(DB.tax).sort().reverse();
+const nwK=Object.keys(DB.networth).sort().reverse();
+let html=`<div style="display:flex;background:#F2EEE8;border-radius:10px;padding:3px;margin-bottom:14px;gap:2px"> ${[['monthly','Monthly'],['tax','Tax'],['networth','Net Worth']].map(([id,l])=>`<button onclick="setHistTab('${id}')" class="toggle-btn${histTab===id?' active':''}" style="flex:1;border-radius:8px">${l}</button>`).join(’’)}
+
+  </div>`;
+
+if(histTab===‘monthly’){
+if(!mK.length)html+=’<div style="text-align:center;padding:30px 0;color:#C8C4BE;font-size:13px">No monthly entries yet</div>’;
+mK.forEach(k=>{const d=DB.monthly[k];html+=`<div class="hist-item"> <div style="flex:1"> <div style="font-size:13px;font-weight:700">${mn(d.month,true)} ${d.year}</div> <div style="font-size:11px;color:#6B6663">Income: ${fF(d.totalIncome)} · Exp: ${fF(d.totalExpenses)}</div> ${d.notes?`<div style="font-size:10px;color:#C8C4BE;font-style:italic">${esc(d.notes.substring(0,40))}${d.notes.length>40?’…’:’’}</div>`:''} </div> <div style="text-align:right"> <div style="font-size:14px;font-weight:700;color:${d.cashflow>=0?C.sageD:C.red}">${fF(d.cashflow)}</div> <div style="font-size:10px;color:#6B6663">Saved: ${pc1(d.savingsRate)}</div> </div> <button onclick="delEntry('monthly','${k}')" style="background:none;border:none;font-size:15px;cursor:pointer;color:#C8C4BE;padding:2px 6px">🗑</button> </div>`;});
+} else if(histTab===‘tax’){
+if(!tK.length)html+=’<div style="text-align:center;padding:30px 0;color:#C8C4BE;font-size:13px">No tax year data yet</div>’;
+tK.forEach(k=>{const d=DB.tax[k];html+=`<div class="hist-item"> <div style="flex:1"> <div style="font-size:13px;font-weight:700">Tax Year ${d.year}</div> <div style="font-size:11px;color:#6B6663">W2: ${fF(d.w2Total)} · AGI: ${fF(d.agi)}</div> <div style="font-size:11px;color:#6B6663">Eff Rate: ${(d.effRate||0).toFixed(1)}%</div> </div> <div style="text-align:right"> <div style="font-size:14px;font-weight:700;color:${(d.refund||0)>=0?C.sageD:C.red}">${(d.refund||0)>=0?'+':'−'}${fF(Math.abs(d.refund||0))}</div> <div style="font-size:10px;color:#6B6663">${(d.refund||0)>=0?'Refund':'Owed'}</div> </div> <button onclick="delEntry('tax','${k}')" style="background:none;border:none;font-size:15px;cursor:pointer;color:#C8C4BE;padding:2px 6px">🗑</button> </div>`;});
+} else {
+if(!nwK.length)html+=’<div style="text-align:center;padding:30px 0;color:#C8C4BE;font-size:13px">No snapshots yet</div>’;
+nwK.forEach((k,i)=>{const d=DB.networth[k];const prev=i<nwK.length-1?DB.networth[nwK[i+1]]:null;const diff=prev?d.netWorth-prev.netWorth:null;html+=`<div class="hist-item"> <div style="flex:1"> <div style="font-size:13px;font-weight:700">${mn(d.month,true)} ${d.year}</div> <div style="font-size:11px;color:#6B6663">Assets: ${fF(d.totalAssets)} · Debt: ${fF(d.totalLiabilities)}</div> ${diff!==null?`<div style="font-size:11px;color:${diff>=0?C.sageD:C.red}">${diff>=0?’▲ ’:’▼ ’}${fF(Math.abs(diff))} vs prior</div>`:''} </div> <div style="text-align:right"> <div style="font-size:14px;font-weight:700;color:${C.sageD}">${fF(d.netWorth)}</div> <div style="font-size:10px;color:#6B6663">Net Worth</div> </div> <button onclick="delEntry('networth','${k}')" style="background:none;border:none;font-size:15px;cursor:pointer;color:#C8C4BE;padding:2px 6px">🗑</button> </div>`;});
+}
+
+html+=card(`<div class="sec-hdr"><div class="sec-title">Backup & Restore</div><span class="sec-icon">💾</span></div> <p style="font-size:12px;color:#6B6663;margin-bottom:12px;line-height:1.6">All data lives only on your device. Export regularly.</p> <div style="display:flex;gap:8px"> ${btn('h-export','⬇ Export JSON',C.dark)} <label style="flex:1;background:#fff;color:#6B6663;border:1.5px solid #C8C4BE;border-radius:12px;padding:13px 14px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;margin-top:6px">⬆ Import<input type="file" accept=".json" id="h-import" style="display:none"></label> </div>`,‘margin-top:8px’);
+el.innerHTML=html;
+}
+
+function setHistTab(t){histTab=t;render();}
+function delEntry(type,key){if(!confirm(‘Delete this entry?’))return;delete DB[type][key];saveDB(DB);toast(‘Deleted’);render();}
+
+function exportData(){
+try{const blob=new Blob([JSON.stringify(DB,null,2)],{type:‘application/json’});const url=URL.createObjectURL(blob);const a=document.createElement(‘a’);a.href=url;a.download=‘familywealth-’+new Date().toISOString().split(‘T’)[0]+’.json’;a.click();URL.revokeObjectURL(url);toast(‘✓ Exported!’);}catch(e){alert(’Export failed: ’+e.message);}
+}
+
+function importData(ev){
+const file=ev.target.files[0];if(!file)return;
+const r=new FileReader();
+r.onload=e=>{try{const d=JSON.parse(e.target.result);
+if(confirm(‘Merge with existing data?’)){
+DB={monthly:{…DB.monthly,…(d.monthly||{})},tax:{…DB.tax,…(d.tax||{})},networth:{…DB.networth,…(d.networth||{})},goals:{…DB.goals,…(d.goals||{})},investments:[…(DB.investments||[]),…(d.investments||[])]};
+saveDB(DB);toast(‘✓ Imported!’);render();
+}}catch(err){alert(‘Invalid file: ‘+err.message);}
+};r.readAsText(file);ev.target.value=’’;
+}
+
+// ──────────────────────────────────────────
+// INSIGHTS
+// ──────────────────────────────────────────
+let fireExpenses=’’, fireReturn=‘7’;
+
+function renderInsights(el){
+const mK=Object.keys(DB.monthly).sort().reverse();
+const tK=Object.keys(DB.tax).sort().reverse();
+const nwK=Object.keys(DB.networth).sort().reverse();
+const lm=mK[0]?DB.monthly[mK[0]]:null;
+const lt=tK[0]?DB.tax[tK[0]]:null;
+const lnw=nwK[0]?DB.networth[nwK[0]]:null;
+const r3=mK.slice(0,3).map(k=>DB.monthly[k]);
+const avgSR=r3.length?r3.reduce((s,d)=>s+d.savingsRate,0)/r3.length:0;
+const avgExp=r3.length?r3.reduce((s,d)=>s+d.totalExpenses,0)/r3.length:0;
+const invs=DB.investments||[];
+const goals=DB.goals||{};
+
+let ins=’’;
+if(r3.length>0){
+if(avgSR>=40)ins+=infoBox(‘good’,‘🚀’,‘FIRE-Track Savings!’,`Averaging ${avgSR.toFixed(0)}% — exceptional wealth building pace.`);
+else if(avgSR>=20)ins+=infoBox(‘good’,‘✅’,‘Healthy Savings Rate’,`${avgSR.toFixed(0)}% avg savings rate. Push toward 30%+ to accelerate.`);
+else if(avgSR>=10)ins+=infoBox(‘warn’,‘⚠️’,‘Room to Save More’,`At ${avgSR.toFixed(0)}%, cut one expense category to reach 20%.`);
+else ins+=infoBox(‘alert’,‘🔴’,‘Savings Rate Below 10%’,‘Review your largest expenses. Even $300/mo more compounds significantly.’);
+if(r3.length>=3){const cf=r3.map(d=>d.cashflow);if(cf[0]>cf[1]&&cf[1]>cf[2])ins+=infoBox(‘good’,‘📈’,‘3 Months Improving Cash Flow!’,‘Fantastic momentum!’);else if(cf[0]<0)ins+=infoBox(‘alert’,‘📉’,‘Negative Cash Flow’,‘Spent more than earned. Review discretionary spending.’);}
+}
+if(lt){const w2=lt.w2Total||0;const rc=(lt.k1||0)+(lt.k2||0)+(lt.ira||0);const rr=w2>0?(rc/w2)*100:0;
+if(rr<15)ins+=infoBox(‘info’,‘🏛️’,‘Boost Retirement Contributions’,`At ${rr.toFixed(0)}% you're below the 15% target.`);
+if((lt.refund||0)>2000)ins+=infoBox(‘info’,‘💡’,‘Large Refund = IRS Loan’,‘Adjust W4 to keep more each paycheck.’);
+}
+if(lnw&&avgExp>0){const mos=(lnw.liquid||0)/avgExp;
+if(mos<3)ins+=infoBox(‘warn’,‘🆘’,‘Build Emergency Fund’,`${mos.toFixed(1)} months liquid. Aim for 3–6 months.`);
+else if(mos>=6)ins+=infoBox(‘good’,‘🛡️’,‘Emergency Fund Solid!’,`${mos.toFixed(1)} months of expenses protected.`);
+}
+if(invs.length>0){
+const foreign=invs.filter(i=>i.currency&&i.currency!==‘USD’);
+if(foreign.length>0){const avgR=foreign.reduce((s,i)=>s+(i.realReturnPct||0),0)/foreign.length;const avgN=foreign.reduce((s,i)=>s+(i.nominalReturnPct||0),0)/foreign.length;const drag=avgN-avgR;
+if(drag>2)ins+=infoBox(‘warn’,‘💱’,`Currency Drag: −${pc1(drag)}`,`Your foreign investments average ${pc1(avgN)} nominal but only ${pc1(avgR)} real return after currency risk.`);
+}
+}
+if(!ins)ins=’<div style="text-align:center;padding:24px 0;color:#C8C4BE;font-size:13px">Add data across tabs to unlock personalized insights!</div>’;
+
+const dti=lt&&lm?((lm.db||0)/((lt.w2Total||1)/12))*100:0;
+const rr2=lt&&(lt.w2Total||0)>0?(((lt.k1||0)+(lt.k2||0)+(lt.ira||0))/(lt.w2Total))*100:0;
+const hr=lt&&lm&&(lt.w2Total||0)>0?((lm.hs||0)*12/lt.w2Total)*100:0;
+const src=avgSR>=20?C.sageD:avgSR>=10?C.gold:C.red;
+
+// FIRE calc
+const fn=nv(fireExpenses)*25;const ci=lnw?lnw.netWorth:0;const fp=fn>0?Math.min(100,(ci/fn)*100):0;
+const ymK=Object.keys(DB.monthly).filter(k=>k.startsWith(CY+’-’));
+const ytdS=ymK.reduce((s,k)=>s+(DB.monthly[k].totalSaved||0),0);
+const ytdI=ymK.reduce((s,k)=>s+((DB.monthly[k].k||0)+(DB.monthly[k].br||0)+(DB.monthly[k].s5||0)),0);
+const as=mK.length?mK.slice(0,6).reduce((s,k)=>s+(DB.monthly[k].totalSaved||0),0)/Math.min(6,mK.length):0;
+let fy=’—’;
+if(as>0&&fn>0&&ci<fn){const r=(nv(fireReturn)||7)/100/12,t=fn-ci;const y=Math.ceil(Math.log(1+(t*r)/as)/Math.log(1+r)/12);fy=y>0&&y<100?y+’ years’:’—’;}
+else if(ci>=fn&&fn>0)fy=‘Already there! 🎉’;
+
+let html=ins;
+html+=card(`<div class="sec-hdr"><div class="sec-title">Financial Benchmarks</div><span class="sec-icon">🎯</span></div> ${dataRow('Savings Rate','Goal: 20%+ | FIRE: 40%+','')} <div style="font-size:18px;font-weight:800;color:${src};margin-bottom:4px">${avgSR>0?pc1(avgSR):'—'}</div> ${pbar(avgSR,src)} <div style="height:8px"></div> ${dataRow('Emergency Fund','Goal: 3–6 months','')} <div style="font-size:14px;font-weight:700;color:${lnw&&avgExp>0&&(lnw.liquid||0)/avgExp>=3?C.sageD:C.red}">${lnw&&avgExp>0?((lnw.liquid||0)/avgExp).toFixed(1)+' months':'—'}</div> <div style="height:8px"></div> ${dataRow('Debt-to-Income','Goal: below 36%','')} <div style="font-size:14px;font-weight:700;color:${dti<=36?C.sageD:C.red}">${dti>0?pc1(dti):'—'}</div> <div style="height:8px"></div> ${dataRow('Retirement Rate','Goal: 15%+ of gross','')} <div style="font-size:14px;font-weight:700;color:${rr2>=15?C.sageD:C.red}">${rr2>0?pc1(rr2):'—'}</div> <div style="height:8px"></div> ${dataRow('Housing Cost Ratio','Goal: below 28% gross','')} <div style="font-size:14px;font-weight:700;color:${hr<=28?C.sageD:C.red}">${hr>0?pc1(hr):'—'}</div>`);
+
+html+=card(` <div class="sec-hdr"><div class="sec-title">Annual Goals ${CY}</div><span class="sec-icon">🏆</span></div> ${[['Annual Savings Goal','g-sav',goals.savings||'',ytdS,C.sage],['Year-End Net Worth','g-nw',goals.nw||'',lnw?lnw.netWorth:0,C.gold],['Investment Contributions','g-inv',goals.invest||'',ytdI,C.purple]].map(([l,id,gv,cur,col])=>{ const target=nv(gv);const pct2=target>0?Math.min(100,(cur/target)*100):0; return`<div style="margin-bottom:14px">
+${field(id,l,gv)}
+${target>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#6B6663;margin-top:-6px;margin-bottom:3px"><span>${fF(cur)} of ${fF(target)}</span><span style="font-weight:700">${pc(pct2)}</span></div> ${pbar(pct2,col)}`:’’}
+</div>`;}).join('')} `);
+
+html+=card(` <div class="sec-hdr"><div class="sec-title">FIRE Calculator 🔥</div><span class="sec-icon">💡</span></div> <p style="font-size:12px;color:#6B6663;margin-bottom:12px;line-height:1.6">FIRE Number = 25× annual retirement expenses (4% withdrawal rule)</p> ${field('fire-exp','Target Annual Retirement Expenses',fireExpenses)} ${field('fire-ret','Expected Annual Return (%)',fireReturn,'%')} ${fn>0?`
+${dataRow(‘Your FIRE Number’,fF(fn),C.sageD)}
+${dataRow(‘Current Net Worth’,fF(ci))}
+${dataRow(‘Progress to FIRE’,pc(fp),C.sageD)}
+${pbar(fp,C.sage)}
+${dataRow(‘Est. Years to FIRE’,fy,C.blue)}
+<div style="font-size:10px;color:#C8C4BE;margin-top:6px">Based on avg ${fF(as)}/mo savings at ${fireReturn}% return</div>
+`:''} `);
+el.innerHTML=html;
+}
+
+// ──────────────────────────────────────────
+// BIND ALL EVENTS
+// ──────────────────────────────────────────
+function bindAll(){
+const on=(id,ev,fn)=>{const el=document.getElementById(id);if(el)el.addEventListener(ev,fn);};
+const onCh=(id,fn)=>{const el=document.getElementById(id);if(el)el.addEventListener(‘change’,fn);};
+
+// Tab navigation dropdowns
+onCh(‘m-mo’,e=>{monthState.mo=e.target.value;render();});
+onCh(‘m-yr’,e=>{monthState.yr=e.target.value;render();});
+on(‘m-save’,‘click’,saveMonthly);
+
+onCh(‘t-yr’,e=>{taxState.yr=e.target.value;render();});
+on(‘t-save’,‘click’,saveTax);
+
+onCh(‘nw-mo’,e=>{nwState.mo=e.target.value;render();});
+onCh(‘nw-yr’,e=>{nwState.yr=e.target.value;render();});
+on(‘nw-save’,‘click’,saveNetWorth);
+
+on(‘inv-add’,‘click’,()=>{invAdding=true;invEditId=null;render();});
+on(‘i-save’,‘click’,saveInvestment);
+on(‘i-cancel’,‘click’,()=>{invAdding=false;invEditId=null;render();});
+onCh(‘i-type’,e=>{const inv=invEditId!==null?(DB.investments||[]).find(i=>i.id===invEditId):null;if(inv)inv.type=e.target.value;render();});
+onCh(‘i-cur’,e=>{const inv=invEditId!==null?(DB.investments||[]).find(i=>i.id===invEditId):null;if(inv){inv.currency=e.target.value;}render();});
+
+on(‘h-export’,‘click’,exportData);
+onCh(‘h-import’,importData);
+
+// Insights goals + FIRE live update
+[‘g-sav’,‘g-nw’,‘g-inv’].forEach(id=>on(id,‘input’,e=>{
+const map={gSav:‘savings’,‘g-nw’:‘nw’,‘g-inv’:‘invest’};
+const k=id===‘g-sav’?‘savings’:id===‘g-nw’?‘nw’:‘invest’;
+DB.goals={…(DB.goals||{}),[k]:nv(e.target.value)};saveDB(DB);
+}));
+on(‘fire-exp’,‘input’,e=>{fireExpenses=e.target.value;const s=document.getElementById(‘content’);if(s){renderInsights(s);bindAll();}});
+on(‘fire-ret’,‘input’,e=>{fireReturn=e.target.value;const s=document.getElementById(‘content’);if(s){renderInsights(s);bindAll();}});
+}
+
+// ──────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────
+function buildIcon(){
+try{
+var s=512,c=document.createElement(‘canvas’);c.width=s;c.height=s;
+var x=c.getContext(‘2d’),r=115;
+x.fillStyle=’#1A1A2E’;
+x.beginPath();x.moveTo(r,0);x.lineTo(s-r,0);x.arcTo(s,0,s,r,r);x.lineTo(s,s-r);x.arcTo(s,s,s-r,s,r);x.lineTo(r,s);x.arcTo(0,s,0,s-r,r);x.lineTo(0,r);x.arcTo(0,0,r,0,r);x.closePath();x.fill();
+var g=x.createRadialGradient(256,180,10,256,256,300);g.addColorStop(0,‘rgba(200,169,110,0.15)’);g.addColorStop(1,‘rgba(0,0,0,0)’);x.fillStyle=g;x.fillRect(0,0,s,s);
+var bars=[{x:68,h:90,c:’#C8A96E’},{x:148,h:150,c:’#C8A96E’},{x:228,h:115,c:’#7A9E7E’},{x:308,h:210,c:’#7A9E7E’},{x:388,h:275,c:’#7A9E7E’}];
+var by=400;
+bars.forEach(function(b){x.fillStyle=b.c;x.beginPath();var bx=b.x,by2=by-b.h,bw=72,bh=b.h,br=Math.min(6,bh/2);x.moveTo(bx+br,by2);x.lineTo(bx+bw-br,by2);x.arcTo(bx+bw,by2,bx+bw,by2+br,br);x.lineTo(bx+bw,by+0);x.lineTo(bx,by+0);x.lineTo(bx,by2+br);x.arcTo(bx,by2,bx+br,by2,br);x.closePath();x.fill();});
+x.strokeStyle=’#FAF7F2’;x.lineWidth=14;x.lineCap=‘round’;x.lineJoin=‘round’;
+x.beginPath();x.moveTo(104,by-90);x.lineTo(184,by-150);x.lineTo(264,by-115);x.lineTo(344,by-210);x.lineTo(424,by-275);x.stroke();
+x.fillStyle=’#7A9E7E’;x.beginPath();x.arc(424,by-275,22,0,Math.PI*2);x.fill();
+x.fillStyle=‘white’;x.beginPath();x.arc(424,by-275,10,0,Math.PI*2);x.fill();
+x.fillStyle=’#7A9E7E’;x.beginPath();x.moveTo(88,130);x.bezierCurveTo(88,65,168,50,195,95);x.bezierCurveTo(165,92,115,112,88,130);x.closePath();x.fill();
+x.fillStyle=’#A8C5AC’;x.beginPath();x.moveTo(88,130);x.bezierCurveTo(108,88,172,78,208,108);x.bezierCurveTo(168,104,118,120,88,130);x.closePath();x.fill();
+x.strokeStyle=’#7A9E7E’;x.lineWidth=9;x.lineCap=‘round’;x.beginPath();x.moveTo(88,130);x.quadraticCurveTo(94,155,112,172);x.stroke();
+var u=c.toDataURL(‘image/png’);
+[‘apple-touch-icon’,‘icon’].forEach(function(rel){var l=document.querySelector(‘link[rel=”’+rel+’”]’);if(!l){l=document.createElement(‘link’);l.rel=rel;if(rel===‘icon’)l.type=‘image/png’;document.head.appendChild(l);}l.href=u;});
+}catch(ex){console.log(‘icon’,ex);}
+}
+
+window.addEventListener(‘DOMContentLoaded’,function(){
+buildIcon();
+setTimeout(function(){
+document.getElementById(‘splash’).classList.add(‘hidden’);
+document.getElementById(‘app’).style.display=‘block’;
+render();
+setTimeout(function(){document.getElementById(‘splash’).style.display=‘none’;},500);
+},1800);
+});
 </script>
+
 </body>
 </html>
