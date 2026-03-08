@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FamilyWealth">
 <meta name="theme-color" content="#1A1A2E">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>FamilyWealth</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -163,6 +166,20 @@ function calcRealReturn(nom,depr){
   const r=((1+n)/(1+d)-1)*100;
   return isFinite(r)?r:0;
 }
+function parseDate(s){
+  if(!s)return null;
+  try{
+    var months={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+    var parts=s.trim().split(/[\s,]+/);
+    if(parts.length>=2){
+      var m=months[parts[0].toLowerCase().substring(0,3)];
+      var y=parseInt(parts[1]);
+      if(m!==undefined&&!isNaN(y))return new Date(y,m,1);
+    }
+    var d=new Date(s);
+    return isNaN(d.getTime())?null:d;
+  }catch(e){return null;}
+}
 
 // ── STORAGE ──
 function loadDB(){try{const d=JSON.parse(localStorage.getItem(DB_KEY));return{monthly:{},tax:{},networth:{},goals:{},investments:[],...(d||{})};}catch{return{monthly:{},tax:{},networth:{},goals:{},investments:[]};}}
@@ -206,40 +223,33 @@ function render(){
 function setTab(t){curTab=t;render();}
 
 // ── HTML HELPERS ──
-function card(inner,style=''){return`<div class="card"${style?` style="${style}"`:''}>${inner}</div>`;}
+function card(inner,style){style=style||'';return`<div class="card"${style?' style="'+style+'"':''}>${inner}</div>`;}
 function secHdr(title,icon){return`<div class="sec-hdr"><div class="sec-title">${esc(title)}</div>${icon?`<span class="sec-icon">${icon}</span>`:''}</div>`;}
-function dataRow(label,val,col='',sub='',bold=false){return`<div class="data-row"><div><div class="data-row-label">${esc(label)}</div>${sub?`<div class="data-row-sub">${esc(sub)}</div>`:''}</div><div class="data-row-val"${col?` style="color:${col}"`:''}${bold?' style="font-size:15px;font-weight:800"':''}>${esc(val)}</div></div>`;}
+function dataRow(label,val,col,sub,bold){col=col||'';sub=sub||'';bold=bold||false;return'<div class="data-row"><div><div class="data-row-label">'+esc(label)+'</div>'+(sub?'<div class="data-row-sub">'+esc(sub)+'</div>':'')+'</div><div class="data-row-val"'+(col?' style="color:'+col+'"':'')+(bold?' style="font-size:15px;font-weight:800"':'')+'>'+(val||'')+'</div></div>';}
 function pbar(p,col){return`<div class="pbar-track"><div class="pbar-fill" style="width:${Math.min(100,Math.max(0,p||0))}%;background:${col}"></div></div>`;}
 function divider(label){return`<div class="divider">${esc(label)}<div class="divider-line"></div></div>`;}
 function infoBox(type,icon,title,text){return`<div class="info-box info-${type}">${icon?`<span class="info-icon">${icon}</span>`:''}<div>${title?`<div class="info-title">${esc(title)}</div>`:''}<div class="info-text">${esc(text)}</div></div></div>`;}
 function badge(text,col){return`<span class="badge" style="background:${col}22;color:${col}">${esc(text)}</span>`;}
 function sumCell(label,val,col){return`<div class="sum-cell"><div class="sum-label">${esc(label)}</div><div class="sum-val" style="color:${col}">${esc(val)}</div></div>`;}
 
-function field(id,label,val,pre='$',type='number',note='',half=false,ph='0'){
-  const cls=half?'field field-half':'field';
-  const inputCls='field-input'+(pre?'':' no-pre');
-  return`<div class="${cls}">
-    <div class="field-label">${esc(label)}</div>
-    <div class="field-wrap">
-      ${pre?`<span class="field-pre">${esc(pre)}</span>`:''}
-      <input class="${inputCls}" id="${id}" type="${type}" value="${esc(String(val))}" inputmode="${type==='number'?'decimal':'text'}" placeholder="${esc(ph)}">
-    </div>
-    ${note?`<div class="field-note">${esc(note)}</div>`:''}
-  </div>`;
+function field(id,label,val,pre,type,note,half,ph){
+  pre=pre===undefined?'$':pre;type=type||'number';note=note||'';half=half||false;ph=ph||'0';
+  var cls=half?'field field-half':'field';
+  var inputCls='field-input'+(pre?'':' no-pre');
+  return '<div class="'+cls+'"><div class="field-label">'+esc(label)+'</div><div class="field-wrap">'+(pre?'<span class="field-pre">'+esc(pre)+'</span>':'')+'<input class="'+inputCls+'" id="'+id+'" type="'+type+'" value="'+esc(String(val||''))+'" inputmode="'+(type==='number'?'decimal':'text')+'" placeholder="'+esc(ph)+'"></div>'+(note?'<div class="field-note">'+esc(note)+'</div>':'')+'</div>';
 }
 
-function selField(id,label,val,opts,half=false){
-  const cls=half?'field field-half':'field';
-  const optHtml=opts.map(o=>`<option value="${esc(String(o.v))}"${String(o.v)===String(val)?' selected':''}>${esc(o.l)}</option>`).join('');
-  return`<div class="${cls}">
-    ${label?`<div class="field-label">${esc(label)}</div>`:''}
-    <select class="field-input no-pre" id="${id}">${optHtml}</select>
-  </div>`;
+function selField(id,label,val,opts,half){
+  half=half||false;
+  var cls=half?'field field-half':'field';
+  var optHtml=opts.map(function(o){return'<option value="'+esc(String(o.v))+'"'+(String(o.v)===String(val)?' selected':'')+'>'+esc(o.l)+'</option>';}).join('');
+  return'<div class="'+cls+'">'+(label?'<div class="field-label">'+esc(label)+'</div>':'')+'<select class="field-input no-pre" id="'+id+'">'+optHtml+'</select></div>';
 }
 
-function btn(id,text,col,outline=false){
-  if(outline)return`<button class="btn btn-outline" id="${id}" style="border-color:${col};color:${col}">${esc(text)}</button>`;
-  return`<button class="btn" id="${id}" style="background:${col};color:#fff">${esc(text)}</button>`;
+function btn(id,text,col,outline){
+  outline=outline||false;
+  if(outline)return'<button class="btn btn-outline" id="'+id+'" style="border-color:'+col+';color:'+col+'">'+esc(text)+'</button>';
+  return'<button class="btn" id="'+id+'" style="background:'+col+';color:#fff">'+esc(text)+'</button>';
 }
 
 function toggleBar(id,opts,active){
@@ -259,7 +269,8 @@ function handleToggle(barId,el,val){
 }
 
 // Allocation ring SVG
-function allocRingSVG(slices,size=90){
+function allocRingSVG(slices,size){
+  size=size||90;
   const valid=slices.filter(s=>s.p>0&&!isNaN(s.p)&&isFinite(s.p));
   if(!valid.length)return'';
   const tot=valid.reduce((s,v)=>s+v.p,0);if(!tot)return'';
@@ -279,7 +290,8 @@ function allocRingSVG(slices,size=90){
 }
 
 // Mini bar chart HTML
-function miniBarHTML(data,colFn,labelFn,valFn,height=60){
+function miniBarHTML(data,colFn,labelFn,valFn,height){
+  height=height||60;
   if(!data||!data.length)return'';
   const vals=data.map(valFn).map(v=>isNaN(v)||!isFinite(v)?0:Math.max(0,v));
   const max=Math.max(...vals,1);
@@ -424,8 +436,8 @@ function renderDashboard(el){
   if(lendInvs.length>0){
     lendInvs.forEach(inv=>{
       const today=new Date();
-      const startD=inv.startDate?new Date(inv.startDate.replace(/([A-Za-z]+)\s+(\d+)/,'$1 1 $2')):null;
-      const matD=inv.maturityDate?new Date(inv.maturityDate.replace(/([A-Za-z]+)\s+(\d+)/,'$1 1 $2')):null;
+      const startD=inv.startDate?parseDate(inv.startDate):null;
+      const matD=inv.maturityDate?parseDate(inv.maturityDate):null;
       const rate=(inv.interestRate||0)/100;
       const principal=inv.amountUSD||0;
       const termYrs=inv.termYears||1;
@@ -515,7 +527,7 @@ function renderDashboard(el){
         const isPlot=inv.type==='Plot / Land';
         const m=inv.metrics||{};
         const today=new Date();
-        const purchaseD=inv.startDate?new Date(inv.startDate.replace(/([A-Za-z]+)\s+(\d+)/,'$1 1 $2')):null;
+        const purchaseD=inv.startDate?parseDate(inv.startDate):null;
         const yearsHeld=purchaseD?Math.max(0.1,(today-purchaseD)/(1000*60*60*24*365.25)):1;
         const pv=inv.propertyValue||inv.amountUSD||0;
         const depr=(CURRENCIES[inv.currency]||{d:0}).d;
@@ -787,7 +799,7 @@ const effSaved=ts>0?ts:autoSaved;
 const cf=ti-effSaved-te;
 const sr=ti>0?(effSaved/ti)*100:0;
 const key=`${yr}-${String(mo).padStart(2,'0')}`;
-DB.monthly[key]={p1:g(‘m-p1’),p2:g(‘m-p2’),rental:g(‘m-rental’),div:g(‘m-div’),oi:g(‘m-oi’),cs:g(‘m-cs’),k:g(‘m-k’),br:g(‘m-br’),s5:g(‘m-s5’),hs:g(‘m-hs’),fd:g(‘m-fd’),tr:g(‘m-tr’),ins:g(‘m-ins’),ut:g(‘m-ut’),cc:g(‘m-cc’),hc:g(‘m-hc’),sb:g(‘m-sb’),rm:g(‘m-rm’),dn:g(‘m-dn’),tv:g(‘m-tv’),ps:g(‘m-ps’),db:g(‘m-db’),ox:g(‘m-ox’),tex,notes:gs(‘m-notes’),month:mo,year:yr,key,totalIncome:ti,totalSaved:effSaved,totalExpenses:te,cashflow:cf,savingsRate:sr};
+var md={};md.p1=g(‘m-p1’);md.p2=g(‘m-p2’);md.rental=g(‘m-rental’);md.div=g(‘m-div’);md.oi=g(‘m-oi’);md.cs=g(‘m-cs’);md.k=g(‘m-k’);md.br=g(‘m-br’);md.s5=g(‘m-s5’);md.hs=g(‘m-hs’);md.fd=g(‘m-fd’);md.tr=g(‘m-tr’);md.ins=g(‘m-ins’);md.ut=g(‘m-ut’);md.cc=g(‘m-cc’);md.hc=g(‘m-hc’);md.sb=g(‘m-sb’);md.rm=g(‘m-rm’);md.dn=g(‘m-dn’);md.tv=g(‘m-tv’);md.ps=g(‘m-ps’);md.db=g(‘m-db’);md.ox=g(‘m-ox’);md.tex=tex;md.notes=gs(‘m-notes’);md.month=mo;md.year=yr;md.key=key;md.totalIncome=ti;md.totalSaved=effSaved;md.totalExpenses=te;md.cashflow=cf;md.savingsRate=sr;DB.monthly[key]=md;
 saveDB(DB);monthState={mo,yr,expMode};toast(`✓ Saved ${mn(mo,true)} ${yr}`);render();
 }
 
@@ -807,7 +819,7 @@ const sd={mfj:29200,single:14600,hoh:21900,mfs:14600}[f.st]||29200;
 const ded=Math.max(sd,nv(f.itm));
 const taxable=Math.max(0,agi-ded);
 const bk=f.st===‘mfj’?[[23200,.1],[71100,.12],[106750,.22],[182850,.24],[103550,.32],[243750,.35],[1e12,.37]]:[[11600,.1],[35550,.12],[53375,.22],[91950,.24],[51775,.32],[365625,.35],[1e12,.37]];
-let ft=0,rem=taxable;for(const[l,r]of bk){const x=Math.min(rem,l);ft+=x*r;rem-=x;if(rem<=0)break;}
+var ft=0,rem=taxable;bk.forEach(function(br2){if(rem>0){var x=Math.min(rem,br2[0]);ft+=x*br2[1];rem-=x;}});
 const ctc=Math.min(nv(f.ch)*2000,ft);const nft=Math.max(0,ft-ctc);
 const wh=nv(f.f1)+nv(f.f2)+nv(f.s1)+nv(f.s2)+nv(f.ep);
 const ref=wh-nft;const er=(w2+oi)>0?(nft/(w2+oi))*100:0;
@@ -832,7 +844,7 @@ const sd={mfj:29200,single:14600,hoh:21900,mfs:14600}[st]||29200;
 const ded=Math.max(sd,g(‘t-itm’));
 const taxable=Math.max(0,agi-ded);
 const bk=st===‘mfj’?[[23200,.1],[71100,.12],[106750,.22],[182850,.24],[103550,.32],[243750,.35],[1e12,.37]]:[[11600,.1],[35550,.12],[53375,.22],[91950,.24],[51775,.32],[365625,.35],[1e12,.37]];
-let ft=0,rem=taxable;for(const[l,r]of bk){const x=Math.min(rem,l);ft+=x*r;rem-=x;if(rem<=0)break;}
+var ft=0,rem=taxable;bk.forEach(function(br2){if(rem>0){var x=Math.min(rem,br2[0]);ft+=x*br2[1];rem-=x;}});
 const ctc=Math.min(g(‘t-ch’)*2000,ft);const nft=Math.max(0,ft-ctc);
 const wh=g(‘t-f1’)+g(‘t-f2’)+g(‘t-s1’)+g(‘t-s2’)+g(‘t-ep’);
 const ref=wh-nft;const er=(w2+oi)>0?(nft/(w2+oi))*100:0;
@@ -844,7 +856,7 @@ saveDB(DB);taxState={yr};toast(`✓ Tax ${yr} saved`);render();
 // INVESTMENTS
 // ──────────────────────────────────────────
 let invEditId=null, invAdding=false;
-let invFormState={type:‘Private Lending’,currency:‘USD’};
+let invFormState.type=‘Private Lending’;invFormState.currency=‘USD’;
 
 function renderInvestments(el){
 const invs=DB.investments||[];
@@ -976,30 +988,29 @@ nomReturn=g(‘i-nom’);
 const realReturn=calcRealReturn(nomReturn,depr);
 const invs=DB.investments||[];
 const existingInv=invEditId!==null?invs.find(i=>i.id===invEditId):null;
-const saved={
-id:existingInv?existingInv.id:Date.now(),
-name:gs(‘i-name’),type,currency,
-amountLocal:isForeign?g(‘i-alocal’):0,
-exchangeRate:g(‘i-exrate’)||1,
-amountUSD,nominalReturnPct:nomReturn,realReturnPct:realReturn,
-currentValueUSD:amtUSD,metrics,
-interestRate:isLend?g(‘i-rate’):0,
-principalUSD:isLend&&!isForeign?g(‘i-princ’):0,
-propertyValue:isRE?g(‘i-pval’):0,
-monthlyRent:isRE?g(‘i-rent’):0,
-mortgageBalance:isRE?g(‘i-mtgbal’):0,
-monthlyMortgage:isRE?g(‘i-mtg’):0,
-propertyTax:isRE?g(‘i-ptax’):0,
-maintenancePct:isRE?g(‘i-maint’):1.5,
-weightOz:isGold?g(‘i-wt’):0,
-pricePerOz:isGold?g(‘i-poz’):0,
-termYears:isLend?g(‘i-term’):0,
-startDate:(isLend||isRE||isPlot)?gs(‘i-start’):’’,
-maturityDate:isLend?gs(‘i-maturity’):’’,
-costBasis:isStock?g(‘i-costbasis’):(inv?inv.costBasis:0),
-currentMarketValue:isStock?g(‘i-curval’):0,
-notes:gs(‘i-notes’)
-};
+var saved={};
+saved.id=existingInv?existingInv.id:Date.now();
+saved.name=gs(‘i-name’);saved.type=type;saved.currency=currency;
+saved.amountLocal=isForeign?g(‘i-alocal’):0;
+saved.exchangeRate=g(‘i-exrate’)||1;
+saved.amountUSD=amtUSD;saved.nominalReturnPct=nomReturn;saved.realReturnPct=realReturn;
+saved.currentValueUSD=amtUSD;saved.metrics=metrics;
+saved.interestRate=isLend?g(‘i-rate’):0;
+saved.principalUSD=isLend&&!isForeign?g(‘i-princ’):0;
+saved.propertyValue=isRE?g(‘i-pval’):0;
+saved.monthlyRent=isRE?g(‘i-rent’):0;
+saved.mortgageBalance=isRE?g(‘i-mtgbal’):0;
+saved.monthlyMortgage=isRE?g(‘i-mtg’):0;
+saved.propertyTax=isRE?g(‘i-ptax’):0;
+saved.maintenancePct=isRE?g(‘i-maint’):1.5;
+saved.weightOz=isGold?g(‘i-wt’):0;
+saved.pricePerOz=isGold?g(‘i-poz’):0;
+saved.termYears=isLend?g(‘i-term’):0;
+saved.startDate=(isLend||isRE||isPlot)?gs(‘i-start’):’’;
+saved.maturityDate=isLend?gs(‘i-maturity’):’’;
+saved.costBasis=isStock?g(‘i-costbasis’):(inv?inv.costBasis:0);
+saved.currentMarketValue=isStock?g(‘i-curval’):0;
+saved.notes=gs(‘i-notes’);
 const isStock2=saved.type===‘Stocks / ETF’||saved.type===‘Mutual Fund’;
 if(isStock2&&saved.costBasis>0&&saved.currentMarketValue>0){
 saved.amountUSD=saved.currentMarketValue;
@@ -1138,7 +1149,7 @@ const file=ev.target.files[0];if(!file)return;
 const r=new FileReader();
 r.onload=e=>{try{const d=JSON.parse(e.target.result);
 if(confirm(‘Merge with existing data?’)){
-DB={monthly:{…DB.monthly,…(d.monthly||{})},tax:{…DB.tax,…(d.tax||{})},networth:{…DB.networth,…(d.networth||{})},goals:{…DB.goals,…(d.goals||{})},investments:[…(DB.investments||[]),…(d.investments||[])]};
+DB={monthly:Object.assign({},DB.monthly,d.monthly||{}),tax:Object.assign({},DB.tax,d.tax||{}),networth:Object.assign({},DB.networth,d.networth||{}),goals:Object.assign({},DB.goals,d.goals||{}),investments:(DB.investments||[]).concat(d.investments||[])};
 saveDB(DB);toast(‘✓ Imported!’);render();
 }}catch(err){alert(‘Invalid file: ‘+err.message);}
 };r.readAsText(file);ev.target.value=’’;
@@ -1241,7 +1252,7 @@ on(‘nw-save’,‘click’,saveNetWorth);
 
 on(‘inv-add’,‘click’,()=>{invAdding=true;invEditId=null;render();});
 on(‘i-save’,‘click’,saveInvestment);
-on(‘i-cancel’,‘click’,()=>{invAdding=false;invEditId=null;invFormState={type:‘Private Lending’,currency:‘USD’};render();});
+on(‘i-cancel’,‘click’,()=>{invAdding=false;invEditId=null;invFormState.type=‘Private Lending’;invFormState.currency=‘USD’;render();});
 onCh(‘i-type’,e=>{
 invFormState.type=e.target.value;
 const inv=invEditId!==null?(DB.investments||[]).find(i=>i.id===invEditId):null;
@@ -1264,7 +1275,7 @@ onCh(‘h-import’,importData);
 [‘g-sav’,‘g-nw’,‘g-inv’].forEach(id=>on(id,‘input’,e=>{
 const map={gSav:‘savings’,‘g-nw’:‘nw’,‘g-inv’:‘invest’};
 const k=id===‘g-sav’?‘savings’:id===‘g-nw’?‘nw’:‘invest’;
-DB.goals={…(DB.goals||{}),[k]:nv(e.target.value)};saveDB(DB);
+DB.goals=Object.assign({},DB.goals||{});DB.goals[k]=nv(e.target.value);saveDB(DB);
 }));
 on(‘fire-exp’,‘input’,e=>{fireExpenses=e.target.value;const s=document.getElementById(‘content’);if(s){renderInsights(s);bindAll();}});
 on(‘fire-ret’,‘input’,e=>{fireReturn=e.target.value;const s=document.getElementById(‘content’);if(s){renderInsights(s);bindAll();}});
