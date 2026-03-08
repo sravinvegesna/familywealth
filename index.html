@@ -10,6 +10,8 @@
 <title>FamilyWealth</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{
@@ -244,10 +246,6 @@ h1,h2,h3,.serif{font-family:'DM Serif Display',serif;}
   <div class="splash-bar-bg"><div class="splash-bar"></div></div>
 </div>
 <div id="root"></div>
-
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
 <script>
 'use strict';
@@ -1749,9 +1747,20 @@ function App(){
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
-const container=document.getElementById('root');
-const root=ReactDOM.createRoot(container);
-root.render(e(App));
+function boot(){
+  try{
+    const container=document.getElementById('root');
+    const root=ReactDOM.createRoot(container);
+    root.render(e(App));
+  }catch(err){
+    document.body.innerHTML='<div style="padding:40px;font-family:sans-serif;color:#fff;background:#1A1A2E;min-height:100vh"><h2>⚠️ Load Error</h2><p style="margin-top:12px;opacity:0.7">'+err.message+'</p><p style="margin-top:12px;opacity:0.5;font-size:13px">Please hard-refresh (hold reload button) or clear Safari cache.</p></div>';
+  }
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',boot);
+}else{
+  boot();
+}
 </script>
 
 </body>
