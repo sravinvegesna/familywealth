@@ -39,11 +39,9 @@ select{-webkit-appearance:none}
 .tab-bar::-webkit-scrollbar{display:none}
 .tab-btn{flex-shrink:0;padding:9px 12px;border:none;background:transparent;color:rgba(200,195,188,0.6);font-size:11px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.2s;letter-spacing:0.2px}
 .tab-btn.active{color:#E8D5A8;border-bottom:2px solid #C8A96E;font-weight:700}
-.content{padding:14px 13px 100px;-webkit-overflow-scrolling:touch}
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid rgba(200,195,188,0.4);display:flex;padding:6px 0 22px;z-index:200;box-shadow:0 -4px 20px rgba(0,0,0,0.08)}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:5px 2px;border:none;border-top:2px solid transparent;background:transparent;cursor:pointer;color:#C8C4BE;font-size:9px;font-weight:500;letter-spacing:0.2px;transition:all 0.2s;margin-top:-2px}
-.nav-btn.active{color:#4E7A52;border-top:2px solid #7A9E7E;font-weight:800}
-.toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%) translateY(10px);background:#1A1A2E;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:all 0.3s;z-index:999;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.content{padding:14px 13px 32px;-webkit-overflow-scrolling:touch}
+.bottom-nav{display:none}.nav-btn{display:none}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);background:#1A1A2E;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:all 0.3s;z-index:999;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 /* Cards */
 .card{background:#fff;border-radius:20px;padding:18px;margin-bottom:12px;box-shadow:0 2px 16px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04)}
@@ -348,10 +346,15 @@ function renderDashboard(el){
         <div class="alloc-wrap">
           ${allocRingSVG(allocSlices,84)}
           <div class="alloc-legend">${allocSlices.map(s=>`
-            <div class="alloc-row">
-              <div class="alloc-dot" style="background:${s.c}"></div>
-              <div class="alloc-label">${esc(s.l)}</div>
-              <div class="alloc-pct">${pc(s.p)}</div>
+            <div style="margin-bottom:7px">
+              <div class="alloc-row" style="margin-bottom:3px">
+                <div class="alloc-dot" style="background:${s.c}"></div>
+                <div class="alloc-label">${esc(s.l)}</div>
+                <div class="alloc-pct">${pc(s.p)}</div>
+              </div>
+              <div style="height:4px;background:#F2EEE8;border-radius:4px;overflow:hidden">
+                <div style="height:100%;width:${Math.min(100,s.p)}%;background:${s.c};border-radius:4px;transition:width 0.6s"></div>
+              </div>
             </div>`).join('')}
           </div>
         </div>`:''}
@@ -413,6 +416,240 @@ function renderDashboard(el){
           </div>
         </div>`).join('')}
       ${invs.length>4?`<div style="text-align:center;font-size:11px;color:#6B6663;margin-top:8px">+${invs.length-4} more · see Investments tab</div>`:''}
+    `);
+  }
+
+  // ── LENDING DETAIL CARDS ──
+  const lendInvs=(DB.investments||[]).filter(i=>i.type==='Private Lending');
+  if(lendInvs.length>0){
+    lendInvs.forEach(inv=>{
+      const today=new Date();
+      const startD=inv.startDate?new Date(inv.startDate.replace(/([A-Za-z]+)\s+(\d+)/,'$1 1 $2')):null;
+      const matD=inv.maturityDate?new Date(inv.maturityDate.replace(/([A-Za-z]+)\s+(\d+)/,'$1 1 $2')):null;
+      const rate=(inv.interestRate||0)/100;
+      const principal=inv.amountUSD||0;
+      const termYrs=inv.termYears||1;
+      const depr=(CURRENCIES[inv.currency]||{d:0}).d;
+      const nomReturn=inv.nominalReturnPct||inv.interestRate||0;
+      const realReturn=inv.realReturnPct||calcRealReturn(nomReturn,depr);
+      // Timeline
+      let elapsedPct=0,elapsedDays=0,totalDays=0,daysLeft=0;
+      if(startD&&matD){
+        totalDays=(matD-startD)/(1000*60*60*24);
+        elapsedDays=Math.max(0,(today-startD)/(1000*60*60*24));
+        daysLeft=Math.max(0,(matD-today)/(1000*60*60*24));
+        elapsedPct=Math.min(100,(elapsedDays/totalDays)*100);
+      }
+      // Interest accrued so far
+      const yearsElapsed=startD?Math.max(0,(today-startD)/(1000*60*60*24*365.25)):0;
+      const interestAccrued=principal*rate*Math.min(yearsElapsed,termYrs);
+      // Payment schedule (annual interest payments)
+      let paymentsHtml='';
+      if(termYrs>1&&startD){
+        const rows=[];
+        for(let y=1;y<=termYrs;y++){
+          const pd=new Date(startD);pd.setFullYear(pd.getFullYear()+y);
+          const isPast=pd<today;
+          const isCurrent=!isPast&&(y===Math.ceil(yearsElapsed+0.001)||y===1);
+          const interest=principal*rate;
+          const isFinal=y===termYrs;
+          rows.push({y,pd,isPast,isCurrent,interest,isFinal,payment:isFinal?principal+interest:interest});
+        }
+        paymentsHtml=`<div style="margin-top:10px">
+          <div style="font-size:10px;font-weight:700;color:#6B6663;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Payment Schedule</div>
+          <div style="border:1px solid #F2EEE8;border-radius:10px;overflow:hidden">
+            ${rows.map(r=>`<div style="display:flex;align-items:center;padding:7px 10px;border-bottom:1px solid #F2EEE8;background:${r.isPast?'#F9FFF9':r.isCurrent?'#FFF8E8':'#fff'}">
+              <div style="width:22px;height:22px;border-radius:50%;background:${r.isPast?'#7A9E7E':r.isCurrent?'#C8A96E':'#F2EEE8'};display:flex;align-items:center;justify-content:center;margin-right:8px;flex-shrink:0">
+                <span style="font-size:10px;color:${r.isPast||r.isCurrent?'white':'#C8C4BE'};font-weight:700">${r.isPast?'✓':r.y}</span>
+              </div>
+              <div style="flex:1">
+                <div style="font-size:11px;font-weight:600;color:#1A1A2E">${r.pd.toLocaleDateString('en-US',{month:'short',year:'numeric'})}${r.isFinal?' + Principal':''}</div>
+                <div style="font-size:10px;color:#6B6663">${r.isPast?'Paid':'Expected'}</div>
+              </div>
+              <div style="font-size:12px;font-weight:700;color:${r.isPast?'#4E7A52':'#1A1A2E'}">${fF(r.payment)}</div>
+            </div>`).join('')}
+          </div>
+        </div>`;
+      }
+      html+=card(`
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div>
+            <div style="font-size:14px;font-weight:700">🤝 ${esc(inv.name||'Private Lending')}</div>
+            <div style="font-size:10px;color:#6B6663;margin-top:2px">Private Lending${inv.currency&&inv.currency!=='USD'?' · '+inv.currency:''}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:15px;font-weight:800;color:#4E7A52">${fF(principal)}</div>
+            <div style="font-size:9px;color:#6B6663">Principal</div>
+          </div>
+        </div>
+        ${totalDays>0?`
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#6B6663;margin-bottom:4px">
+            <span>${startD?startD.toLocaleDateString('en-US',{month:'short',year:'numeric'}):''}</span>
+            <span style="font-weight:700;color:${elapsedPct>=100?'#4E7A52':'#C8A96E'}">${Math.round(elapsedPct)}% complete · ${daysLeft<1?'Matured!':Math.round(daysLeft)+' days left'}</span>
+            <span>${matD?matD.toLocaleDateString('en-US',{month:'short',year:'numeric'}):''}</span>
+          </div>
+          <div style="height:8px;background:#F2EEE8;border-radius:8px;overflow:hidden;position:relative">
+            <div style="height:100%;width:${elapsedPct}%;background:linear-gradient(90deg,#7A9E7E,#C8A96E);border-radius:8px;transition:width 0.6s"></div>
+          </div>
+        </div>`:''}
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+          ${[['Interest Rate',pc1(nomReturn),'#C8A96E'],['Real Return',pc1(realReturn),realReturn>=nomReturn-0.5?'#4E7A52':realReturn>=4?'#A07840':'#C0392B'],['Accrued',fF(interestAccrued),'#3D7EAA']].map(([l,v,c])=>`
+            <div style="background:#F2EEE8;border-radius:10px;padding:8px;text-align:center">
+              <div style="font-size:8px;color:#6B6663;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px">${l}</div>
+              <div style="font-size:13px;font-weight:700;color:${c}">${v}</div>
+            </div>`).join('')}
+        </div>
+        ${inv.currency!=='USD'?`<div style="background:#FDF3E3;border-left:3px solid #D47C0F;border-radius:8px;padding:7px 10px;margin-bottom:8px;font-size:11px;color:#8B6E30">⚠️ Currency risk: ${inv.currency} depreciates ~${pc1(depr)}/yr vs USD. Nominal ${pc1(nomReturn)} → Real ${pc1(realReturn)}</div>`:''}
+        ${paymentsHtml}
+      `);
+    });
+  }
+
+  // ── REAL ESTATE DETAIL ──
+  const reInvs=(DB.investments||[]).filter(i=>['Real Estate','Plot / Land'].includes(i.type));
+  if(reInvs.length>0){
+    html+=card(`
+      <div class="sec-hdr"><div class="sec-title">Real Estate Portfolio</div><span class="sec-icon">🏠</span></div>
+      ${reInvs.map(inv=>{
+        const isPlot=inv.type==='Plot / Land';
+        const m=inv.metrics||{};
+        const today=new Date();
+        const purchaseD=inv.startDate?new Date(inv.startDate.replace(/([A-Za-z]+)\s+(\d+)/,'$1 1 $2')):null;
+        const yearsHeld=purchaseD?Math.max(0.1,(today-purchaseD)/(1000*60*60*24*365.25)):1;
+        const pv=inv.propertyValue||inv.amountUSD||0;
+        const depr=(CURRENCIES[inv.currency]||{d:0}).d;
+        // Plot: pure appreciation
+        if(isPlot){
+          const appRate=inv.nominalReturnPct||0;
+          const origCost=inv.amountLocal&&inv.exchangeRate?(inv.amountLocal/inv.exchangeRate):inv.amountUSD||0;
+          const totalAppPct=pv>0&&origCost>0?((pv-origCost)/origCost)*100:0;
+          const annualAppPct=yearsHeld>0.5?((Math.pow(pv/Math.max(origCost,1),1/yearsHeld)-1)*100):appRate;
+          return `<div style="border:1px solid #F2EEE8;border-radius:12px;padding:12px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <div><div style="font-size:13px;font-weight:700">${esc(inv.name||'Plot')}</div><div style="font-size:10px;color:#6B6663">Plot / Land${purchaseD?' · Bought '+purchaseD.getFullYear():''}</div></div>
+              <div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#4E7A52">${fF(pv)}</div><div style="font-size:9px;color:#6B6663">Current Value</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
+              ${[['Annual Appreciation',pc1(annualAppPct),'#C8A96E'],['Total Return',pc1(totalAppPct),'#4E7A52'],['Held',yearsHeld.toFixed(1)+'y','#6B6663']].map(([l,v,c])=>`
+              <div style="background:#F2EEE8;border-radius:8px;padding:7px;text-align:center">
+                <div style="font-size:8px;color:#6B6663;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:1px">${l}</div>
+                <div style="font-size:12px;font-weight:700;color:${c}">${v}</div>
+              </div>`).join('')}
+            </div>
+          </div>`;
+        }
+        // Rental property
+        const mr=inv.monthlyRent||0, mm=inv.monthlyMortgage||0;
+        const pt=(inv.propertyTax||0)/12, maint=(pv*(inv.maintenancePct||1.5)/100)/12;
+        const noi=mr-pt-maint, cf=noi-mm;
+        const capRate=pv>0?(noi*12/pv)*100:0;
+        const cashYield=pv>0?(cf*12/pv)*100:0;
+        const origCost=inv.amountLocal&&inv.exchangeRate?(inv.amountLocal/inv.exchangeRate):inv.amountUSD||0;
+        const totalAppPct=pv>0&&origCost>0?((pv-origCost)/origCost)*100:0;
+        const annualAppPct=yearsHeld>0.5?((Math.pow(pv/Math.max(origCost,1),1/yearsHeld)-1)*100):(inv.nominalReturnPct||0);
+        const totalReturn=cashYield+annualAppPct;
+        const totalRentalIncome=mr*12*Math.min(yearsHeld,100);
+        const totalRentalExp=(pt+maint)*12*Math.min(yearsHeld,100);
+        const ytdMonths=Math.min(12,yearsHeld*12);
+        return `<div style="border:1px solid #F2EEE8;border-radius:12px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <div><div style="font-size:13px;font-weight:700">${esc(inv.name||'Property')}</div><div style="font-size:10px;color:#6B6663">${esc(inv.type)}${purchaseD?' · Since '+purchaseD.getFullYear():''}</div></div>
+            <div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#4E7A52">${fF(pv)}</div><div style="font-size:9px;color:#6B6663">Current Value</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:7px">
+            ${[['Monthly Rent',fF(mr),'#4E7A52'],['Monthly CF',fF(cf),cf>=0?'#4E7A52':'#C0392B'],['Cap Rate',pc1(capRate),'#A07840'],['Cash Yield',pc1(cashYield),'#3D7EAA'],['Appreciation',pc1(annualAppPct)+'/yr','#C8A96E'],['Total Return',pc1(totalReturn),'#4E7A52']].map(([l,v,c])=>`
+            <div style="background:#F2EEE8;border-radius:8px;padding:7px">
+              <div style="font-size:8px;color:#6B6663;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:1px">${l}</div>
+              <div style="font-size:12px;font-weight:700;color:${c}">${v}</div>
+            </div>`).join('')}
+          </div>
+          <div style="background:#F2EEE8;border-radius:8px;padding:8px;font-size:11px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:#6B6663">Total Rental Income (lifetime est.)</span><span style="font-weight:700;color:#4E7A52">${fF(totalRentalIncome)}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:#6B6663">Mortgage Balance</span><span style="font-weight:700">${fF(inv.mortgageBalance||0)}</span></div>
+          </div>
+        </div>`;
+      }).join('')}
+    `);
+  }
+
+  // Also show primary home if in NW assets
+  const lnw2=Object.keys(DB.networth).sort().reverse()[0]?DB.networth[Object.keys(DB.networth).sort().reverse()[0]]:null;
+  if(lnw2&&(lnw2.assets.hm||0)>0){
+    const hv=lnw2.assets.hm||0;
+    html+=card(`
+      <div class="sec-hdr"><div class="sec-title">Primary Home</div><span class="sec-icon">🏡</span></div>
+      ${dataRow('Estimated Value',fF(hv),C.sageD)}
+      ${dataRow('Mortgage Balance',fF((lnw2.liabilities.mg||0)),C.red)}
+      ${dataRow('Home Equity',fF(hv-(lnw2.liabilities.mg||0)),C.sageD,'')}
+    `);
+  }
+
+  // ── STOCKS SNAPSHOT ──
+  const stockInvs=(DB.investments||[]).filter(i=>['Stocks / ETF','Mutual Fund','Brokerage'].includes(i.type));
+  if(stockInvs.length>0){
+    const totalCost=stockInvs.reduce((s,i)=>s+(i.costBasis||i.amountUSD||0),0);
+    const totalVal=stockInvs.reduce((s,i)=>s+(i.currentValueUSD||i.amountUSD||0),0);
+    const totalGain=totalVal-totalCost;
+    const totalGainPct=totalCost>0?(totalGain/totalCost)*100:0;
+    html+=card(`
+      <div class="sec-hdr"><div class="sec-title">Stocks & Equity</div><span class="sec-icon">📈</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+        ${[['Cost Basis',fF(totalCost),'#6B6663'],['Current Value',fF(totalVal),C.sageD],['Total Gain',fF(totalGain),totalGain>=0?C.sageD:C.red]].map(([l,v,c])=>`
+        <div style="background:#F2EEE8;border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:8px;color:#6B6663;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px">${l}</div>
+          <div style="font-size:13px;font-weight:700;color:${c}">${v}</div>
+        </div>`).join('')}
+      </div>
+      ${dataRow('Total Return',pc1(totalGainPct),totalGainPct>=0?C.sageD:C.red)}
+      ${stockInvs.map(inv=>`
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F2EEE8">
+          <div><div style="font-size:12px;font-weight:600">${esc(inv.name||'Stock')}</div><div style="font-size:10px;color:#6B6663">${esc(inv.type)}</div></div>
+          <div style="text-align:right">
+            <div style="font-size:12px;font-weight:700">${fF(inv.currentValueUSD||inv.amountUSD||0)}</div>
+            <div style="font-size:10px;color:${(inv.realReturnPct||0)>=0?C.sageD:C.red}">${pc1(inv.realReturnPct||0)} real</div>
+          </div>
+        </div>`).join('')}
+    `);
+  }
+
+  // ── CASH ACCUMULATION TREND ──
+  const mK2=Object.keys(DB.monthly).sort();
+  if(mK2.length>2){
+    let cumulativeCash=0;
+    const cashData=mK2.map(k=>{const d=DB.monthly[k];cumulativeCash+=(d.totalSaved||0);return{k,month:d.month,year:d.year,saved:d.totalSaved||0,cumulative:cumulativeCash};});
+    const recentCash=cashData.slice(-8);
+    const maxCum=Math.max(...recentCash.map(d=>d.cumulative),1);
+    const annualSaved={};mK2.forEach(k=>{const d=DB.monthly[k];annualSaved[d.year]=(annualSaved[d.year]||0)+(d.totalSaved||0);});
+    html+=card(`
+      <div class="sec-hdr"><div class="sec-title">Cash Accumulation</div><span class="sec-icon">💵</span></div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;color:#6B6663;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:700">Cumulative Savings (last 8 months)</div>
+        <div style="display:flex;align-items:flex-end;height:55px;gap:3px">
+          ${recentCash.map((d,i)=>{
+            const h=Math.max(4,(d.cumulative/maxCum)*50);
+            return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:2px">
+              <div style="width:100%;height:${h}px;background:${i===recentCash.length-1?'#7A9E7E':'#A8C5AC'};border-radius:2px 2px 0 0"></div>
+              <div style="font-size:7px;color:#6B6663;white-space:nowrap">${MS[parseInt(d.month)-1]}</div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:4px">
+          <span style="color:#6B6663">Total accumulated</span>
+          <span style="font-weight:700;color:#4E7A52">${fF(cumulativeCash)}</span>
+        </div>
+      </div>
+      <div style="border-top:1px solid #F2EEE8;padding-top:8px">
+        <div style="font-size:10px;color:#6B6663;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:700">Annual Savings</div>
+        ${Object.entries(annualSaved).reverse().slice(0,4).map(([yr,amt])=>`
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="font-size:11px;color:#6B6663;width:36px">${yr}</span>
+            <div style="flex:1;height:6px;background:#F2EEE8;border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${Math.min(100,(amt/Math.max(...Object.values(annualSaved),1))*100)}%;background:#7A9E7E;border-radius:3px"></div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:#4E7A52;min-width:52px;text-align:right">${fF(amt)}</span>
+          </div>`).join('')}
+      </div>
     `);
   }
 
@@ -607,6 +844,7 @@ saveDB(DB);taxState={yr};toast(`✓ Tax ${yr} saved`);render();
 // INVESTMENTS
 // ──────────────────────────────────────────
 let invEditId=null, invAdding=false;
+let invFormState={type:‘Private Lending’,currency:‘USD’};
 
 function renderInvestments(el){
 const invs=DB.investments||[];
@@ -651,18 +889,18 @@ function deleteInv(id){if(!confirm(‘Delete this investment?’))return;DB.inve
 function renderInvForm(el){
 const invs=DB.investments||[];
 const inv=invEditId!==null?invs.find(i=>i.id===invEditId):null;
-const f=inv||{id:Date.now(),name:’’,type:‘Private Lending’,currency:‘USD’,amountUSD:0,amountLocal:0,exchangeRate:1,nominalReturnPct:0,termYears:1,startDate:’’,maturityDate:’’,notes:’’,propertyValue:0,monthlyRent:0,mortgageBalance:0,monthlyMortgage:0,propertyTax:0,maintenancePct:1.5,weightOz:0,pricePerOz:0,interestRate:0,principalUSD:0};
-const type=toggleState[‘inv-type’]||f.type;
-const cur=CURRENCIES[f.currency]||CURRENCIES.USD;
-const isForeign=f.currency!==‘USD’;
+const f=inv||{id:Date.now(),name:’’,type:invFormState.type,currency:invFormState.currency,amountUSD:0,amountLocal:0,exchangeRate:1,nominalReturnPct:0,termYears:1,startDate:’’,maturityDate:’’,notes:’’,propertyValue:0,monthlyRent:0,mortgageBalance:0,monthlyMortgage:0,propertyTax:0,maintenancePct:1.5,weightOz:0,pricePerOz:0,interestRate:0,principalUSD:0};
+if(inv){invFormState.type=inv.type;invFormState.currency=inv.currency;}
+const cur=CURRENCIES[invFormState.currency]||CURRENCIES.USD;
+const isForeign=invFormState.currency!==‘USD’;
 
 let html=’’;
-html+=card(` <div class="sec-hdr"><div class="sec-title">${inv?'Edit Investment':'New Investment'}</div><span class="sec-icon">🌐</span></div> ${field('i-name','Investment Name',f.name||'','','text','','','')} ${selField('i-type','Type',f.type,INV_TYPES.map(t=>({v:t,l:t})))} ${divider('💱 Currency & Amount')} ${selField('i-cur','Currency',f.currency,Object.entries(CURRENCIES).map(([k,v])=>({v:k,l:`${k} — ${v.l}`})))} ${isForeign?infoBox('info','📉','Currency Risk',`${f.currency} historically depreciates ~${cur.d}% per year vs USD. Your real USD return will be reduced accordingly.`):''} `);
+html+=card(` <div class="sec-hdr"><div class="sec-title">${inv?'Edit Investment':'New Investment'}</div><span class="sec-icon">🌐</span></div> ${field('i-name','Investment Name',f.name||'','','text','','','')} ${selField('i-type','Type',invFormState.type,INV_TYPES.map(t=>({v:t,l:t})))} ${divider('💱 Currency & Amount')} ${selField('i-cur','Currency',invFormState.currency,Object.entries(CURRENCIES).map(([k,v])=>({v:k,l:`${k} — ${v.l}`})))} ${isForeign?infoBox('info','📉','Currency Risk',`${f.currency} historically depreciates ~${cur.d}% per year vs USD. Your real USD return will be reduced accordingly.`):''} `);
 
-const isRE=f.type===‘Real Estate’;
-const isGold=f.type===‘Gold / Silver’;
-const isLend=f.type===‘Private Lending’;
-const isPlot=f.type===‘Plot / Land’;
+const isRE=invFormState.type===‘Real Estate’;
+const isGold=invFormState.type===‘Gold / Silver’;
+const isLend=invFormState.type===‘Private Lending’;
+const isPlot=invFormState.type===‘Plot / Land’;
 
 if(isLend){
 html+=card(` ${divider('🤝 Lending Details')} ${isForeign?`<div class="flex-row">
@@ -673,19 +911,23 @@ ${field(‘i-exrate’,‘Exchange Rate’,f.exchangeRate||1,’’,‘number’
 html+=card(` ${divider('🏠 Property Details')} ${isForeign?`<div class="flex-row">
 ${field(‘i-pval’,`Property Value (${f.currency})`,f.propertyValue||0,cur.sym,‘number’,’’,true)}
 ${field(‘i-exrate’,‘Exchange Rate’,f.exchangeRate||1,’’,‘number’,‘e.g. 83.5’,true)}
-</div>`:`${field(‘i-pval’,‘Property Value’,f.propertyValue||0)}`} <div class="flex-row"> ${field('i-rent','Monthly Rent',f.monthlyRent||0,'$','number','',true)} ${field('i-mtg','Monthly Mortgage',f.monthlyMortgage||0,'$','number','',true)} ${field('i-mtgbal','Mortgage Balance',f.mortgageBalance||0,'$','number','',true)} ${field('i-ptax','Annual Property Tax',f.propertyTax||0,'$','number','',true)} ${field('i-maint','Maintenance % (annual)',f.maintenancePct||1.5,'%','number','',true)} </div> `);
+</div>`:`${field(‘i-pval’,‘Property Value’,f.propertyValue||0)}`} <div class="flex-row"> ${field('i-rent','Monthly Rent',f.monthlyRent||0,'$','number','',true)} ${field('i-mtg','Monthly Mortgage',f.monthlyMortgage||0,'$','number','',true)} ${field('i-mtgbal','Mortgage Balance',f.mortgageBalance||0,'$','number','',true)} ${field('i-ptax','Annual Property Tax',f.propertyTax||0,'$','number','',true)} ${field('i-maint','Maintenance % (annual)',f.maintenancePct||1.5,'%','number','',true)} </div> ${field('i-start','Purchase Date',f.startDate||'','','text','e.g. Jan 2020')} `);
 } else if(isPlot){
 html+=card(` ${divider('🌍 Plot / Land Details')} ${isForeign?`<div class="flex-row">
 ${field(‘i-alocal’,`Purchase Price (${f.currency})`,f.amountLocal||0,cur.sym,‘number’,’’,true)}
 ${field(‘i-exrate’,‘Exchange Rate’,f.exchangeRate||1,’’,‘number’,‘83.5’,true)}
-</div>`:`${field(‘i-ausd’,‘Current Value’,f.amountUSD||0)}`} ${field('i-nom','Expected Annual Appreciation %',f.nominalReturnPct||0,'%')} `);
+</div>`:`${field(‘i-ausd’,‘Current Value’,f.amountUSD||0)}`} ${field('i-nom','Expected Annual Appreciation %',f.nominalReturnPct||0,'%')} ${field('i-start','Purchase Date',f.startDate||'','','text','e.g. Mar 2019')} `);
 } else if(isGold){
 html+=card(`${divider('🥇 Gold / Silver Details')} <div class="flex-row"> ${field('i-wt','Weight (troy oz)',f.weightOz||0,'oz','number','',true)} ${field('i-poz','Price per oz (USD)',f.pricePerOz||0,'$','number','~2300',true)} </div> ${field('i-nom','Expected Annual Return %',f.nominalReturnPct||0,'%','number','Historically gold ~3-5% annually')}`);
 } else {
+const isStock=invFormState.type===‘Stocks / ETF’||invFormState.type===‘Mutual Fund’;
 html+=card(` ${divider('💰 Amount & Return')} ${isForeign?`<div class="flex-row">
 ${field(‘i-alocal’,`Amount (${f.currency})`,f.amountLocal||0,cur.sym,‘number’,’’,true)}
 ${field(‘i-exrate’,‘Exchange Rate’,f.exchangeRate||1,’’,‘number’,‘83.5’,true)}
-</div>`:`${field(‘i-ausd’,‘Amount (USD)’,f.amountUSD||0)}`} ${field('i-nom','Expected Annual Return %',f.nominalReturnPct||0,'%')} `);
+</div>`:`${field(‘i-ausd’,‘Amount (USD)’,f.amountUSD||0)}`} ${isStock?`<div class="flex-row">
+${field(‘i-costbasis’,‘Cost Basis (what you paid)’,f.costBasis||0,’$’,‘number’,‘Total invested amount’,true)}
+${field(‘i-curval’,‘Current Value’,f.currentMarketValue||f.amountUSD||0,’$’,‘number’,‘Market value today’,true)}
+</div>`:''} ${field('i-nom','Expected Annual Return %',f.nominalReturnPct||0,'%')} `);
 }
 
 html+=card(`${field('i-notes','Notes',f.notes||'','','text','Any additional context...')} <div style="display:flex;gap:8px"> ${btn('i-save','✓ Save Investment',C.sage)} ${btn('i-cancel','Cancel',C.gray,true)} </div>`);
@@ -705,6 +947,7 @@ const isLend=type===‘Private Lending’;
 const isRE=type===‘Real Estate’;
 const isGold=type===‘Gold / Silver’;
 const isPlot=type===‘Plot / Land’;
+const isStock=type===‘Stocks / ETF’||type===‘Mutual Fund’;
 
 let amtUSD=0, nomReturn=nom, metrics={};
 
@@ -751,10 +994,19 @@ maintenancePct:isRE?g(‘i-maint’):1.5,
 weightOz:isGold?g(‘i-wt’):0,
 pricePerOz:isGold?g(‘i-poz’):0,
 termYears:isLend?g(‘i-term’):0,
-startDate:isLend?gs(‘i-start’):’’,
+startDate:(isLend||isRE||isPlot)?gs(‘i-start’):’’,
 maturityDate:isLend?gs(‘i-maturity’):’’,
+costBasis:isStock?g(‘i-costbasis’):(inv?inv.costBasis:0),
+currentMarketValue:isStock?g(‘i-curval’):0,
 notes:gs(‘i-notes’)
 };
+const isStock2=saved.type===‘Stocks / ETF’||saved.type===‘Mutual Fund’;
+if(isStock2&&saved.costBasis>0&&saved.currentMarketValue>0){
+saved.amountUSD=saved.currentMarketValue;
+saved.currentValueUSD=saved.currentMarketValue;
+saved.nominalReturnPct=((saved.currentMarketValue-saved.costBasis)/saved.costBasis)*100;
+saved.realReturnPct=saved.nominalReturnPct;
+}
 
 if(invEditId!==null){const idx=invs.findIndex(i=>i.id===invEditId);if(idx>=0)invs[idx]=saved;else invs.push(saved);}
 else invs.push(saved);
@@ -989,9 +1241,21 @@ on(‘nw-save’,‘click’,saveNetWorth);
 
 on(‘inv-add’,‘click’,()=>{invAdding=true;invEditId=null;render();});
 on(‘i-save’,‘click’,saveInvestment);
-on(‘i-cancel’,‘click’,()=>{invAdding=false;invEditId=null;render();});
-onCh(‘i-type’,e=>{const inv=invEditId!==null?(DB.investments||[]).find(i=>i.id===invEditId):null;if(inv)inv.type=e.target.value;render();});
-onCh(‘i-cur’,e=>{const inv=invEditId!==null?(DB.investments||[]).find(i=>i.id===invEditId):null;if(inv){inv.currency=e.target.value;}render();});
+on(‘i-cancel’,‘click’,()=>{invAdding=false;invEditId=null;invFormState={type:‘Private Lending’,currency:‘USD’};render();});
+onCh(‘i-type’,e=>{
+invFormState.type=e.target.value;
+const inv=invEditId!==null?(DB.investments||[]).find(i=>i.id===invEditId):null;
+if(inv)inv.type=e.target.value;
+const el=document.getElementById(‘content’);
+if(el){renderInvForm(el);bindAll();}
+});
+onCh(‘i-cur’,e=>{
+invFormState.currency=e.target.value;
+const inv=invEditId!==null?(DB.investments||[]).find(i=>i.id===invEditId):null;
+if(inv)inv.currency=e.target.value;
+const el=document.getElementById(‘content’);
+if(el){renderInvForm(el);bindAll();}
+});
 
 on(‘h-export’,‘click’,exportData);
 onCh(‘h-import’,importData);
@@ -1033,12 +1297,25 @@ var u=c.toDataURL(‘image/png’);
 
 window.addEventListener(‘DOMContentLoaded’,function(){
 buildIcon();
-setTimeout(function(){
+function launch(){
+try{
 document.getElementById(‘splash’).classList.add(‘hidden’);
 document.getElementById(‘app’).style.display=‘block’;
 render();
-setTimeout(function(){document.getElementById(‘splash’).style.display=‘none’;},500);
-},1800);
+setTimeout(function(){
+var s=document.getElementById(‘splash’);
+if(s)s.style.display=‘none’;
+},500);
+}catch(err){
+console.error(‘Launch error:’,err);
+// Show error on splash so it’s not stuck
+var sp=document.getElementById(‘splash’);
+if(sp){
+sp.innerHTML=’<div style="color:#FAF7F2;padding:24px;text-align:center"><div style="font-size:18px;margin-bottom:12px">⚠️ Load Error</div><div style="font-size:12px;color:#A8C5AC;word-break:break-all">’+String(err)+’</div><button onclick="location.reload()" style="margin-top:16px;padding:10px 20px;background:#7A9E7E;border:none;border-radius:10px;color:white;font-size:14px;cursor:pointer">Reload</button></div>’;
+}
+}
+}
+setTimeout(launch,600);
 });
 </script>
 
