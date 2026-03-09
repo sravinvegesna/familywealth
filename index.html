@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="FamilyWealth">
 <title>FamilyWealth</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
 <style>
@@ -26,7 +26,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1C1E;-webkit-overflow-scrolling:t
 #splash.hide{opacity:0;pointer-events:none;}
 .splash-leaf{width:48px;height:48px;animation:leafpop 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards;}
 @keyframes leafpop{0%{opacity:0;transform:scale(0.4) rotate(-20deg);}100%{opacity:1;transform:scale(1) rotate(0deg);}}
-.splash-title{font-family:‘DM Serif Display’,serif;color:#FFFFFF;font-size:26px;margin-top:14px;letter-spacing:-0.5px;font-style:italic;}
+.splash-title{font-family:‘Nunito’,sans-serif;color:#FFFFFF;font-size:26px;margin-top:14px;letter-spacing:-0.5px;font-weight:300;}
 .splash-word{color:#A8C5AC;font-family:‘DM Sans’,sans-serif;font-size:26px;font-style:normal;font-weight:300;margin-left:6px;}
 .splash-sub{color:rgba(168,197,172,0.6);font-size:13px;margin-top:8px;font-weight:400;letter-spacing:0.5px;}
 .splash-bar-bg{width:160px;height:2px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:48px;overflow:hidden;}
@@ -39,8 +39,8 @@ body{font-family:'DM Sans',sans-serif;color:#1C1C1E;-webkit-overflow-scrolling:t
 /* ── Header ── */
 .header{background:#FAFAF8;padding:0 20px;position:sticky;top:0;z-index:100;flex-shrink:0;border-bottom:1px solid #EEEBE5;}
 .header-top{display:flex;align-items:center;justify-content:space-between;padding:14px 0 10px;}
-.header-title{font-family:‘DM Serif Display’,serif;color:#1C1C1E;font-size:19px;font-style:italic;letter-spacing:-0.3px;}
-.header-title span{font-style:normal;font-weight:300;color:#6E7D6F;font-family:‘DM Sans’,sans-serif;font-size:14px;margin-left:6px;}
+.header-title{font-family:‘Nunito’,sans-serif;color:#1C1C1E;font-size:18px;font-weight:300;letter-spacing:-0.2px;}
+.header-title span{font-weight:700;color:#3D6E42;font-family:‘Nunito’,sans-serif;font-size:18px;margin-left:1px;}
 .year-badge{background:#EFF5EF;color:#4E7A52;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.3px;}
 .tab-bar{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:0;gap:0;}
 .tab-bar::-webkit-scrollbar{display:none;}
@@ -53,27 +53,27 @@ body{font-family:'DM Sans',sans-serif;color:#1C1C1E;-webkit-overflow-scrolling:t
 /* ── Cards ── */
 .card{background:#FFFFFF;border-radius:16px;padding:18px;border:1px solid #EEEBE5;margin-bottom:12px;}
 .card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#B0ABA5;margin-bottom:14px;}
-.card-value{font-family:‘DM Serif Display’,serif;font-size:28px;color:#1C1C1E;line-height:1;}
+.card-value{font-family:‘Nunito’,sans-serif;font-size:28px;color:#1C1C1E;line-height:1;letter-spacing:-0.5px;font-weight:800;}
 .card-sub{font-size:12px;color:#9E9A94;margin-top:4px;}
 
 /* ── Hero card ── */
 .hero-card{background:#1C2B1E;border-radius:20px;padding:22px 20px;margin-bottom:12px;}
 .hero-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.4px;color:rgba(168,197,172,0.65);margin-bottom:8px;}
-.hero-value{font-family:‘DM Serif Display’,serif;font-size:36px;color:#FFFFFF;line-height:1;letter-spacing:-0.5px;}
+.hero-value{font-family:‘Nunito’,sans-serif;font-size:34px;color:#FFFFFF;line-height:1;letter-spacing:-1px;font-weight:800;}
 .hero-delta{font-size:12px;margin-top:6px;font-weight:500;}
 .hero-delta.pos{color:#7ECB8F;}
 .hero-delta.neg{color:#E07070;}
 .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px;}
-.hero-stat{background:rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;border:1px solid rgba(255,255,255,0.05);}
-.hero-stat-label{font-size:9px;color:rgba(255,255,255,0.4);font-weight:600;text-transform:uppercase;letter-spacing:1px;}
-.hero-stat-value{font-size:17px;font-family:‘DM Serif Display’,serif;color:#FFFFFF;margin-top:4px;letter-spacing:-0.3px;}
-.hero-stat-sub{font-size:10px;color:rgba(168,197,172,0.7);margin-top:3px;}
+.hero-stat{background:rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;border:1px solid rgba(255,255,255,0.07);}
+.hero-stat-label{font-size:9px;color:rgba(255,255,255,0.45);font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+.hero-stat-value{font-size:18px;font-family:‘Nunito’,sans-serif;color:#FFFFFF;margin-top:4px;letter-spacing:-0.5px;font-weight:700;}
+.hero-stat-sub{font-size:10px;color:rgba(168,197,172,0.65);margin-top:3px;}
 
 /* ── Summary grid (monthly) ── */
 .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
 .summary-box{background:#FFFFFF;border-radius:14px;padding:14px 16px;border:1px solid #EEEBE5;}
 .summary-box-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#B0ABA5;}
-.summary-box-value{font-family:‘DM Serif Display’,serif;font-size:22px;color:#1C1C1E;margin-top:5px;letter-spacing:-0.3px;}
+.summary-box-value{font-family:‘Nunito’,sans-serif;font-size:22px;color:#1C1C1E;margin-top:5px;letter-spacing:-0.5px;font-weight:800;}
 .summary-box-value.green{color:#3D6E42;}
 .summary-box-value.red{color:#B83030;}
 
@@ -82,7 +82,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1C1E;-webkit-overflow-scrolling:t
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 .stat-tile{background:#F4F2EE;border-radius:12px;padding:12px 14px;}
 .stat-tile-label{font-size:9px;font-weight:700;color:#B0ABA5;text-transform:uppercase;letter-spacing:1px;}
-.stat-tile-value{font-family:‘DM Serif Display’,serif;font-size:20px;color:#1C1C1E;margin-top:4px;}
+.stat-tile-value{font-family:‘Nunito’,sans-serif;font-size:20px;color:#1C1C1E;margin-top:4px;letter-spacing:-0.3px;font-weight:800;}
 .stat-tile-sub{font-size:11px;color:#9E9A94;margin-top:2px;}
 
 /* ── Bar chart ── */
@@ -172,14 +172,14 @@ body{font-family:'DM Sans',sans-serif;color:#1C1C1E;-webkit-overflow-scrolling:t
 .tax-row.total{border-top:1px solid rgba(255,255,255,0.08);margin-top:8px;padding-top:12px;font-weight:700;color:#FFFFFF;}
 .tax-refund{text-align:center;margin-top:14px;padding:14px;background:rgba(255,255,255,0.05);border-radius:12px;border:1px solid rgba(255,255,255,0.07);}
 .tax-refund-label{font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;}
-.tax-refund-value{font-family:‘DM Serif Display’,serif;font-size:30px;margin-top:6px;}
+.tax-refund-value{font-family:‘Nunito’,sans-serif;font-size:30px;margin-top:6px;font-weight:800;letter-spacing:-0.5px;}
 
 /* ── Investment card ── */
 .inv-card{background:#FFFFFF;border-radius:14px;padding:16px;border:1px solid #EEEBE5;margin-bottom:10px;}
 .inv-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
 .inv-card-name{font-size:15px;font-weight:600;color:#1C1C1E;}
 .inv-card-type{font-size:11px;color:#9E9A94;margin-top:2px;}
-.inv-card-value{font-family:‘DM Serif Display’,serif;font-size:20px;color:#1C1C1E;text-align:right;}
+.inv-card-value{font-family:‘Nunito’,sans-serif;font-size:20px;color:#1C1C1E;text-align:right;letter-spacing:-0.3px;font-weight:700;}
 .inv-card-ret{font-size:11px;text-align:right;margin-top:2px;}
 
 /* ── Timeline ── */
@@ -531,7 +531,7 @@ function HomeTab({data}){
     nwTrend.length>1&&e('div',{className:'card'},
       e('div',{className:'card-title'},'Net Worth Trend'),
       e(BarChart,{data:nwTrend,color:'#7B5EA7'}),
-      e('div',{style:{fontSize:10,color:'var(--gray)',textAlign:'center',marginTop:4}},'Values in $K')
+      e('div',{style:{fontSize:10,color:'#9E9A94',textAlign:'center',marginTop:4}},'Values in $K')
     ),
 
     // Asset Allocation
@@ -563,11 +563,11 @@ function HomeTab({data}){
       e('div',{style:{display:'flex',gap:12,marginTop:6}},
         e('div',{style:{display:'flex',alignItems:'center',gap:4}},
           e('div',{style:{width:8,height:8,borderRadius:2,background:'#3D7EAA'}}),
-          e('div',{style:{fontSize:10,color:'var(--gray)'}},`Gross ($K)`)
+          e('div',{style:{fontSize:10,color:'#9E9A94'}},`Gross ($K)`)
         ),
         e('div',{style:{display:'flex',alignItems:'center',gap:4}},
           e('div',{style:{width:8,height:8,borderRadius:2,background:'#C0392B'}}),
-          e('div',{style:{fontSize:10,color:'var(--gray)'}},`Tax ($K)`)
+          e('div',{style:{fontSize:10,color:'#9E9A94'}},`Tax ($K)`)
         )
       )
     ),
@@ -589,14 +589,14 @@ function HomeTab({data}){
       e('div',{className:'card-title'},'Stocks & Equity'),
       e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:10}},
         e('div',null,
-          e('div',{style:{fontSize:11,color:'var(--gray)'}},`Cost Basis`),
-          e('div',{style:{fontSize:18,fontFamily:"'DM Serif Display',serif",color:'var(--dark)'}},
+          e('div',{style:{fontSize:11,color:'#9E9A94'}},`Cost Basis`),
+          e('div',{style:{fontSize:18,fontFamily:"'Nunito',sans-serif",color:'#1C1C1E'}},
             fmtFull(stocks.reduce((s,i)=>s+(+i.costBasis||+i.amountUSD||0),0))
           )
         ),
         e('div',{style:{textAlign:'right'}},
-          e('div',{style:{fontSize:11,color:'var(--gray)'}},`Current Value`),
-          e('div',{style:{fontSize:18,fontFamily:"'DM Serif Display',serif",color:'var(--sageD)'}},
+          e('div',{style:{fontSize:11,color:'#9E9A94'}},`Current Value`),
+          e('div',{style:{fontSize:18,fontFamily:"'Nunito',sans-serif",color:'#3D6E42'}},
             fmtFull(stocks.reduce((s,i)=>s+(+i.currentMarketValue||+i.amountUSD||0),0))
           )
         )
@@ -612,7 +612,7 @@ function HomeTab({data}){
           ),
           e('div',{className:'list-item-right'},
             e('div',{className:'list-item-value'},fmtFull(curr)),
-            e('div',{style:{fontSize:11,color:gain>=0?'var(--sageD)':'var(--red)'}},
+            e('div',{style:{fontSize:11,color:gain>=0?'#3D6E42':'#B83030'}},
               `${gain>=0?'+':''}${fmtFull(gain)}`
             )
           )
@@ -624,7 +624,7 @@ function HomeTab({data}){
     cashTrend.length>1&&e('div',{className:'card'},
       e('div',{className:'card-title'},'Monthly Savings'),
       e(BarChart,{data:cashTrend,color:'#7A9E7E'}),
-      e('div',{style:{fontSize:10,color:'var(--gray)',textAlign:'center',marginTop:4}},'Values in $K')
+      e('div',{style:{fontSize:10,color:'#9E9A94',textAlign:'center',marginTop:4}},'Values in $K')
     ),
 
     // Latest month snapshot
@@ -641,11 +641,11 @@ function HomeTab({data}){
         ),
         e('div',{className:'stat-tile'},
           e('div',{className:'stat-tile-label'},'Saved'),
-          e('div',{className:'stat-tile-value',style:{color:'var(--sageD)'}},fmt(latestM.totalSaved||0))
+          e('div',{className:'stat-tile-value',style:{color:'#3D6E42'}},fmt(latestM.totalSaved||0))
         ),
         e('div',{className:'stat-tile'},
           e('div',{className:'stat-tile-label'},'Cash Flow'),
-          e('div',{className:'stat-tile-value',style:{color:latestM.cashflow>=0?'var(--sageD)':'var(--red)'}},fmt(latestM.cashflow||0))
+          e('div',{className:'stat-tile-value',style:{color:latestM.cashflow>=0?'#3D6E42':'#B83030'}},fmt(latestM.cashflow||0))
         )
       )
     ),
@@ -678,25 +678,25 @@ function LoanCard({inv}){
   }
   const realRet = calcRealReturn(+inv.interestRate||0, inv.currency||'USD');
   const drag = CURRENCY_RISK[inv.currency||'USD']||0;
-  return e('div',{style:{marginBottom:12,paddingBottom:12,borderBottom:'1px solid var(--surf)'}},
+  return e('div',{style:{marginBottom:12,paddingBottom:12,borderBottom:'1px solid #F4F2EE'}},
     e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}},
       e('div',null,
-        e('div',{style:{fontSize:14,fontWeight:600,color:'var(--dark)'}},inv.name||'Loan'),
-        e('div',{style:{fontSize:11,color:'var(--gray)'}},`${inv.currency||'USD'} · ${inv.interestRate||0}% interest`)
+        e('div',{style:{fontSize:14,fontWeight:600,color:'#1C1C1E'}},inv.name||'Loan'),
+        e('div',{style:{fontSize:11,color:'#9E9A94'}},`${inv.currency||'USD'} · ${inv.interestRate||0}% interest`)
       ),
       e('div',{style:{textAlign:'right'}},
-        e('div',{style:{fontSize:16,fontFamily:"'DM Serif Display',serif"}},fmtFull(+inv.principalUSD||+inv.amountUSD||0)),
-        e('div',{style:{fontSize:11,color:realRet>=0?'var(--sageD)':'var(--red)'}},`Real: ${pct(realRet)}`)
+        e('div',{style:{fontSize:16,fontFamily:"'Nunito',sans-serif"}},fmtFull(+inv.principalUSD||+inv.amountUSD||0)),
+        e('div',{style:{fontSize:11,color:realRet>=0?'#3D6E42':'#B83030'}},`Real: ${pct(realRet)}`)
       )
     ),
     start&&mat&&e('div',null,
       e('div',{className:'timeline-bg'},e('div',{className:'timeline-fill',style:{width:`${pctElapsed}%`}})),
-      e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:10,color:'var(--gray)'}},
+      e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:10,color:'#9E9A94'}},
         e('span',null,start.toLocaleDateString('en-US',{month:'short',year:'numeric'})),
         e('span',null,`${pctElapsed.toFixed(0)}% elapsed · ${daysLeft}d left`),
         e('span',null,mat.toLocaleDateString('en-US',{month:'short',year:'numeric'}))
       ),
-      e('div',{style:{marginTop:6,fontSize:12,color:'var(--sageD)',fontWeight:600}},
+      e('div',{style:{marginTop:6,fontSize:12,color:'#3D6E42',fontWeight:600}},
         `Interest accrued: ${fmtFull(Math.round(accrued))}`
       )
     ),
@@ -710,15 +710,15 @@ function RECard({inv}){
     const start = inv.startDate?new Date(inv.startDate):null;
     const years = start?(new Date()-start)/(1000*60*60*24*365):0;
     const totalRet = (+inv.nominalReturnPct||0)*years;
-    return e('div',{style:{marginBottom:10,paddingBottom:10,borderBottom:'1px solid var(--surf)'}},
+    return e('div',{style:{marginBottom:10,paddingBottom:10,borderBottom:'1px solid #F4F2EE'}},
       e('div',{style:{display:'flex',justifyContent:'space-between'}},
         e('div',null,
           e('div',{style:{fontSize:14,fontWeight:600}},inv.name||'Plot'),
-          e('div',{style:{fontSize:11,color:'var(--gray)'}},`${years.toFixed(1)} yrs held · ${pct(+inv.nominalReturnPct||0)}/yr`)
+          e('div',{style:{fontSize:11,color:'#9E9A94'}},`${years.toFixed(1)} yrs held · ${pct(+inv.nominalReturnPct||0)}/yr`)
         ),
         e('div',{style:{textAlign:'right'}},
-          e('div',{style:{fontSize:16,fontFamily:"'DM Serif Display',serif"}},fmtFull(+inv.amountUSD||0)),
-          e('div',{style:{fontSize:11,color:'var(--sageD)'}},`Total: +${pct(totalRet)}`)
+          e('div',{style:{fontSize:16,fontFamily:"'Nunito',sans-serif"}},fmtFull(+inv.amountUSD||0)),
+          e('div',{style:{fontSize:11,color:'#3D6E42'}},`Total: +${pct(totalRet)}`)
         )
       )
     );
@@ -730,21 +730,21 @@ function RECard({inv}){
   const cf=rent-mort-propTax-maint;
   const equity=(+inv.propertyValue||0)-(+inv.mortgageBalance||0);
   const capRate=inv.propertyValue?(noi*12/(+inv.propertyValue)*100):0;
-  return e('div',{style:{marginBottom:10,paddingBottom:10,borderBottom:'1px solid var(--surf)'}},
+  return e('div',{style:{marginBottom:10,paddingBottom:10,borderBottom:'1px solid #F4F2EE'}},
     e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
       e('div',null,
         e('div',{style:{fontSize:14,fontWeight:600}},inv.name||'Property'),
-        e('div',{style:{fontSize:11,color:'var(--gray)'}},`${inv.currency||'USD'} · ${inv.startDate?'Purchased '+inv.startDate:''}`)
+        e('div',{style:{fontSize:11,color:'#9E9A94'}},`${inv.currency||'USD'} · ${inv.startDate?'Purchased '+inv.startDate:''}`)
       ),
       e('div',{style:{textAlign:'right'}},
-        e('div',{style:{fontSize:16,fontFamily:"'DM Serif Display',serif"}},fmtFull(+inv.propertyValue||+inv.amountUSD||0)),
-        e('div',{style:{fontSize:11,color:'var(--sageD)'}},`Equity: ${fmtFull(equity)}`)
+        e('div',{style:{fontSize:16,fontFamily:"'Nunito',sans-serif"}},fmtFull(+inv.propertyValue||+inv.amountUSD||0)),
+        e('div',{style:{fontSize:11,color:'#3D6E42'}},`Equity: ${fmtFull(equity)}`)
       )
     ),
     e('div',{className:'grid-2'},
       e('div',{className:'stat-tile'},
         e('div',{className:'stat-tile-label'},'Monthly CF'),
-        e('div',{className:'stat-tile-value',style:{color:cf>=0?'var(--sageD)':'var(--red)',fontSize:16}},fmt(cf))
+        e('div',{className:'stat-tile-value',style:{color:cf>=0?'#3D6E42':'#B83030',fontSize:16}},fmt(cf))
       ),
       e('div',{className:'stat-tile'},
         e('div',{className:'stat-tile-label'},'Cap Rate'),
@@ -830,10 +830,10 @@ function MonthlyTab({data,setData}){
     ),
     e('div',{className:'card',style:{marginBottom:14}},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
-        e('div',{style:{fontSize:12,color:'var(--gray)'}},`Savings Rate`),
-        e('div',{style:{fontSize:14,fontWeight:700,color:'var(--sageD)'}},pct(savingsRate))
+        e('div',{style:{fontSize:12,color:'#9E9A94'}},`Savings Rate`),
+        e('div',{style:{fontSize:14,fontWeight:700,color:'#3D6E42'}},pct(savingsRate))
       ),
-      e(ProgressBar,{value:savingsRate,max:100,color:'var(--sage)'})
+      e(ProgressBar,{value:savingsRate,max:100,color:'#6E9E72'})
     ),
 
     // Income
@@ -1066,7 +1066,7 @@ function InvestTab({data,setData}){
           return e('div',{key:type,style:{marginBottom:6}},
             e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:3}},
               e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.6)'}},type),
-              e('div',{style:{fontSize:11,color:'var(--gold)'}},`${fmtFull(val)} · ${p.toFixed(0)}%`)
+              e('div',{style:{fontSize:11,color:'#B8926A'}},`${fmtFull(val)} · ${p.toFixed(0)}%`)
             ),
             e('div',{style:{height:4,background:'rgba(255,255,255,0.1)',borderRadius:2}},
               e('div',{style:{height:'100%',width:`${p}%`,background:typeColors[type]||'#7A9E7E',borderRadius:2}})
@@ -1098,7 +1098,7 @@ function InvestTab({data,setData}){
           ),
           e('div',null,
             e('div',{className:'inv-card-value'},fmtFull(+inv.amountUSD||0)),
-            e('div',{className:`inv-card-ret`,style:{color:realRet>=0?'var(--sageD)':'var(--red)'}},
+            e('div',{className:`inv-card-ret`,style:{color:realRet>=0?'#3D6E42':'#B83030'}},
               `Real: ${pct(realRet)}/yr`
             )
           )
@@ -1177,7 +1177,7 @@ function InvestForm({data,setData,existing,onClose}){
   return e('div',null,
     e('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:16}},
       e('button',{className:'btn btn-sm btn-outline',onClick:onClose},'← Back'),
-      e('div',{style:{fontFamily:"'DM Serif Display',serif",fontSize:18,color:'var(--dark)'}},
+      e('div',{style:{fontFamily:"'Nunito',sans-serif",fontSize:18,color:'#1C1C1E'}},
         existing?'Edit Investment':'New Investment'
       )
     ),
@@ -1252,8 +1252,15 @@ function InvestForm({data,setData,existing,onClose}){
         e(FormInput,{label:'Weight (troy oz)',value:form.weightOz,onChange:v=>ff('weightOz',v),step:0.01}),
         e(FormInput,{label:'Price per oz (USD)',value:form.pricePerOz,onChange:v=>ff('pricePerOz',v)})
       ),
-      e('div',{style:{padding:'8px 12px',background:'var(--surf)',borderRadius:10,fontSize:12,color:'var(--gray)'}},
-        `Value: ${fmtFull((+form.weightOz||0)*(+form.pricePerOz||0))} USD`
+      e('div',{style:{
+        background:'#F9F5EE',border:'1px solid #E8DCC8',borderRadius:10,
+        padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',
+        marginTop:4
+      }},
+        e('span',{style:{fontSize:11,color:'#9E8A6A',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Calculated Value'),
+        e('span',{style:{fontSize:16,fontFamily:"'Nunito',sans-serif",fontWeight:800,color:'#6B4F2A',letterSpacing:'-0.3px'}},
+          fmtFull((+form.weightOz||0)*(+form.pricePerOz||0))
+        )
       ),
       e(FormInput,{label:'Expected Return %',value:form.nominalReturnPct,onChange:v=>ff('nominalReturnPct',v),step:0.1})
     ),
@@ -1606,10 +1613,10 @@ function InsightsTab({data,setData}){
   ].filter(Boolean);
 
   const benchmarks=[
-    {icon:'💰',label:'Savings Rate',value:pct(savingsRate),fill:Math.min(100,savingsRate/30*100),color:savingsRate>=20?'var(--sage)':'var(--amber)',target:'Target: 20%+'},
-    {icon:'🛡',label:'Emergency Fund',value:`${liquidMonths.toFixed(1)}mo`,fill:Math.min(100,liquidMonths/6*100),color:liquidMonths>=6?'var(--sage)':'var(--amber)',target:'Target: 6mo+'},
-    {icon:'🏦',label:'Retirement Rate',value:pct(retRate),fill:Math.min(100,retRate/15*100),color:retRate>=15?'var(--sage)':'var(--amber)',target:'Target: 15%+'},
-    {icon:'🏠',label:'Housing Ratio',value:pct(housingRatio),fill:Math.min(100,housingRatio/28*100),color:housingRatio<=28?'var(--sage)':'var(--red)',target:'Target: ≤28%'},
+    {icon:'💰',label:'Savings Rate',value:pct(savingsRate),fill:Math.min(100,savingsRate/30*100),color:savingsRate>=20?'#6E9E72':'#C8860A',target:'Target: 20%+'},
+    {icon:'🛡',label:'Emergency Fund',value:`${liquidMonths.toFixed(1)}mo`,fill:Math.min(100,liquidMonths/6*100),color:liquidMonths>=6?'#6E9E72':'#C8860A',target:'Target: 6mo+'},
+    {icon:'🏦',label:'Retirement Rate',value:pct(retRate),fill:Math.min(100,retRate/15*100),color:retRate>=15?'#6E9E72':'#C8860A',target:'Target: 15%+'},
+    {icon:'🏠',label:'Housing Ratio',value:pct(housingRatio),fill:Math.min(100,housingRatio/28*100),color:housingRatio<=28?'#6E9E72':'#B83030',target:'Target: ≤28%'},
   ];
 
   function saveGoals(){
@@ -1646,7 +1653,7 @@ function InsightsTab({data,setData}){
             e('div',{className:'bench-bar-bg'},
               e('div',{className:'bench-bar-fill',style:{width:`${b.fill}%`,background:b.color}})
             ),
-            e('div',{style:{fontSize:10,color:'var(--gray)',marginTop:2}},b.target)
+            e('div',{style:{fontSize:10,color:'#9E9A94',marginTop:2}},b.target)
           )
         )
       )
@@ -1664,24 +1671,24 @@ function InsightsTab({data,setData}){
       e('div',{className:'divider'}),
       goalForm.savings>0&&e('div',{style:{marginBottom:12}},
         e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
-          e('span',{style:{fontSize:12,color:'var(--dark)',fontWeight:500}},'YTD Savings'),
-          e('span',{style:{fontSize:12,fontWeight:700,color:'var(--sageD)'}},`${fmtFull(ytdSavings)} / ${fmtFull(+goalForm.savings||0)}`)
+          e('span',{style:{fontSize:12,color:'#1C1C1E',fontWeight:500}},'YTD Savings'),
+          e('span',{style:{fontSize:12,fontWeight:700,color:'#3D6E42'}},`${fmtFull(ytdSavings)} / ${fmtFull(+goalForm.savings||0)}`)
         ),
-        e(ProgressBar,{value:ytdSavings,max:+goalForm.savings||1,color:'var(--sage)'})
+        e(ProgressBar,{value:ytdSavings,max:+goalForm.savings||1,color:'#6E9E72'})
       ),
       goalForm.nw>0&&e('div',{style:{marginBottom:12}},
         e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
-          e('span',{style:{fontSize:12,color:'var(--dark)',fontWeight:500}},'Net Worth'),
-          e('span',{style:{fontSize:12,fontWeight:700,color:'var(--blue)'}},`${fmtFull(nwVal)} / ${fmtFull(+goalForm.nw||0)}`)
+          e('span',{style:{fontSize:12,color:'#1C1C1E',fontWeight:500}},'Net Worth'),
+          e('span',{style:{fontSize:12,fontWeight:700,color:'#3D7EAA'}},`${fmtFull(nwVal)} / ${fmtFull(+goalForm.nw||0)}`)
         ),
-        e(ProgressBar,{value:nwVal,max:+goalForm.nw||1,color:'var(--blue)'})
+        e(ProgressBar,{value:nwVal,max:+goalForm.nw||1,color:'#3D7EAA'})
       ),
       goalForm.invest>0&&e('div',null,
         e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
-          e('span',{style:{fontSize:12,color:'var(--dark)',fontWeight:500}},'Investments'),
-          e('span',{style:{fontSize:12,fontWeight:700,color:'var(--purple)'}},`${fmtFull(totalInvest)} / ${fmtFull(+goalForm.invest||0)}`)
+          e('span',{style:{fontSize:12,color:'#1C1C1E',fontWeight:500}},'Investments'),
+          e('span',{style:{fontSize:12,fontWeight:700,color:'#7B5EA7'}},`${fmtFull(totalInvest)} / ${fmtFull(+goalForm.invest||0)}`)
         ),
-        e(ProgressBar,{value:totalInvest,max:+goalForm.invest||1,color:'var(--purple)'})
+        e(ProgressBar,{value:totalInvest,max:+goalForm.invest||1,color:'#7B5EA7'})
       )
     ),
 
@@ -1692,15 +1699,15 @@ function InsightsTab({data,setData}){
       e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:12}},
         e('div',null,
           e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.7)'}},`Annual Expenses (est.)`),
-          e('div',{style:{fontSize:20,fontFamily:"'DM Serif Display',serif",color:'var(--white)'}},fmtFull(annualExp))
+          e('div',{style:{fontSize:20,fontFamily:"'Nunito',sans-serif",color:'#FFFFFF'}},fmtFull(annualExp))
         ),
         e('div',{style:{textAlign:'right'}},
           e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.7)'}},`FIRE Number (25x)`),
-          e('div',{style:{fontSize:20,fontFamily:"'DM Serif Display',serif",color:'var(--white)'}},fmt(fireNum))
+          e('div',{style:{fontSize:20,fontFamily:"'Nunito',sans-serif",color:'#FFFFFF'}},fmt(fireNum))
         )
       ),
       e('div',{style:{height:8,background:'rgba(255,255,255,0.2)',borderRadius:4,marginBottom:8}},
-        e('div',{style:{height:'100%',width:`${Math.min(100,fireProgress)}%`,background:'var(--white)',borderRadius:4}})
+        e('div',{style:{height:'100%',width:`${Math.min(100,fireProgress)}%`,background:'#FFFFFF',borderRadius:4}})
       ),
       e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,color:'rgba(255,255,255,0.8)'}},
         e('span',null,`Progress: ${fireProgress.toFixed(1)}%`),
