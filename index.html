@@ -505,30 +505,33 @@ function HomeTab({data}){
   const liveInvStocks = investments.filter(i=>!['Real Estate','Plot / Land','Gold / Silver','Private Lending'].includes(i.type)).reduce((s,i)=>s+(+i.currentMarketValue||+i.amountUSD||0),0);
   const liveInvMortgages = investments.filter(i=>i.type==='Real Estate').reduce((s,i)=>s+(+i.mortgageBalance||0),0);
   const liveTotalInv = liveInvRE+liveInvGold+liveInvLending+liveInvStocks;
-  // Merge: use saved manual assets + live investment values
-  const savedAssets = latestNW ? (Object.values(latestNW.assets||{}).reduce((s,v)=>s+(+v||0),0)) : 0;
-  const savedLiabs = latestNW ? (Object.values(latestNW.liabilities||{}).reduce((s,v)=>s+(+v||0),0)) : 0;
-  const liveTotal = savedAssets + liveTotalInv;
-  const liveLiabs = savedLiabs + liveInvMortgages;
-  const nwValue = investments.length>0 ? (liveTotal - liveLiabs) : (latestNW ? latestNW.netWorth||0 : 0);
-  const prevNWVal = prevNW ? prevNW.netWorth||0 : 0;
-  const nwDelta = latestNW ? nwValue - prevNWVal : 0;
-  // Asset breakdown for home page
-  const homeAssets = latestNW ? [
-    {label:'Checking & Emergency',value:(+latestNW.assets?.ck||0)+(+latestNW.assets?.em||0),color:'#7A9E7E'},
-    {label:'Retirement (401k/IRA)',value:(+latestNW.assets?.k4||0)+(+latestNW.assets?.ro||0),color:'#7B5EA7'},
-    {label:'Real Estate',value:liveInvRE+(+latestNW.assets?.hm||0)+(+latestNW.assets?.rp||0),color:'#3D7EAA'},
-    {label:'Private Lending',value:liveInvLending,color:'#C8A96E'},
-    {label:'Stocks & Funds',value:liveInvStocks+(+latestNW.assets?.br||0),color:'#4E7A52'},
-    {label:'Gold & Metals',value:liveInvGold,color:'#B8926A'},
-    {label:'Other Assets',value:(+latestNW.assets?.ti||0)+(+latestNW.assets?.s5||0)+(+latestNW.assets?.oa||0)+(+latestNW.assets?.bz||0)+(+latestNW.assets?.cr||0)+(+latestNW.assets?.vc||0),color:'#B0ABA5'},
-  ].filter(a=>a.value>0) : [];
-  const homeLiabs = latestNW ? [
-    {label:'Primary Mortgage',value:+latestNW.liabilities?.mg||0,color:'#B83030'},
-    {label:'Inv. Mortgages',value:liveInvMortgages,color:'#C0392B'},
-    {label:'Auto / Student Loans',value:(+latestNW.liabilities?.au||0)+(+latestNW.liabilities?.st||0),color:'#D47C0F'},
-    {label:'Credit Cards & Other',value:(+latestNW.liabilities?.cc||0)+(+latestNW.liabilities?.ot||0)+(+latestNW.liabilities?.rm||0),color:'#E07070'},
-  ].filter(a=>a.value>0) : [];
+  // Merge: saved manual assets (from Worth tab) + live investment values
+  const savedAssets = Object.values(latestNW?.assets||{}).reduce((s,v)=>s+(+v||0),0);
+  const savedLiabs  = Object.values(latestNW?.liabilities||{}).reduce((s,v)=>s+(+v||0),0);
+  const liveTotal   = savedAssets + liveTotalInv;
+  const liveLiabs   = savedLiabs + liveInvMortgages;
+  // nwValue is always live — never falls back to a stale saved figure
+  const nwValue     = liveTotal - liveLiabs;
+  const prevNWVal   = prevNW ? prevNW.netWorth||0 : 0;
+  const nwDelta     = (latestNW||investments.length>0) ? nwValue - prevNWVal : 0;
+  // Asset breakdown — always built from live inv data + saved NW manual entries (if any)
+  const nwA = latestNW?.assets || {};
+  const nwL = latestNW?.liabilities || {};
+  const homeAssets = [
+    {label:'Checking & Emergency', value:(+nwA.ck||0)+(+nwA.em||0),           color:'#7A9E7E'},
+    {label:'Retirement (401k/IRA)',value:(+nwA.k4||0)+(+nwA.ro||0),            color:'#7B5EA7'},
+    {label:'Real Estate',          value:liveInvRE+(+nwA.hm||0)+(+nwA.rp||0), color:'#3D7EAA'},
+    {label:'Private Lending',      value:liveInvLending,                        color:'#C8A96E'},
+    {label:'Stocks & Funds',       value:liveInvStocks+(+nwA.br||0),            color:'#4E7A52'},
+    {label:'Gold & Metals',        value:liveInvGold,                           color:'#B8926A'},
+    {label:'Other Assets',         value:(+nwA.ti||0)+(+nwA.s5||0)+(+nwA.oa||0)+(+nwA.bz||0)+(+nwA.cr||0)+(+nwA.vc||0), color:'#B0ABA5'},
+  ].filter(a=>a.value>0);
+  const homeLiabs = [
+    {label:'Primary Mortgage',      value:+nwL.mg||0,                                    color:'#B83030'},
+    {label:'Inv. Mortgages',        value:liveInvMortgages,                              color:'#C0392B'},
+    {label:'Auto / Student Loans',  value:(+nwL.au||0)+(+nwL.st||0),                    color:'#D47C0F'},
+    {label:'Credit Cards & Other',  value:(+nwL.cc||0)+(+nwL.ot||0)+(+nwL.rm||0),      color:'#E07070'},
+  ].filter(a=>a.value>0);
 
   // Latest monthly
   const mKeys = Object.keys(monthly).sort();
