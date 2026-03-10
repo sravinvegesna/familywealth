@@ -544,37 +544,61 @@ function HomeTab({data}){
   // Live investment totals (always up to date from investments array)
   const liveInvRE = investments.filter(i=>i.type==='Real Estate'||i.type==='Plot / Land').reduce((s,i)=>s+(+i.propertyValue||+i.amountUSD||0),0);
   const liveInvGold = investments.filter(i=>i.type==='Gold / Silver').reduce((s,i)=>s+(+i.amountUSD||0),0);
-  // Private lending NW value — avoid double-counting sequential loans.
-  // Overlapping date windows = separate capital (additive).
-  // Non-overlapping (sequential) = same capital recycled (take max at any point).
-  // Algorithm: sweep a timeline of all loans, find the max total capital deployed
-  // simultaneously. Loans without dates are assumed concurrent with everything.
+  // Private lending NW value — two separate pieces:
+  // A) Deployed capital: max concurrent principal active at any point (no double-counting)
+  // B) Outstanding receivables: unpaid interest/principal on matured loans
+  //    (this is money still owed to you — a real asset, separate from deployed capital)
+  //
+  // When manual cash assets are entered (ck/em), returned capital from matured loans
+  // is already in the cash balance. We only count:
+  //   - Active loans (principal still out)
+  //   - Matured loans' UNPAID portion (receivable — not yet returned to cash)
   const liveInvLending = (()=>{
-    const loans = investments.filter(i=>i.type==='Private Lending').map(i=>({
-      principal: +i.principalUSD||+i.amountUSD||0,
-      start: i.startDate ? new Date(i.startDate).getTime() : null,
-      end:   i.maturityDate ? new Date(i.maturityDate).getTime() : null
-    }));
+    const loans = investments.filter(i=>i.type==='Private Lending').map(i=>{
+      const principal=+i.principalUSD||+i.amountUSD||0;
+      const start=i.startDate?new Date(i.startDate).getTime():null;
+      const end=i.maturityDate?new Date(i.maturityDate).getTime():null;
+      const isActive=start===null||end===null?true:(start<=nowMs&&end>=nowMs);
+      const isMatured=end!==null&&end<nowMs;
+      const rate=+i.interestRate||0;
+      let outstanding=0;
+      if(isMatured){
+        let totalExp=principal;
+        if(start&&end){const d=(end-start)/(1000*60*60*24);totalExp+=principal*(rate/100)*(d/365);}
+        const paid=(i.payments||[]).reduce((s,p)=>s+(+p.amount||0),0);
+        outstanding=Math.max(0,totalExp-paid);
+      }
+      return {principal,start,end,isActive,isMatured,outstanding};
+    });
     if(loans.length===0) return 0;
-    // Separate dated vs undated loans
-    const dated   = loans.filter(l=>l.start!==null&&l.end!==null);
-    const undated = loans.filter(l=>l.start===null||l.end===null);
-    // For dated loans: collect all unique time boundaries and evaluate total
-    // capital deployed in each interval, take the maximum
-    if(dated.length===0) return loans.reduce((s,l)=>s+l.principal,0);
-    const points = [...new Set(dated.flatMap(l=>[l.start,l.end]))].sort((a,b)=>a-b);
-    let maxConcurrent = 0;
-    for(let pi=0;pi<points.length-1;pi++){
-      const mid = (points[pi]+points[pi+1])/2;
-      const concurrent = dated.filter(l=>l.start<=mid&&l.end>mid).reduce((s,l)=>s+l.principal,0);
-      if(concurrent>maxConcurrent) maxConcurrent=concurrent;
+
+    let deployedCapital=0;
+    if(manualCash>0){
+      // Cash entered: only count ACTIVE loans (matured capital already back in cash)
+      // Plus unpaid receivables from matured loans (not yet returned)
+      deployedCapital=loans.filter(l=>l.isActive).reduce((s,l)=>s+l.principal,0);
+    } else {
+      // No cash: use max-concurrent to avoid double-counting sequential loans
+      const dated=loans.filter(l=>l.start!==null&&l.end!==null);
+      const undated=loans.filter(l=>l.start===null||l.end===null);
+      if(dated.length===0){
+        deployedCapital=loans.reduce((s,l)=>s+l.principal,0);
+      } else {
+        const points=[...new Set(dated.flatMap(l=>[l.start,l.end]))].sort((a,b)=>a-b);
+        let maxC=0;
+        for(let pi=0;pi<points.length-1;pi++){
+          const mid=(points[pi]+points[pi+1])/2;
+          const c=dated.filter(l=>l.start<=mid&&l.end>mid).reduce((s,l)=>s+l.principal,0);
+          if(c>maxC)maxC=c;
+        }
+        const atLast=dated.filter(l=>l.start<=points[points.length-1]&&l.end>=points[points.length-1]).reduce((s,l)=>s+l.principal,0);
+        if(atLast>maxC)maxC=atLast;
+        deployedCapital=maxC+undated.reduce((s,l)=>s+l.principal,0);
+      }
     }
-    // Also check single-point loans (start==end) or last point
-    const atLast = dated.filter(l=>l.start<=points[points.length-1]&&l.end>=points[points.length-1]).reduce((s,l)=>s+l.principal,0);
-    if(atLast>maxConcurrent) maxConcurrent=atLast;
-    // Undated loans are always "active" — add their principal on top
-    const undatedTotal = undated.reduce((s,l)=>s+l.principal,0);
-    return maxConcurrent + undatedTotal;
+    // Always add outstanding receivables from matured loans (not yet in cash)
+    const receivables=loans.filter(l=>l.isMatured).reduce((s,l)=>s+l.outstanding,0);
+    return deployedCapital+receivables;
   })();
   const liveInvStocks = investments.filter(i=>!['Real Estate','Plot / Land','Gold / Silver','Private Lending'].includes(i.type)).reduce((s,i)=>s+(+i.currentMarketValue||+i.amountUSD||0),0);
   const liveInvMortgages = investments.filter(i=>i.type==='Real Estate').reduce((s,i)=>s+(+i.mortgageBalance||0),0);
@@ -584,8 +608,11 @@ function HomeTab({data}){
   const savedLiabs  = Object.values(latestNW?.liabilities||{}).reduce((s,v)=>s+(+v||0),0);
   const liveTotal   = savedAssets + liveTotalInv;
   const liveLiabs   = savedLiabs + liveInvMortgages;
+  // nwValue uses cash-adjusted lending (liveInvLendingNW computed below after nwA is available)
+  // liveTotalNW replaces liveTotal for NW calculation only
+  const liveTotalNW = savedAssets + liveInvRE + liveInvGold + liveInvLendingNW + liveInvStocks;
   // nwValue is always live — never falls back to a stale saved figure
-  const nwValue     = liveTotal - liveLiabs;
+  const nwValue     = liveTotalNW - liveLiabs;
   const prevNWVal   = prevNW ? prevNW.netWorth||0 : 0;
   const nwDelta     = (latestNW||investments.length>0) ? nwValue - prevNWVal : 0;
   // Asset breakdown — always built from live inv data + saved NW manual entries (if any)
@@ -639,60 +666,152 @@ function HomeTab({data}){
   const stocks = investments.filter(i=>['Stocks / ETF','Mutual Fund','Crypto','Fixed Deposit','Bonds','Other'].includes(i.type));
 
   // ── Investment-derived monthly income ─────────────────────────────────────
-  // Monthly rental income from all RE properties
-  const invMonthlyRental = investments.filter(i=>i.type==='Real Estate')
-    .reduce((s,i)=>s+(+i.monthlyRent||0),0);
-  // Monthly net cash flow from RE (rent minus mortgage)
-  const invREMonthlyNOI = investments.filter(i=>i.type==='Real Estate')
-    .reduce((s,i)=>{
-      const rent=+i.monthlyRent||0, mort=+i.monthlyMortgage||0;
-      const propTax=(+i.propertyTax||0)/12;
-      const maint=(+i.propertyValue||+i.amountUSD||0)*(+i.maintenancePct||1)/100/12;
-      return s+(rent-mort-propTax-maint);
-    },0);
-  // Monthly interest income from private lending (annual interest / 12)
-  const invMonthlyLendingIncome = investments.filter(i=>i.type==='Private Lending')
-    .reduce((s,i)=>{
-      const principal=+i.principalUSD||+i.amountUSD||0;
-      const rate=+i.interestRate||0;
-      // Only count if loan is currently active
-      const now=new Date();
-      const start=i.startDate?new Date(i.startDate):null;
-      const mat=i.maturityDate?new Date(i.maturityDate):null;
-      if(start&&mat&&now>=start&&now<=mat){
-        return s+(principal*(rate/100)/12);
-      }
-      return s+(principal*(rate/100)/12); // show even if no dates set
-    },0);
-  // Total monthly investment income
-  const totalInvMonthlyIncome = invMonthlyRental + invMonthlyLendingIncome;
-  // RE monthly expenses (mortgage + tax + maintenance across all properties)
-  const invREMonthlyExpenses = investments.filter(i=>i.type==='Real Estate')
-    .reduce((s,i)=>{
-      const mort=+i.monthlyMortgage||0;
-      const propTax=(+i.propertyTax||0)/12;
-      const maint=(+i.propertyValue||+i.amountUSD||0)*(+i.maintenancePct||1)/100/12;
-      return s+mort+propTax+maint;
-    },0);
-  // Per-property RE breakdown for display
-  const reBreakdown = investments.filter(i=>i.type==='Real Estate').map(i=>{
-    const rent=+i.monthlyRent||0, mort=+i.monthlyMortgage||0;
-    const propTax=(+i.propertyTax||0)/12;
-    const maint=(+i.propertyValue||+i.amountUSD||0)*(+i.maintenancePct||1)/100/12;
-    const noi=rent-propTax-maint;
-    const cf=rent-mort-propTax-maint;
-    return {name:i.name||'Property',rent,mort,propTax,maint,noi,cf};
-  });
-  // Per-loan lending breakdown for display
+  const now = new Date();
+  const nowMs = now.getTime();
+
+  // ── Net Worth: cash assets + active lending adjustment ───────────────────
+  // If the user has manually entered cash assets (checking/emergency), those
+  // balances already reflect money that was lent out (it left the bank account).
+  // So we must NOT add active lending on top — doing so double-counts.
+  // Rule: if manual cash assets > 0, liveInvLending for NW = only loans that
+  // are currently active AND whose principal exceeds what cash already covers.
+  // Simpler safe rule: if cash assets entered, use max-concurrent ACTIVE-ONLY
+  // (loans where today is within start..maturity). Matured loans' capital has
+  // already returned to cash and is captured in the manual cash balance.
+  const manualCash = (nwA.ck||0)+(nwA.em||0);
+  const liveInvLendingNW = (()=>{
+    const loans = investments.filter(i=>i.type==='Private Lending').map(i=>({
+      principal: +i.principalUSD||+i.amountUSD||0,
+      start: i.startDate ? new Date(i.startDate).getTime() : null,
+      end:   i.maturityDate ? new Date(i.maturityDate).getTime() : null
+    }));
+    if(loans.length===0) return 0;
+    // If manual cash assets entered: only count CURRENTLY ACTIVE loans
+    // (principal is still outstanding, not yet returned to cash)
+    if(manualCash>0){
+      const activeNow = loans.filter(l=>{
+        if(l.start===null||l.end===null) return true; // undated = assume active
+        return l.start<=nowMs && l.end>=nowMs;
+      });
+      return activeNow.reduce((s,l)=>s+l.principal,0);
+    }
+    // No manual cash: use max-concurrent algorithm (same as before)
+    const dated   = loans.filter(l=>l.start!==null&&l.end!==null);
+    const undated = loans.filter(l=>l.start===null||l.end===null);
+    if(dated.length===0) return loans.reduce((s,l)=>s+l.principal,0);
+    const points = [...new Set(dated.flatMap(l=>[l.start,l.end]))].sort((a,b)=>a-b);
+    let maxC=0;
+    for(let pi=0;pi<points.length-1;pi++){
+      const mid=(points[pi]+points[pi+1])/2;
+      const c=dated.filter(l=>l.start<=mid&&l.end>mid).reduce((s,l)=>s+l.principal,0);
+      if(c>maxC) maxC=c;
+    }
+    const atLast=dated.filter(l=>l.start<=points[points.length-1]&&l.end>=points[points.length-1]).reduce((s,l)=>s+l.principal,0);
+    if(atLast>maxC) maxC=atLast;
+    return maxC + undated.reduce((s,l)=>s+l.principal,0);
+  })();
+
+  // ── Lending income: only ACTIVE loans (today between start and maturity) ──
+  // Accrual: monthly interest accruing this month regardless of payment schedule
+  // Real: only interest actually RECEIVED this month (logged payments in current month)
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const thisMonthEnd   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23, 59, 59).getTime();
+
   const lendingBreakdown = investments.filter(i=>i.type==='Private Lending').map(i=>{
     const principal=+i.principalUSD||+i.amountUSD||0;
     const rate=+i.interestRate||0;
-    const monthly=principal*(rate/100)/12;
-    return {name:i.name||'Loan',principal,rate,monthly};
+    const startMs=i.startDate?new Date(i.startDate).getTime():null;
+    const endMs=i.maturityDate?new Date(i.maturityDate).getTime():null;
+    const isActive   = startMs===null||endMs===null ? true : (startMs<=nowMs && endMs>=nowMs);
+    const isMatured  = endMs!==null && endMs<nowMs;
+    const isUpcoming = startMs!==null && startMs>nowMs;
+
+    // Total expected = full principal + all interest over loan life
+    let totalExpected=principal;
+    if(startMs&&endMs){
+      const totalDays=(endMs-startMs)/(1000*60*60*24);
+      totalExpected=principal+principal*(rate/100)*(totalDays/365);
+    }
+    // Total received from all logged payments
+    const totalReceived=(i.payments||[]).reduce((s,p)=>s+(+p.amount||0),0);
+    // Outstanding receivable = what was expected but not yet paid
+    // For active loans: only count PAST portions (not future interest yet due)
+    // For matured loans: everything unpaid is outstanding
+    let outstandingReceivable=0;
+    if(isMatured){
+      outstandingReceivable=Math.max(0,totalExpected-totalReceived);
+    } else if(isActive&&startMs&&endMs){
+      // Interest accrued so far (up to today)
+      const daysElapsed=Math.max(0,(nowMs-startMs)/(1000*60*60*24));
+      const accruedSoFar=principal*(rate/100)*(daysElapsed/365);
+      const expectedSoFar=principal+accruedSoFar; // principal always outstanding until maturity
+      outstandingReceivable=Math.max(0,expectedSoFar-totalReceived);
+    }
+
+    // Accrual: proportional daily interest for this calendar month (active only)
+    let accrualMonthly=0;
+    if(isActive&&principal>0&&rate>0){
+      const mStart=Math.max(startMs||thisMonthStart,thisMonthStart);
+      const mEnd=Math.min(endMs||thisMonthEnd,thisMonthEnd);
+      const daysInPeriod=Math.max(0,(mEnd-mStart)/(1000*60*60*24));
+      accrualMonthly=principal*(rate/100)*(daysInPeriod/365);
+    }
+    // Real cash received this month (logged payments)
+    const realMonthly=(i.payments||[]).filter(p=>{
+      const pd=new Date(p.date).getTime();
+      return pd>=thisMonthStart && pd<=thisMonthEnd;
+    }).reduce((s,p)=>s+(+p.amount||0),0);
+
+    return {
+      name:i.name||'Loan',principal,rate,
+      accrualMonthly,realMonthly,
+      totalExpected,totalReceived,outstandingReceivable,
+      isActive,isMatured,isUpcoming
+    };
   });
-  // Augmented totals for hero card (monthly record + live investment income)
+
+  // ── RE breakdown: real vs accrual cashflow ───────────────────────────────
+  // Real CF: rent received - mortgage paid - logged expenses this month
+  // Accrual CF: rent - mortgage - estimated tax/mo - estimated maint/mo
+  const reBreakdown = investments.filter(i=>i.type==='Real Estate').map(i=>{
+    const rent=+i.monthlyRent||0, mort=+i.monthlyMortgage||0;
+    // propTax is optional — used only for NOI/cap rate accrual calcs, NOT for real CF
+    // because monthlyMortgage now represents the full PITI payment (mortgage + escrow/tax)
+    const propTax=(+i.propertyTax||0)/12;
+    const maint=(+i.propertyValue||+i.amountUSD||0)*(+i.maintenancePct||1)/100/12;
+    const noi=rent-propTax-maint;               // excludes mortgage (for cap rate)
+    const accrualCF=rent-mort-maint;            // mort already includes tax; maint estimated
+    // Real: rent - full monthly payment (PITI) - logged one-off expenses this month
+    const loggedExpenses=(i.expenses||[]).filter(e=>{
+      const ed=new Date(e.date).getTime();
+      return ed>=thisMonthStart && ed<=thisMonthEnd;
+    }).reduce((s,e)=>s+(+e.amount||0),0);
+    const realCF=rent-mort-loggedExpenses;      // mort=PITI, no estimated maint
+    return {name:i.name||'Property',rent,mort,propTax,maint,noi,accrualCF,realCF,loggedExpenses};
+  });
+
+  // ── Aggregate income & cashflow in both modes ────────────────────────────
+  const invMonthlyRental     = reBreakdown.reduce((s,r)=>s+r.rent,0);
+  const invREAccrualNOI      = reBreakdown.reduce((s,r)=>s+r.accrualCF,0);
+  const invRERealCF          = reBreakdown.reduce((s,r)=>s+r.realCF,0);
+  const invLendingAccrual    = lendingBreakdown.filter(l=>l.isActive).reduce((s,l)=>s+l.accrualMonthly,0);
+  const invLendingReal       = lendingBreakdown.reduce((s,l)=>s+l.realMonthly,0);
+  // For RE expenses summary
+  const invREMonthlyExpenses = reBreakdown.reduce((s,r)=>s+r.mort+r.propTax+r.maint,0);
+
+  // Totals shown in hero
+  const invMonthlyLendingIncome = invLendingAccrual; // used for income display
+  const totalInvMonthlyIncome = invMonthlyRental + invLendingAccrual;
+  const invREMonthlyNOI = invREAccrualNOI; // legacy name kept
+
+  // Two cashflow totals
+  const accrualCashflow = (latestM?.cashflow||0) + invREAccrualNOI + invLendingAccrual;
+  const realCashflow    = (latestM?.cashflow||0) + invRERealCF + invLendingReal;
+  // Hero card uses accrual (expected this month)
+  const augCashflow = accrualCashflow;
+
+  // Augmented totals for hero card
   const augIncome = (latestM?.totalIncome||0) + totalInvMonthlyIncome;
-  const augCashflow = (latestM?.cashflow||0) + invREMonthlyNOI + invMonthlyLendingIncome;
   const augSaved = latestM?.totalSaved||0;
   const augSavingsRate = augIncome>0 ? (augSaved/augIncome*100) : (latestM?.savingsRate||0);
   const hasInvIncome = totalInvMonthlyIncome > 0;
@@ -739,8 +858,11 @@ function HomeTab({data}){
         ),
         e('div',{className:'hero-stat'},
           e('div',{className:'hero-stat-label'},'Net Cash Flow'),
-          e('div',{className:'hero-stat-value',style:{color:augCashflow>=0?'#7ECB8F':'#E07070'}},fmt(augCashflow)),
-          e('div',{className:'hero-stat-sub'},`${latestM?'Salary+':''}RE+Lending`)
+          e('div',{className:'hero-stat-value',style:{color:accrualCashflow>=0?'#7ECB8F':'#E07070'}},fmt(accrualCashflow)),
+          e('div',{className:'hero-stat-sub',style:{display:'flex',flexDirection:'column',gap:1}},
+            e('span',null,'Accrual (expected)'),
+            realCashflow!==accrualCashflow&&e('span',{style:{color:realCashflow>=0?'#A8D8B0':'#E8A0A0'}},`Real: ${fmt(realCashflow)}`)
+          )
         )
       ),
       // ── Income breakdown strip (top 3 + others) ────────────────────────────
@@ -753,7 +875,7 @@ function HomeTab({data}){
             const incomeItems=[];
             if(latestM&&(latestM.totalIncome||0)>0) incomeItems.push({dot:'#7ECB8F',label:'Salary / W2',val:latestM.totalIncome,color:'#FFFFFF'});
             reBreakdown.filter(r=>r.rent>0).forEach(r=>incomeItems.push({dot:'#3D7EAA',label:r.name+' (rent)',val:r.rent,color:'#FFFFFF'}));
-            lendingBreakdown.forEach(l=>incomeItems.push({dot:'#C8A96E',label:l.name+' (interest)',val:l.monthly,color:'#FFFFFF'}));
+            lendingBreakdown.filter(l=>l.isActive).forEach(l=>incomeItems.push({dot:'#C8A96E',label:l.name+' (accrual)',val:l.accrualMonthly,color:'rgba(200,169,110,0.9)'}));
             const top=incomeItems.slice(0,3);
             const rest=incomeItems.slice(3);
             const othersVal=rest.reduce((s,x)=>s+x.val,0);
@@ -778,8 +900,8 @@ function HomeTab({data}){
           ...(()=>{
             const cfItems=[];
             if(latestM) cfItems.push({dot:'#7ECB8F',label:'Salary',val:latestM.cashflow||0,signed:true});
-            reBreakdown.filter(r=>r.rent>0).forEach(r=>cfItems.push({dot:'#3D7EAA',label:r.name,val:r.cf,signed:true,sub:'NOI'}));
-            lendingBreakdown.forEach(l=>cfItems.push({dot:'#C8A96E',label:l.name,val:l.monthly,signed:false}));
+            reBreakdown.filter(r=>r.rent>0).forEach(r=>cfItems.push({dot:'#3D7EAA',label:r.name,val:r.accrualCF,signed:true,sub:'est. NOI'}));
+            lendingBreakdown.filter(l=>l.isActive).forEach(l=>cfItems.push({dot:'#C8A96E',label:l.name,val:l.accrualMonthly,signed:false,sub:'accrual'}));
             const top=cfItems.slice(0,3);
             const rest=cfItems.slice(3);
             const othersVal=rest.reduce((s,x)=>s+x.val,0);
@@ -1055,8 +1177,11 @@ function HomeTab({data}){
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}},
         e('div',{className:'card-title',style:{marginBottom:0}},'Investment Income & Expenses'),
         e('div',{style:{textAlign:'right'}},
-          e('div',{style:{fontSize:11,fontWeight:700,color:invREMonthlyNOI+invMonthlyLendingIncome>=0?'#3D6E42':'#B83030'}},
-            fmt(invREMonthlyNOI+invMonthlyLendingIncome)+'/mo net'
+          e('div',{style:{textAlign:'right'}},
+            e('div',{style:{fontSize:11,fontWeight:700,color:invREAccrualNOI+invLendingAccrual>=0?'#3D6E42':'#B83030'}},
+              fmt(invREAccrualNOI+invLendingAccrual)+'/mo'
+            ),
+            e('div',{style:{fontSize:9,color:'#B0ABA5'}},'Accrual basis')
           )
         )
       ),
@@ -1071,10 +1196,10 @@ function HomeTab({data}){
           }},
             e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
               e('div',{style:{fontSize:13,fontWeight:600,color:'#1C1C1E'}},r.name),
-              e('div',{style:{
-                fontSize:13,fontWeight:700,
-                color:r.cf>=0?'#3D6E42':'#B83030'
-              }},fmt(r.cf)+'/mo')
+              e('div',{style:{textAlign:'right'}},
+                e('div',{style:{fontSize:13,fontWeight:700,color:r.accrualCF>=0?'#3D6E42':'#B83030'}},fmt(r.accrualCF)+'/mo'),
+                r.realCF!==r.accrualCF&&e('div',{style:{fontSize:10,color:'#B0ABA5'}},`Real: ${fmt(r.realCF)} (${r.loggedExpenses>0?fmtFull(r.loggedExpenses)+' logged':'no logged exp.'})`)
+              )
             ),
             // Income row
             e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
@@ -1124,16 +1249,43 @@ function HomeTab({data}){
         e('div',{style:{fontSize:10,fontWeight:700,color:'#C8A96E',textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Private Lending'),
         ...lendingBreakdown.map((l,i)=>
           e('div',{key:i,style:{
-            background:'#F9FAF9',borderRadius:12,padding:'12px 14px',
-            marginBottom:i<lendingBreakdown.length-1?8:0
+            background: l.isMatured?'#F9F9F9':'#FFFBF4',
+            borderRadius:12,padding:'12px 14px',
+            marginBottom:i<lendingBreakdown.length-1?8:0,
+            opacity: l.isMatured?0.6:1,
+            border: l.isMatured?'1px solid #EDEBE6':'1px solid #F5EDDB'
           }},
             e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
-              e('div',{style:{fontSize:13,fontWeight:600,color:'#1C1C1E'}},l.name),
-              e('div',{style:{fontSize:13,fontWeight:700,color:'#C8A96E'}},fmt(l.monthly)+'/mo')
+              e('div',null,
+                e('div',{style:{fontSize:13,fontWeight:600,color:'#1C1C1E'}},l.name),
+                e('div',{style:{
+                  display:'inline-block',fontSize:9,fontWeight:700,marginTop:3,
+                  padding:'2px 6px',borderRadius:10,
+                  background: l.isMatured&&l.outstandingReceivable>0?'#FFF5E8':l.isMatured?'#F0EDE8':l.isActive?'#EFF5EF':'#FFF8E8',
+                  color: l.isMatured&&l.outstandingReceivable>0?'#C8700A':l.isMatured?'#9E9A94':l.isActive?'#3D6E42':'#C8860A'
+                }},
+                  l.isMatured&&l.outstandingReceivable>0?'Matured — unpaid balance':
+                  l.isMatured?'Matured — fully settled':
+                  l.isActive?'Active':'Not yet started'
+                )
+              ),
+              l.isActive
+                ? e('div',{style:{textAlign:'right'}},
+                    e('div',{style:{fontSize:13,fontWeight:700,color:'#C8A96E'}},fmt(l.accrualMonthly)+'/mo'),
+                    e('div',{style:{fontSize:9,color:'#B0ABA5'}},'Accrual this month'),
+                    l.realMonthly>0&&e('div',{style:{fontSize:10,fontWeight:600,color:'#3D6E42',marginTop:2}},`✓ ${fmt(l.realMonthly)} received`)
+                  )
+                : l.isMatured&&l.outstandingReceivable>0
+                  ? e('div',{style:{textAlign:'right'}},
+                      e('div',{style:{fontSize:12,fontWeight:700,color:'#C8700A'}},fmtFull(Math.round(l.outstandingReceivable))),
+                      e('div',{style:{fontSize:9,color:'#B0ABA5'}},'Outstanding receivable'),
+                      e('div',{style:{fontSize:9,color:'#9E9A94',marginTop:1}},`${fmtFull(Math.round(l.totalReceived))} of ${fmtFull(Math.round(l.totalExpected))} received`)
+                    )
+                  : e('div',{style:{fontSize:11,color:'#9E9A94',fontStyle:'italic'}},'Fully settled')
             ),
             e('div',{style:{display:'flex',justifyContent:'space-between'}},
               e('div',{style:{fontSize:11,color:'#9E9A94'}},`${l.rate}%/yr on ${fmtFull(l.principal)}`),
-              e('div',{style:{fontSize:11,color:'#B0ABA5'}},`${fmtFull(Math.round(l.monthly*12))}/yr`)
+              e('div',{style:{fontSize:11,color:'#B0ABA5'}},`${fmtFull(Math.round(l.accrualMonthly*12))}/yr est.`)
             )
           )
         )
@@ -1142,16 +1294,27 @@ function HomeTab({data}){
       // Total row
       e('div',{style:{
         marginTop:12,padding:'12px 14px',
-        background:'#1A2B1C',borderRadius:12,
-        display:'flex',justifyContent:'space-between',alignItems:'center'
+        background:'#1A2B1C',borderRadius:12
       }},
-        e('div',null,
-          e('div',{style:{fontSize:9,color:'rgba(168,197,172,0.6)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px',marginBottom:3}},'Total Investment Net CF'),
-          e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.45)'}},'Rent + Interest − Expenses')
+        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
+          e('div',null,
+            e('div',{style:{fontSize:9,color:'rgba(168,197,172,0.6)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px',marginBottom:2}},'Accrual Net CF'),
+            e('div',{style:{fontSize:10,color:'rgba(255,255,255,0.35)'}},'Expected this month')
+          ),
+          e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:20,fontWeight:700,
+            color:(invREAccrualNOI+invLendingAccrual)>=0?'#7ECB8F':'#E07070',letterSpacing:'-0.3px'}},
+            fmt(invREAccrualNOI+invLendingAccrual)+'/mo'
+          )
         ),
-        e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:20,fontWeight:700,
-          color:(invREMonthlyNOI+invMonthlyLendingIncome)>=0?'#7ECB8F':'#E07070',letterSpacing:'-0.3px'}},
-          fmt(invREMonthlyNOI+invMonthlyLendingIncome)+'/mo'
+        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:6,borderTop:'1px solid rgba(255,255,255,0.08)'}},
+          e('div',null,
+            e('div',{style:{fontSize:9,color:'rgba(168,197,172,0.45)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px',marginBottom:2}},'Real CF (cash in hand)'),
+            e('div',{style:{fontSize:10,color:'rgba(255,255,255,0.25)'}},'Rent + logged payments − mortgage − logged exp.')
+          ),
+          e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:16,fontWeight:700,
+            color:(invRERealCF+invLendingReal)>=0?'#5CA870':'#C07070',letterSpacing:'-0.2px'}},
+            fmt(invRERealCF+invLendingReal)+'/mo'
+          )
         )
       )
     ),
@@ -2163,11 +2326,14 @@ function InvestForm({data,setData,existing,onClose}){
       e(FormInput,{label:'Purchase Price (USD)',value:form.purchasePrice,onChange:v=>ff('purchasePrice',v),placeholder:'Original price paid'}),
       e('div',{className:'grid-2'},
         e(FormInput,{label:'Monthly Rent',value:form.monthlyRent,onChange:v=>ff('monthlyRent',v)}),
-        e(FormInput,{label:'Monthly Mortgage',value:form.monthlyMortgage,onChange:v=>ff('monthlyMortgage',v)}),
-        e(FormInput,{label:'Mortgage Balance',value:form.mortgageBalance,onChange:v=>ff('mortgageBalance',v)}),
-        e(FormInput,{label:'Annual Property Tax',value:form.propertyTax,onChange:v=>ff('propertyTax',v)}),
-        e(FormInput,{label:'Maintenance %',value:form.maintenancePct,onChange:v=>ff('maintenancePct',v),step:0.1}),
+        e(FormInput,{label:'Monthly Payment (Mortgage+Tax)',value:form.monthlyMortgage,onChange:v=>ff('monthlyMortgage',v),placeholder:'Total PITI payment'}),
+        e(FormInput,{label:'Mortgage Balance (USD)',value:form.mortgageBalance,onChange:v=>ff('mortgageBalance',v)}),
+        e(FormInput,{label:'Ann. Property Tax (for cap rate)',value:form.propertyTax,onChange:v=>ff('propertyTax',v),placeholder:'Optional'}),
+        e(FormInput,{label:'Maintenance %/yr',value:form.maintenancePct,onChange:v=>ff('maintenancePct',v),step:0.1,placeholder:'e.g. 1'}),
         e(FormInput,{label:'Purchase Date',value:form.startDate,onChange:v=>ff('startDate',v),type:'date'})
+      ),
+      e('div',{style:{fontSize:10,color:'#9E9A94',marginTop:4,padding:'0 2px',lineHeight:1.5}},
+        '💡 Enter your total monthly payment (mortgage + escrow/tax) as one number. Annual Property Tax is optional — only used for Cap Rate and NOI calculations, not for cashflow.'
       )
     ),
 
