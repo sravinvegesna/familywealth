@@ -544,62 +544,10 @@ function HomeTab({data}){
   // Live investment totals (always up to date from investments array)
   const liveInvRE = investments.filter(i=>i.type==='Real Estate'||i.type==='Plot / Land').reduce((s,i)=>s+(+i.propertyValue||+i.amountUSD||0),0);
   const liveInvGold = investments.filter(i=>i.type==='Gold / Silver').reduce((s,i)=>s+(+i.amountUSD||0),0);
-  // Private lending NW value — two separate pieces:
-  // A) Deployed capital: max concurrent principal active at any point (no double-counting)
-  // B) Outstanding receivables: unpaid interest/principal on matured loans
-  //    (this is money still owed to you — a real asset, separate from deployed capital)
-  //
-  // When manual cash assets are entered (ck/em), returned capital from matured loans
-  // is already in the cash balance. We only count:
-  //   - Active loans (principal still out)
-  //   - Matured loans' UNPAID portion (receivable — not yet returned to cash)
-  const liveInvLending = (()=>{
-    const loans = investments.filter(i=>i.type==='Private Lending').map(i=>{
-      const principal=+i.principalUSD||+i.amountUSD||0;
-      const start=i.startDate?new Date(i.startDate).getTime():null;
-      const end=i.maturityDate?new Date(i.maturityDate).getTime():null;
-      const isActive=start===null||end===null?true:(start<=nowMs&&end>=nowMs);
-      const isMatured=end!==null&&end<nowMs;
-      const rate=+i.interestRate||0;
-      let outstanding=0;
-      if(isMatured){
-        let totalExp=principal;
-        if(start&&end){const d=(end-start)/(1000*60*60*24);totalExp+=principal*(rate/100)*(d/365);}
-        const paid=(i.payments||[]).reduce((s,p)=>s+(+p.amount||0),0);
-        outstanding=Math.max(0,totalExp-paid);
-      }
-      return {principal,start,end,isActive,isMatured,outstanding};
-    });
-    if(loans.length===0) return 0;
-
-    let deployedCapital=0;
-    if(manualCash>0){
-      // Cash entered: only count ACTIVE loans (matured capital already back in cash)
-      // Plus unpaid receivables from matured loans (not yet returned)
-      deployedCapital=loans.filter(l=>l.isActive).reduce((s,l)=>s+l.principal,0);
-    } else {
-      // No cash: use max-concurrent to avoid double-counting sequential loans
-      const dated=loans.filter(l=>l.start!==null&&l.end!==null);
-      const undated=loans.filter(l=>l.start===null||l.end===null);
-      if(dated.length===0){
-        deployedCapital=loans.reduce((s,l)=>s+l.principal,0);
-      } else {
-        const points=[...new Set(dated.flatMap(l=>[l.start,l.end]))].sort((a,b)=>a-b);
-        let maxC=0;
-        for(let pi=0;pi<points.length-1;pi++){
-          const mid=(points[pi]+points[pi+1])/2;
-          const c=dated.filter(l=>l.start<=mid&&l.end>mid).reduce((s,l)=>s+l.principal,0);
-          if(c>maxC)maxC=c;
-        }
-        const atLast=dated.filter(l=>l.start<=points[points.length-1]&&l.end>=points[points.length-1]).reduce((s,l)=>s+l.principal,0);
-        if(atLast>maxC)maxC=atLast;
-        deployedCapital=maxC+undated.reduce((s,l)=>s+l.principal,0);
-      }
-    }
-    // Always add outstanding receivables from matured loans (not yet in cash)
-    const receivables=loans.filter(l=>l.isMatured).reduce((s,l)=>s+l.outstanding,0);
-    return deployedCapital+receivables;
-  })();
+  // Simple sum of all lending principals — used for portfolio display/allocation only
+  // NW uses liveInvLendingNW (computed below after nowMs/nwA/manualCash are available)
+  const liveInvLending = investments.filter(i=>i.type==='Private Lending')
+    .reduce((s,i)=>s+(+i.principalUSD||+i.amountUSD||0),0);
   const liveInvStocks = investments.filter(i=>!['Real Estate','Plot / Land','Gold / Silver','Private Lending'].includes(i.type)).reduce((s,i)=>s+(+i.currentMarketValue||+i.amountUSD||0),0);
   const liveInvMortgages = investments.filter(i=>i.type==='Real Estate').reduce((s,i)=>s+(+i.mortgageBalance||0),0);
   const liveTotalInv = liveInvRE+liveInvGold+liveInvLending+liveInvStocks;
@@ -608,14 +556,7 @@ function HomeTab({data}){
   const savedLiabs  = Object.values(latestNW?.liabilities||{}).reduce((s,v)=>s+(+v||0),0);
   const liveTotal   = savedAssets + liveTotalInv;
   const liveLiabs   = savedLiabs + liveInvMortgages;
-  // nwValue uses cash-adjusted lending (liveInvLendingNW computed below after nwA is available)
-  // liveTotalNW replaces liveTotal for NW calculation only
-  const liveTotalNW = savedAssets + liveInvRE + liveInvGold + liveInvLendingNW + liveInvStocks;
-  // nwValue is always live — never falls back to a stale saved figure
-  const nwValue     = liveTotalNW - liveLiabs;
-  const prevNWVal   = prevNW ? prevNW.netWorth||0 : 0;
-  const nwDelta     = (latestNW||investments.length>0) ? nwValue - prevNWVal : 0;
-  // Asset breakdown — always built from live inv data + saved NW manual entries (if any)
+  // nwA/manualCash must come before liveInvLendingNW and liveTotalNW
   const nwA = latestNW?.assets || {};
   const nwL = latestNW?.liabilities || {};
   const homeAssets = [
@@ -710,6 +651,11 @@ function HomeTab({data}){
     if(atLast>maxC) maxC=atLast;
     return maxC + undated.reduce((s,l)=>s+l.principal,0);
   })();
+  // liveTotalNW uses cash-adjusted lending value for accurate NW
+  const liveTotalNW = savedAssets + liveInvRE + liveInvGold + liveInvLendingNW + liveInvStocks;
+  const nwValue     = liveTotalNW - liveLiabs;
+  const prevNWVal   = prevNW ? prevNW.netWorth||0 : 0;
+  const nwDelta     = (latestNW||investments.length>0) ? nwValue - prevNWVal : 0;
 
   // ── Lending income: only ACTIVE loans (today between start and maturity) ──
   // Accrual: monthly interest accruing this month regardless of payment schedule
