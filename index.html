@@ -488,6 +488,49 @@ function SectionHeader({title,action}){
   );
 }
 
+// ─── Collapsible Section ──────────────────────────────────────────────────────
+function CollapsibleSection({title,count,total,subtitle,accentColor,children}){
+  const [open,setOpen] = useState(false);
+  return e('div',{className:'card',style:{padding:0,overflow:'hidden'}},
+    // Header — always visible, tap to expand
+    e('button',{
+      onClick:()=>setOpen(p=>!p),
+      style:{
+        width:'100%',background:'none',border:'none',cursor:'pointer',
+        padding:'14px 16px',display:'flex',alignItems:'center',gap:12,textAlign:'left'
+      }
+    },
+      // Accent dot
+      e('div',{style:{width:4,alignSelf:'stretch',borderRadius:2,background:accentColor,flexShrink:0}}),
+      // Text block
+      e('div',{style:{flex:1,minWidth:0}},
+        e('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:2}},
+          e('div',{style:{fontSize:14,fontWeight:600,color:'#1C1C1E'}},title),
+          e('div',{style:{
+            fontSize:10,fontWeight:700,color:accentColor,
+            background:accentColor+'18',borderRadius:20,padding:'2px 8px'
+          }},count+' item'+(count===1?'':'s'))
+        ),
+        e('div',{style:{display:'flex',alignItems:'center',gap:8}},
+          e('div',{style:{fontSize:13,fontWeight:700,color:'#3D6E42'}},total),
+          subtitle&&e('div',{style:{fontSize:11,color:'#9E9A94'}},subtitle)
+        )
+      ),
+      // Chevron
+      e('div',{style:{
+        fontSize:11,color:'#B0ABA5',fontWeight:600,flexShrink:0,
+        transform:open?'rotate(180deg)':'rotate(0deg)',
+        transition:'transform 0.2s'
+      }},'▼')
+    ),
+    // Collapsible body
+    open&&e('div',{style:{
+      borderTop:'1px solid #F4F2EE',
+      padding:'14px 16px'
+    }}, ...React.Children.toArray(children))
+  );
+}
+
 // ─── TAB: HOME / DASHBOARD ───────────────────────────────────────────────────
 function HomeTab({data}){
   const {monthly={},networth={},investments=[],tax={}} = data;
@@ -592,12 +635,37 @@ function HomeTab({data}){
     },0);
   // Total monthly investment income
   const totalInvMonthlyIncome = invMonthlyRental + invMonthlyLendingIncome;
+  // RE monthly expenses (mortgage + tax + maintenance across all properties)
+  const invREMonthlyExpenses = investments.filter(i=>i.type==='Real Estate')
+    .reduce((s,i)=>{
+      const mort=+i.monthlyMortgage||0;
+      const propTax=(+i.propertyTax||0)/12;
+      const maint=(+i.propertyValue||+i.amountUSD||0)*(+i.maintenancePct||1)/100/12;
+      return s+mort+propTax+maint;
+    },0);
+  // Per-property RE breakdown for display
+  const reBreakdown = investments.filter(i=>i.type==='Real Estate').map(i=>{
+    const rent=+i.monthlyRent||0, mort=+i.monthlyMortgage||0;
+    const propTax=(+i.propertyTax||0)/12;
+    const maint=(+i.propertyValue||+i.amountUSD||0)*(+i.maintenancePct||1)/100/12;
+    const noi=rent-propTax-maint;
+    const cf=rent-mort-propTax-maint;
+    return {name:i.name||'Property',rent,mort,propTax,maint,noi,cf};
+  });
+  // Per-loan lending breakdown for display
+  const lendingBreakdown = investments.filter(i=>i.type==='Private Lending').map(i=>{
+    const principal=+i.principalUSD||+i.amountUSD||0;
+    const rate=+i.interestRate||0;
+    const monthly=principal*(rate/100)/12;
+    return {name:i.name||'Loan',principal,rate,monthly};
+  });
   // Augmented totals for hero card (monthly record + live investment income)
   const augIncome = (latestM?.totalIncome||0) + totalInvMonthlyIncome;
   const augCashflow = (latestM?.cashflow||0) + invREMonthlyNOI + invMonthlyLendingIncome;
   const augSaved = latestM?.totalSaved||0;
   const augSavingsRate = augIncome>0 ? (augSaved/augIncome*100) : (latestM?.savingsRate||0);
   const hasInvIncome = totalInvMonthlyIncome > 0;
+  const hasInvExpenses = invREMonthlyExpenses > 0;
 
   // Cash accumulation (last 8 months saved)
   const cashTrend = mKeys.slice(-8).map(k=>({
@@ -630,19 +698,91 @@ function HomeTab({data}){
         ),
         e('div',{className:'hero-stat'},
           e('div',{className:'hero-stat-label'},'Invest. Income'),
-          e('div',{className:'hero-stat-value',style:{color:'#B8926A'}},fmt(totalInvMonthlyIncome)),
+          e('div',{className:'hero-stat-value',style:{color:'#C8A96E'}},fmt(totalInvMonthlyIncome)),
           e('div',{className:'hero-stat-sub'},
-            invMonthlyRental>0&&invMonthlyLendingIncome>0
-              ? `Rent ${fmt(invMonthlyRental)} + Lending ${fmt(invMonthlyLendingIncome)}`
-              : invMonthlyRental>0 ? `Rental income`
-              : invMonthlyLendingIncome>0 ? `Lending interest`
-              : 'No inv. income yet'
+            invMonthlyRental>0&&invMonthlyLendingIncome>0 ? `Rent+Lending/mo`
+            : invMonthlyRental>0 ? `${investments.filter(i=>i.type==='Real Estate'&&+i.monthlyRent>0).length} prop.`
+            : invMonthlyLendingIncome>0 ? `${investments.filter(i=>i.type==='Private Lending').length} loans`
+            : 'None yet'
           )
         ),
         e('div',{className:'hero-stat'},
-          e('div',{className:'hero-stat-label'},'Cash Flow'),
+          e('div',{className:'hero-stat-label'},'Net Cash Flow'),
           e('div',{className:'hero-stat-value',style:{color:augCashflow>=0?'#7ECB8F':'#E07070'}},fmt(augCashflow)),
-          e('div',{className:'hero-stat-sub'},'Salary + RE + Lending')
+          e('div',{className:'hero-stat-sub'},`${latestM?'Salary+':''}RE+Lending`)
+        )
+      ),
+      // ── Income breakdown strip (embedded in hero) ─────────────────────────
+      (hasInvIncome||latestM)&&e('div',{style:{
+        marginTop:12,paddingTop:12,borderTop:'1px solid rgba(255,255,255,0.08)'
+      }},
+        e('div',{style:{fontSize:9,fontWeight:700,color:'rgba(168,197,172,0.5)',textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Income Breakdown'),
+        e('div',{style:{display:'flex',flexDirection:'column',gap:5}},
+          latestM&&(latestM.totalIncome||0)>0&&e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+            e('div',{style:{display:'flex',alignItems:'center',gap:6}},
+              e('div',{style:{width:6,height:6,borderRadius:1,background:'#7ECB8F'}}),
+              e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},'Salary / W2')
+            ),
+            e('div',{style:{fontSize:12,fontWeight:700,color:'#FFFFFF'}},fmt(latestM.totalIncome))
+          ),
+          ...reBreakdown.filter(r=>r.rent>0).map((r,i)=>
+            e('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+              e('div',{style:{display:'flex',alignItems:'center',gap:6}},
+                e('div',{style:{width:6,height:6,borderRadius:1,background:'#3D7EAA'}}),
+                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},r.name+' (rent)')
+              ),
+              e('div',{style:{fontSize:12,fontWeight:700,color:'#FFFFFF'}},fmt(r.rent))
+            )
+          ),
+          ...lendingBreakdown.map((l,i)=>
+            e('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+              e('div',{style:{display:'flex',alignItems:'center',gap:6}},
+                e('div',{style:{width:6,height:6,borderRadius:1,background:'#C8A96E'}}),
+                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},l.name+' (interest)')
+              ),
+              e('div',{style:{fontSize:12,fontWeight:700,color:'#FFFFFF'}},fmt(l.monthly))
+            )
+          )
+        )
+      ),
+      // ── Cash flow breakdown strip ─────────────────────────────────────────
+      (hasInvExpenses||latestM)&&e('div',{style:{
+        marginTop:10,paddingTop:10,borderTop:'1px solid rgba(255,255,255,0.08)'
+      }},
+        e('div',{style:{fontSize:9,fontWeight:700,color:'rgba(168,197,172,0.5)',textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Cash Flow Breakdown'),
+        e('div',{style:{display:'flex',flexDirection:'column',gap:5}},
+          latestM&&e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+            e('div',{style:{display:'flex',alignItems:'center',gap:6}},
+              e('div',{style:{width:6,height:6,borderRadius:1,background:'#7ECB8F'}}),
+              e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},'Salary cashflow')
+            ),
+            e('div',{style:{fontSize:12,fontWeight:700,color:latestM.cashflow>=0?'#7ECB8F':'#E07070'}},fmt(latestM.cashflow||0))
+          ),
+          ...reBreakdown.filter(r=>r.rent>0).map((r,i)=>
+            e('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+              e('div',{style:{display:'flex',alignItems:'center',gap:6}},
+                e('div',{style:{width:6,height:6,borderRadius:1,background:'#3D7EAA'}}),
+                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},r.name+' (NOI)')
+              ),
+              e('div',{style:{display:'flex',alignItems:'center',gap:6}},
+                e('div',{style:{fontSize:10,color:'rgba(255,255,255,0.35)'}},'rent-mort-tax-maint'),
+                e('div',{style:{fontSize:12,fontWeight:700,color:r.cf>=0?'#7ECB8F':'#E07070'}},fmt(r.cf))
+              )
+            )
+          ),
+          ...lendingBreakdown.map((l,i)=>
+            e('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+              e('div',{style:{display:'flex',alignItems:'center',gap:6}},
+                e('div',{style:{width:6,height:6,borderRadius:1,background:'#C8A96E'}}),
+                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},l.name)
+              ),
+              e('div',{style:{fontSize:12,fontWeight:700,color:'#C8A96E'}},fmt(l.monthly))
+            )
+          ),
+          e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:4,paddingTop:6,borderTop:'1px solid rgba(255,255,255,0.08)'}},
+            e('div',{style:{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.8)'}},'Net Cash Flow'),
+            e('div',{style:{fontSize:14,fontWeight:700,color:augCashflow>=0?'#7ECB8F':'#E07070'}},fmt(augCashflow))
+          )
         )
       )
     ),
@@ -817,35 +957,35 @@ function HomeTab({data}){
       )
     ),
 
-    // Private Lending
-    privateLoans.length>0&&e('div',{className:'card'},
-      e('div',{className:'card-title'},'Private Lending'),
+    // ── Collapsible investment sections ───────────────────────────────────────
+    privateLoans.length>0&&e(CollapsibleSection,{
+      title:'Private Lending',
+      count:privateLoans.length,
+      total:fmtFull(privateLoans.reduce((s,i)=>s+(+i.principalUSD||+i.amountUSD||0),0)),
+      accentColor:'#C8A96E',
+      key:'loans'
+    },
       ...privateLoans.map((inv,idx)=>e(LoanCard,{key:idx,inv}))
     ),
 
-    // Real Estate
-    realEstate.length>0&&e('div',{className:'card'},
-      e('div',{className:'card-title'},'Real Estate Portfolio'),
+    realEstate.length>0&&e(CollapsibleSection,{
+      title:'Real Estate',
+      count:realEstate.length,
+      total:fmtFull(realEstate.reduce((s,i)=>s+(+i.propertyValue||+i.amountUSD||0),0)),
+      accentColor:'#3D7EAA',
+      key:'re'
+    },
       ...realEstate.map((inv,idx)=>e(RECard,{key:idx,inv}))
     ),
 
-    // Stocks
-    stocks.length>0&&e('div',{className:'card'},
-      e('div',{className:'card-title'},'Stocks & Equity'),
-      e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:10}},
-        e('div',null,
-          e('div',{style:{fontSize:11,color:'#9E9A94'}},`Cost Basis`),
-          e('div',{style:{fontSize:18,fontFamily:"'DM Sans',sans-serif",color:'#1C1C1E'}},
-            fmtFull(stocks.reduce((s,i)=>s+(+i.costBasis||+i.amountUSD||0),0))
-          )
-        ),
-        e('div',{style:{textAlign:'right'}},
-          e('div',{style:{fontSize:11,color:'#9E9A94'}},`Current Value`),
-          e('div',{style:{fontSize:18,fontFamily:"'DM Sans',sans-serif",color:'#3D6E42'}},
-            fmtFull(stocks.reduce((s,i)=>s+(+i.currentMarketValue||+i.amountUSD||0),0))
-          )
-        )
-      ),
+    stocks.length>0&&e(CollapsibleSection,{
+      title:'Stocks & Equity',
+      count:stocks.length,
+      total:fmtFull(stocks.reduce((s,i)=>s+(+i.currentMarketValue||+i.amountUSD||0),0)),
+      accentColor:'#4E7A52',
+      subtitle:`Cost basis: ${fmtFull(stocks.reduce((s,i)=>s+(+i.costBasis||+i.amountUSD||0),0))}`,
+      key:'stocks'
+    },
       ...stocks.map((inv,idx)=>{
         const basis=+inv.costBasis||+inv.amountUSD||0;
         const curr=+inv.currentMarketValue||+inv.amountUSD||0;
@@ -872,48 +1012,131 @@ function HomeTab({data}){
       e('div',{style:{fontSize:10,color:'#9E9A94',textAlign:'center',marginTop:4}},'Values in $K')
     ),
 
-    // Latest month snapshot — salary + investment income combined
-    (latestM||hasInvIncome)&&e('div',{className:'card'},
-      e('div',{className:'card-title'},
-        latestM
-          ? 'Latest Month — '+(latestMKey?new Date(latestMKey+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'}):'')
-          : 'Investment Income Summary'
-      ),
+    // ── Monthly Summary (salary only) ─────────────────────────────────────────
+    latestM&&e('div',{className:'card'},
+      e('div',{className:'card-title'},'Monthly Summary — '+(latestMKey?new Date(latestMKey+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'}):'') ),
       e('div',{className:'grid-2'},
         e('div',{className:'stat-tile'},
           e('div',{className:'stat-tile-label'},'Salary Income'),
-          e('div',{className:'stat-tile-value'},fmt(latestM?.totalIncome||0))
-        ),
-        e('div',{className:'stat-tile'},
-          e('div',{className:'stat-tile-label'},'Investment Income'),
-          e('div',{className:'stat-tile-value',style:{color:'#B8926A'}},fmt(totalInvMonthlyIncome))
-        ),
-        e('div',{className:'stat-tile'},
-          e('div',{className:'stat-tile-label'},'Total Income'),
-          e('div',{className:'stat-tile-value',style:{color:'#3D6E42',fontWeight:700}},fmt(augIncome))
+          e('div',{className:'stat-tile-value'},fmt(latestM.totalIncome||0))
         ),
         e('div',{className:'stat-tile'},
           e('div',{className:'stat-tile-label'},'Expenses'),
-          e('div',{className:'stat-tile-value'},fmt(latestM?.totalExpenses||0))
+          e('div',{className:'stat-tile-value'},fmt(latestM.totalExpenses||0))
         ),
         e('div',{className:'stat-tile'},
           e('div',{className:'stat-tile-label'},'Saved'),
-          e('div',{className:'stat-tile-value',style:{color:'#3D6E42'}},fmt(latestM?.totalSaved||0))
+          e('div',{className:'stat-tile-value',style:{color:'#3D6E42'}},fmt(latestM.totalSaved||0))
         ),
         e('div',{className:'stat-tile'},
-          e('div',{className:'stat-tile-label'},'Net Cash Flow'),
-          e('div',{className:'stat-tile-value',style:{color:augCashflow>=0?'#3D6E42':'#B83030'}},fmt(augCashflow))
+          e('div',{className:'stat-tile-label'},'Salary CF'),
+          e('div',{className:'stat-tile-value',style:{color:(latestM.cashflow||0)>=0?'#3D6E42':'#B83030'}},fmt(latestM.cashflow||0))
+        )
+      )
+    ),
+
+    // ── Investment Income & Expenses ───────────────────────────────────────────
+    (reBreakdown.length>0||lendingBreakdown.length>0)&&e('div',{className:'card'},
+      e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}},
+        e('div',{className:'card-title',style:{marginBottom:0}},'Investment Income & Expenses'),
+        e('div',{style:{textAlign:'right'}},
+          e('div',{style:{fontSize:11,fontWeight:700,color:invREMonthlyNOI+invMonthlyLendingIncome>=0?'#3D6E42':'#B83030'}},
+            fmt(invREMonthlyNOI+invMonthlyLendingIncome)+'/mo net'
+          )
         )
       ),
-      hasInvIncome&&e('div',{style:{marginTop:10,padding:'8px 12px',background:'#F9FAF9',borderRadius:10}},
-        e('div',{style:{fontSize:10,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px',marginBottom:6}},'Investment Income Breakdown'),
-        invMonthlyRental>0&&e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,color:'#1C1C1E',marginBottom:4}},
-          e('span',null,'Rental ('+investments.filter(i=>i.type==='Real Estate'&&(+i.monthlyRent||0)>0).length+' properties)'),
-          e('span',{style:{fontWeight:600}},fmt(invMonthlyRental)+'/mo')
+
+      // Real Estate properties
+      reBreakdown.length>0&&e('div',{style:{marginBottom:12}},
+        e('div',{style:{fontSize:10,fontWeight:700,color:'#3D7EAA',textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Real Estate'),
+        ...reBreakdown.map((r,i)=>
+          e('div',{key:i,style:{
+            background:'#F9FAF9',borderRadius:12,padding:'12px 14px',
+            marginBottom:i<reBreakdown.length-1?8:0
+          }},
+            e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
+              e('div',{style:{fontSize:13,fontWeight:600,color:'#1C1C1E'}},r.name),
+              e('div',{style:{
+                fontSize:13,fontWeight:700,
+                color:r.cf>=0?'#3D6E42':'#B83030'
+              }},fmt(r.cf)+'/mo')
+            ),
+            // Income row
+            e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
+              e('div',{style:{display:'flex',alignItems:'center',gap:5}},
+                e('div',{style:{width:5,height:5,borderRadius:1,background:'#3D6E42'}}),
+                e('div',{style:{fontSize:11,color:'#6B6663'}},'Rental income')
+              ),
+              e('div',{style:{fontSize:12,fontWeight:600,color:'#3D6E42'}},fmt(r.rent))
+            ),
+            // Expense rows
+            r.mort>0&&e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
+              e('div',{style:{display:'flex',alignItems:'center',gap:5}},
+                e('div',{style:{width:5,height:5,borderRadius:1,background:'#B83030'}}),
+                e('div',{style:{fontSize:11,color:'#6B6663'}},'Mortgage')
+              ),
+              e('div',{style:{fontSize:12,fontWeight:600,color:'#B83030'}},`−${fmt(r.mort)}`)
+            ),
+            r.propTax>0&&e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
+              e('div',{style:{display:'flex',alignItems:'center',gap:5}},
+                e('div',{style:{width:5,height:5,borderRadius:1,background:'#D47C0F'}}),
+                e('div',{style:{fontSize:11,color:'#6B6663'}},'Property tax/mo')
+              ),
+              e('div',{style:{fontSize:12,fontWeight:600,color:'#D47C0F'}},`−${fmt(r.propTax)}`)
+            ),
+            r.maint>0&&e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
+              e('div',{style:{display:'flex',alignItems:'center',gap:5}},
+                e('div',{style:{width:5,height:5,borderRadius:1,background:'#9E9A94'}}),
+                e('div',{style:{fontSize:11,color:'#6B6663'}},'Maintenance/mo')
+              ),
+              e('div',{style:{fontSize:12,fontWeight:600,color:'#9E9A94'}},`−${fmt(r.maint)}`)
+            ),
+            // NOI divider
+            e('div',{style:{
+              display:'flex',justifyContent:'space-between',alignItems:'center',
+              marginTop:6,paddingTop:6,borderTop:'1px solid #EDEBE6'
+            }},
+              e('div',{style:{fontSize:11,color:'#9E9A94'}},'NOI (excl. mortgage)'),
+              e('div',{style:{fontSize:12,fontWeight:700,color:r.noi>=0?'#3D6E42':'#B83030'}},fmt(r.noi))
+            )
+          )
+        )
+      ),
+
+      // Private Lending
+      lendingBreakdown.length>0&&e('div',null,
+        reBreakdown.length>0&&e('div',{style:{height:1,background:'#F0EDE8',margin:'4px 0 12px'}}),
+        e('div',{style:{fontSize:10,fontWeight:700,color:'#C8A96E',textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Private Lending'),
+        ...lendingBreakdown.map((l,i)=>
+          e('div',{key:i,style:{
+            background:'#F9FAF9',borderRadius:12,padding:'12px 14px',
+            marginBottom:i<lendingBreakdown.length-1?8:0
+          }},
+            e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
+              e('div',{style:{fontSize:13,fontWeight:600,color:'#1C1C1E'}},l.name),
+              e('div',{style:{fontSize:13,fontWeight:700,color:'#C8A96E'}},fmt(l.monthly)+'/mo')
+            ),
+            e('div',{style:{display:'flex',justifyContent:'space-between'}},
+              e('div',{style:{fontSize:11,color:'#9E9A94'}},`${l.rate}%/yr on ${fmtFull(l.principal)}`),
+              e('div',{style:{fontSize:11,color:'#B0ABA5'}},`${fmtFull(Math.round(l.monthly*12))}/yr`)
+            )
+          )
+        )
+      ),
+
+      // Total row
+      e('div',{style:{
+        marginTop:12,padding:'12px 14px',
+        background:'#1A2B1C',borderRadius:12,
+        display:'flex',justifyContent:'space-between',alignItems:'center'
+      }},
+        e('div',null,
+          e('div',{style:{fontSize:9,color:'rgba(168,197,172,0.6)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px',marginBottom:3}},'Total Investment Net CF'),
+          e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.45)'}},'Rent + Interest − Expenses')
         ),
-        invMonthlyLendingIncome>0&&e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,color:'#1C1C1E'}},
-          e('span',null,'Lending interest ('+investments.filter(i=>i.type==='Private Lending').length+' loans)'),
-          e('span',{style:{fontWeight:600}},fmt(invMonthlyLendingIncome)+'/mo')
+        e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:20,fontWeight:700,
+          color:(invREMonthlyNOI+invMonthlyLendingIncome)>=0?'#7ECB8F':'#E07070',letterSpacing:'-0.3px'}},
+          fmt(invREMonthlyNOI+invMonthlyLendingIncome)+'/mo'
         )
       )
     ),
@@ -1233,6 +1456,11 @@ function RECard({inv}){
   const annualRent=rent*12;
   const annualNOI=noi*12;
   const grossYield=currentVal>0?(annualRent/currentVal*100):0;
+  // FCF Rate = Annual Free Cash Flow / Purchase Price (or current value if no purchase price)
+  // FCF = Rent - Mortgage - Tax - Maintenance (all cash out the door)
+  const annualCF=cf*12;
+  const fcfBase=purchasePrice>0?purchasePrice:currentVal;
+  const fcfRate=fcfBase>0?(annualCF/fcfBase*100):0;
   const totalReturn=appreciation+(annualNOI*(years||1));
 
   return e('div',{style:{marginBottom:10,paddingBottom:10,borderBottom:'1px solid #F4F2EE'}},
@@ -1247,19 +1475,27 @@ function RECard({inv}){
         e('div',{style:{fontSize:11,color:'#3D6E42',marginTop:2}},`Equity: ${fmtFull(equity)}`)
       )
     ),
-    // 3-metric row
-    e('div',{style:{display:'flex',gap:6,marginBottom:10}},
-      e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 8px'}},
-        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Mo. CF'),
-        e('div',{style:{fontSize:14,fontWeight:700,color:cf>=0?'#3D6E42':'#B83030',marginTop:3}},fmt(cf))
+    // 4-metric 2x2 grid
+    e('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}},
+      e('div',{style:{background:'#F4F2EE',borderRadius:10,padding:'9px 10px'}},
+        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Mo. Cash Flow'),
+        e('div',{style:{fontSize:15,fontWeight:700,color:cf>=0?'#3D6E42':'#B83030',marginTop:3,letterSpacing:'-0.2px'}},fmt(cf)),
+        e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},'Rent−Mort−Tax−Maint')
       ),
-      e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 8px'}},
+      e('div',{style:{background:'#F4F2EE',borderRadius:10,padding:'9px 10px'}},
+        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'FCF Rate'),
+        e('div',{style:{fontSize:15,fontWeight:700,color:fcfRate>=0?'#3D6E42':'#B83030',marginTop:3,letterSpacing:'-0.2px'}},pct(fcfRate)),
+        e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},`Ann.CF÷${purchasePrice>0?'PurchPrice':'Value'}`)
+      ),
+      e('div',{style:{background:'#F4F2EE',borderRadius:10,padding:'9px 10px'}},
         e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Cap Rate'),
-        e('div',{style:{fontSize:14,fontWeight:700,color:'#1C1C1E',marginTop:3}},pct(capRate))
+        e('div',{style:{fontSize:15,fontWeight:700,color:'#1C1C1E',marginTop:3,letterSpacing:'-0.2px'}},pct(capRate)),
+        e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},'NOI÷Value (excl. mort.)')
       ),
-      e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 8px'}},
+      e('div',{style:{background:'#F4F2EE',borderRadius:10,padding:'9px 10px'}},
         e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Gross Yield'),
-        e('div',{style:{fontSize:14,fontWeight:700,color:'#1C1C1E',marginTop:3}},pct(grossYield))
+        e('div',{style:{fontSize:15,fontWeight:700,color:'#1C1C1E',marginTop:3,letterSpacing:'-0.2px'}},pct(grossYield)),
+        e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},'Ann.Rent÷CurrValue')
       )
     ),
     // Rental income snapshot
@@ -2487,14 +2723,39 @@ function InsightsTab({data,setData}){
         desc:'Total Saved = Income − Expenses. Target is 20%+ for healthy financial progress.'
       },
       {
-        title:'Net Operating Income (Real Estate)',
-        formula:'NOI = Monthly Rent − (Annual Property Tax ÷ 12) − (Property Value × Maintenance% ÷ 12)',
-        desc:'Excludes mortgage. Cap Rate = (NOI × 12 ÷ Property Value) × 100.'
+        title:'Investment Net Cash Flow',
+        formula:'Inv. Net CF = Σ RE Cash Flows + Σ Lending Monthly Interest',
+        desc:'Sum of all RE monthly cash flows (rent−mort−tax−maint) plus monthly lending interest (Principal × Rate ÷ 12). Added to your salary cashflow for the total net cash flow shown in the hero card.'
       },
       {
-        title:'Cash Flow (Real Estate)',
+        title:'Total Monthly Income',
+        formula:'Total Income = Salary/W2 + RE Monthly Rent + Lending Monthly Interest',
+        desc:'Salary from Monthly tab plus all rental income from RE properties plus interest income from active lending — as shown in the Income Breakdown in the hero card.'
+      },
+      {
+        title:'Net Operating Income (Real Estate)',
+        formula:'NOI = Monthly Rent − (Annual Property Tax ÷ 12) − (Property Value × Maintenance% ÷ 12)',
+        desc:'Excludes mortgage payments. Represents true property earning power. Used to compute Cap Rate.'
+      },
+      {
+        title:'Monthly Cash Flow (Real Estate)',
         formula:'Cash Flow = Rent − Mortgage − Property Tax/mo − Maintenance/mo',
-        desc:'Monthly cash in pocket after all property costs including mortgage payments.'
+        desc:'Cash actually in your pocket each month after every cost including mortgage. Negative CF means the property costs you money despite earning rent.'
+      },
+      {
+        title:'Cap Rate',
+        formula:'Cap Rate = (NOI × 12) ÷ Current Property Value × 100',
+        desc:'How much the property earns relative to its value, ignoring how it was financed. Benchmark: 5–8% is typical for residential. Higher = better income-to-value ratio.'
+      },
+      {
+        title:'Gross Yield',
+        formula:'Gross Yield = (Annual Rent ÷ Current Property Value) × 100',
+        desc:'Raw rental income as a % of property value — before any expenses. It does NOT change with expenses and reflects only rent vs. market value. Compare to cap rate to understand your expense ratio.'
+      },
+      {
+        title:'FCF Rate (Free Cash Flow Rate)',
+        formula:'FCF Rate = (Annual Cash Flow ÷ Purchase Price) × 100',
+        desc:'Annual net cash flow (rent minus all costs including mortgage) as a % of what you actually paid. Uses purchase price (not current value) so it reflects your actual cash-on-cash return. Also called Cash-on-Cash Return. Target: 6–10%+. Falls below 0% if you have negative monthly cash flow.'
       },
       {
         title:'Private Lending Interest (Date-Accurate)',
