@@ -238,6 +238,9 @@ body{font-family:'DM Sans',sans-serif;color:#1C1C1E;-webkit-overflow-scrolling:t
 .pay-done{background:#EFF5EF;color:#3D6E42;}
 .pay-exp{background:#FBF4E8;color:#8A6030;}
 .pay-miss{background:#FFF0EF;color:#B83030;}
+.pay-late{background:#FFF0EF;color:#B83030;}
+.pay-early{background:#EFF5EF;color:#3D6E42;}
+.pay-partial{background:#FBF4E8;color:#8A6030;}
 .pay-fut{background:#F4F2EE;color:#9E9A94;}
 
 /* ── Inv card redesign ── */
@@ -576,7 +579,7 @@ function HomeTab({data}){
         e('div',{className:'hero-stat'},
           e('div',{className:'hero-stat-label'},'Monthly Income'),
           e('div',{className:'hero-stat-value'},fmt(latestM?.totalIncome||0)),
-          e('div',{className:'hero-stat-sub'},latestMKey?`${monthName(+latestMKey.slice(5))} ${latestMKey.slice(0,4)}`:'No data')
+          e('div',{className:'hero-stat-sub'},latestMKey?new Date(latestMKey+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'}):'No data')
         ),
         e('div',{className:'hero-stat'},
           e('div',{className:'hero-stat-label'},'Savings Rate'),
@@ -724,7 +727,7 @@ function HomeTab({data}){
 
     // Latest month snapshot
     latestM&&e('div',{className:'card'},
-      e('div',{className:'card-title'},'Latest Month — '+( latestMKey?`${monthName(+latestMKey.slice(5))} ${latestMKey.slice(0,4)}`:'')  ),
+      e('div',{className:'card-title'},'Latest Month — '+(latestMKey?new Date(latestMKey+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'}):'')),
       e('div',{className:'grid-2'},
         e('div',{className:'stat-tile'},
           e('div',{className:'stat-tile-label'},'Income'),
@@ -758,116 +761,256 @@ function HomeTab({data}){
   );
 }
 
+function buildLoanSchedule(inv) {
+  // Builds payment schedule driven by actual start/maturity dates + payment interval
+  const start = inv.startDate ? new Date(inv.startDate) : null;
+  const mat   = inv.maturityDate ? new Date(inv.maturityDate) : null;
+  if (!start || !mat) return [];
+
+  const principal    = +inv.principalUSD || +inv.amountUSD || 0;
+  const annualRate   = +inv.interestRate || 0;            // e.g. 10 means 10%/yr
+  const intervalMo   = +inv.payIntervalMonths || 12;      // payment every N months
+  const payments     = inv.payments || [];                // logged actual payments
+
+  // Total interest = principal * (annualRate/100) * (actual days / 365)
+  const totalDays    = (mat - start) / (1000*60*60*24);
+  const totalInterest = principal * (annualRate/100) * (totalDays/365);
+
+  // Interest per interval period = principal * (annualRate/100) * (intervalMo/12)
+  // But the last interval may be shorter — we compute each slot's actual days.
+  const rows = [];
+  let slotStart = new Date(start);
+  let slotNum = 0;
+  const GRACE_DAYS = 7; // days window before due = "due soon"
+
+  while (slotStart < mat) {
+    slotNum++;
+    // compute due date by advancing intervalMo months from slotStart
+    const dueDate = new Date(slotStart);
+    dueDate.setMonth(dueDate.getMonth() + intervalMo);
+    // cap at maturity
+    const effectiveDue = dueDate > mat ? new Date(mat) : dueDate;
+    const isFinal = effectiveDue >= mat;
+
+    // Actual days in this slot
+    const slotDays = (effectiveDue - slotStart) / (1000*60*60*24);
+    const slotInterest = principal * (annualRate/100) * (slotDays/365);
+    const slotPrincipal = isFinal ? principal : 0;
+    const totalDue = slotInterest + slotPrincipal;
+
+    // Find matching logged payment(s) for this slot window
+    const slotPayments = payments.filter(p => {
+      if (!p.date) return false;
+      const pd = new Date(p.date);
+      return pd >= slotStart && pd <= effectiveDue;
+    });
+    const totalPaid = slotPayments.reduce((s,p)=>s+(+p.amount||0), 0);
+    const loggedDate = slotPayments.length > 0 ? slotPayments[slotPayments.length-1].date : null;
+
+    // Determine status
+    const now = new Date();
+    const msNow = now.getTime();
+    const msDue = effectiveDue.getTime();
+    const daysUntilDue = (msDue - msNow)/(1000*60*60*24);
+
+    let status;
+    if (slotPayments.length > 0) {
+      // Payment was logged — was it early or late?
+      const payDate = new Date(loggedDate);
+      if (payDate <= effectiveDue) {
+        status = payDate < slotStart ? 'early' : 'paid';
+      } else {
+        status = 'late';
+      }
+      // partial override
+      if (totalPaid < totalDue * 0.95) status = 'partial';
+    } else if (effectiveDue < now) {
+      status = 'missed';
+    } else if (daysUntilDue <= GRACE_DAYS) {
+      status = 'due';
+    } else {
+      status = 'upcoming';
+    }
+
+    rows.push({
+      num: slotNum,
+      dueDate: effectiveDue,
+      slotDays: Math.round(slotDays),
+      interest: slotInterest,
+      principalDue: slotPrincipal,
+      totalDue,
+      totalPaid,
+      loggedDate,
+      isFinal,
+      status
+    });
+
+    if (isFinal || effectiveDue >= mat) break;
+    slotStart = new Date(effectiveDue);
+  }
+  return rows;
+}
+
 function LoanCard({inv}){
   const start = inv.startDate ? new Date(inv.startDate) : null;
-  const mat = inv.maturityDate ? new Date(inv.maturityDate) : null;
-  const now = new Date();
+  const mat   = inv.maturityDate ? new Date(inv.maturityDate) : null;
+  const now   = new Date();
   const principal = +inv.principalUSD||+inv.amountUSD||0;
-  const rate = +inv.interestRate||0;
-  const term = +inv.termYears||0;
-  let daysLeft=0, pctElapsed=0, accrued=0;
-  if(start&&mat){
-    const total = mat-start;
-    const done = now-start;
-    pctElapsed = Math.min(100,Math.max(0,(done/total)*100));
-    daysLeft = Math.max(0,Math.ceil((mat-now)/(1000*60*60*24)));
-    const yearsElapsed = done/(1000*60*60*24*365);
-    accrued = principal * rate/100 * yearsElapsed;
+  const rate      = +inv.interestRate||0;
+  const intervalMo = +inv.payIntervalMonths||12;
+  const realRet   = calcRealReturn(rate, inv.currency||'USD');
+  const drag      = CURRENCY_RISK[inv.currency||'USD']||0;
+
+  // ── Day-accurate interest calculations ────────────────────────────────────
+  let totalDays=0, yearsActive=0, totalInterest=0, accrued=0, daysLeft=0, pctElapsed=0;
+  if (start && mat) {
+    totalDays    = (mat-start)/(1000*60*60*24);
+    yearsActive  = totalDays/365;
+    totalInterest = principal * (rate/100) * yearsActive;
+    const daysDone = Math.min(totalDays, Math.max(0,(now-start)/(1000*60*60*24)));
+    accrued      = principal * (rate/100) * (daysDone/365);
+    pctElapsed   = Math.min(100, Math.max(0,(daysDone/totalDays)*100));
+    daysLeft     = Math.max(0, Math.ceil((mat-now)/(1000*60*60*24)));
   }
-  const realRet = calcRealReturn(rate, inv.currency||'USD');
-  const drag = CURRENCY_RISK[inv.currency||'USD']||0;
-  const annualInterest = principal * rate/100;
-  const totalInterest = principal * rate/100 * (term||1);
-  // Build payment schedule rows (annual payments)
-  const payRows = [];
-  if(start && term>0){
-    for(let y=1;y<=Math.ceil(term);y++){
-      const payDate = new Date(start);
-      payDate.setFullYear(payDate.getFullYear()+y);
-      const isFinal = y>=term;
-      const isLast = y===Math.ceil(term);
-      const partialFactor = (isLast&&term!==Math.floor(term))?(term-Math.floor(term)):1;
-      const interest = annualInterest * partialFactor;
-      const principal_repay = isFinal ? principal : 0;
-      const isPast = payDate < now;
-      const isCurrent = !isPast && (y===1||(y===Math.ceil(term)));
-      const statusKey = inv[`pay_status_y${y}`]||'';
-      const status = isPast ? (statusKey==='missed'?'miss':(statusKey==='partial'?'exp':'done')) : 'fut';
-      payRows.push({y, payDate, interest, principal_repay, isFinal, status, isPast});
-    }
-  }
+  const annualInterestFull = principal*(rate/100); // full year baseline for display
+
+  const schedule = buildLoanSchedule(inv);
   const [showTable, setShowTable] = useState(false);
+
+  const statusBadge = (s) => {
+    const map = {
+      paid:   ['pay-done','Paid'],
+      early:  ['pay-done','Paid Early'],
+      late:   ['pay-miss','Paid Late'],
+      partial:['pay-exp','Partial'],
+      missed: ['pay-miss','Missed'],
+      due:    ['pay-exp','Due Now'],
+      upcoming:['pay-fut','Upcoming'],
+    };
+    const [cls,label] = map[s]||['pay-fut','—'];
+    return e('span',{className:`pay-badge ${cls}`},label);
+  };
+
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+  const intervalLabel = {1:'Monthly',2:'2-Monthly',3:'Quarterly',6:'Half-Yearly',12:'Annual',24:'2-Yearly'}[intervalMo]||`${intervalMo}mo`;
+
   return e('div',{style:{marginBottom:12,paddingBottom:12,borderBottom:'1px solid #F4F2EE'}},
+    // Header
     e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}},
       e('div',null,
         e('div',{style:{fontSize:14,fontWeight:600,color:'#1C1C1E'}},inv.name||'Loan'),
-        e('div',{style:{fontSize:11,color:'#9E9A94',marginTop:2}},`${inv.currency||'USD'} · ${rate}% p.a. · ${term}yr term`)
+        e('div',{style:{fontSize:11,color:'#9E9A94',marginTop:2}},
+          `${inv.currency||'USD'} · ${rate}% p.a. · ${intervalLabel} payments`)
       ),
       e('div',{style:{textAlign:'right'}},
         e('div',{style:{fontSize:16,fontWeight:700,color:'#1C1C1E',fontFamily:"'DM Sans',sans-serif"}},fmtFull(principal)),
         e('div',{style:{fontSize:11,color:realRet>=0?'#3D6E42':'#B83030',marginTop:2}},`Real: ${pct(realRet)}/yr`)
       )
     ),
-    // Stats row
-    e('div',{style:{display:'flex',gap:8,marginBottom:10}},
-      e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 10px'}},
-        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Annual Interest'),
-        e('div',{style:{fontSize:13,fontWeight:700,color:'#3D6E42',marginTop:3}},fmtFull(Math.round(annualInterest)))
-      ),
+
+    // 3-stat row using actual date-based values
+    e('div',{style:{display:'flex',gap:6,marginBottom:10}},
       e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 10px'}},
         e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Total Interest'),
-        e('div',{style:{fontSize:13,fontWeight:700,color:'#1C1C1E',marginTop:3}},fmtFull(Math.round(totalInterest)))
+        e('div',{style:{fontSize:13,fontWeight:700,color:'#3D6E42',marginTop:3}},fmtFull(Math.round(totalInterest)))
       ),
       e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 10px'}},
-        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Accrued'),
+        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Accrued Today'),
         e('div',{style:{fontSize:13,fontWeight:700,color:'#B8926A',marginTop:3}},fmtFull(Math.round(accrued)))
+      ),
+      e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 10px'}},
+        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Active Period'),
+        e('div',{style:{fontSize:13,fontWeight:700,color:'#1C1C1E',marginTop:3}},
+          `${yearsActive.toFixed(2)}yr`)
       )
     ),
+
     // Timeline
-    start&&mat&&e('div',null,
-      e('div',{className:'timeline-bg'},e('div',{className:'timeline-fill',style:{width:`${pctElapsed}%`}})),
-      e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:10,color:'#B0ABA5',marginTop:3}},
-        e('span',null,start.toLocaleDateString('en-US',{month:'short',year:'numeric'})),
+    start&&mat&&e('div',{style:{marginBottom:10}},
+      e('div',{className:'timeline-bg'},
+        e('div',{className:'timeline-fill',style:{width:`${pctElapsed}%`}})
+      ),
+      e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:10,color:'#B0ABA5',marginTop:4}},
+        e('span',null,fmtDate(start)),
         e('span',null,`${pctElapsed.toFixed(0)}% · ${daysLeft}d left`),
-        e('span',null,mat.toLocaleDateString('en-US',{month:'short',year:'numeric'}))
+        e('span',null,fmtDate(mat))
       )
     ),
+
     // Payment schedule toggle
-    payRows.length>0&&e('div',{style:{marginTop:10}},
+    schedule.length>0&&e('div',null,
       e('button',{
         onClick:()=>setShowTable(p=>!p),
         style:{background:'none',border:'none',fontSize:11,color:'#6E9E72',fontWeight:600,
-          cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:4}
-      }, showTable?'▲ Hide Schedule':'▼ Payment Schedule'),
-      showTable&&e('div',{style:{marginTop:8,overflowX:'auto'}},
-        e('table',{className:'pay-table'},
-          e('thead',null,
-            e('tr',null,
-              e('th',null,'Year'),
-              e('th',null,'Due Date'),
-              e('th',null,'Interest'),
-              e('th',null,'Principal'),
-              e('th',null,'Status')
-            )
+          cursor:'pointer',padding:'4px 0',display:'flex',alignItems:'center',gap:4}
+      }, showTable?'▲ Hide Schedule':'▼ Payment Schedule ('+schedule.length+' payments)'),
+
+      showTable&&e('div',{style:{marginTop:10}},
+        // Summary of logged vs expected
+        e('div',{style:{display:'flex',gap:8,marginBottom:10}},
+          e('div',{style:{flex:1,background:'#EFF5EF',borderRadius:8,padding:'7px 10px'}},
+            e('div',{style:{fontSize:9,color:'#6E9E72',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px'}},'Received'),
+            e('div',{style:{fontSize:13,fontWeight:700,color:'#3D6E42',marginTop:2}},
+              fmtFull(Math.round(schedule.reduce((s,r)=>s+r.totalPaid,0))))
           ),
-          e('tbody',null,
-            ...payRows.map(r=>
-              e('tr',{key:r.y},
-                e('td',null,`Y${r.y}`),
-                e('td',null,r.payDate.toLocaleDateString('en-US',{month:'short',year:'numeric'})),
-                e('td',null,fmtFull(Math.round(r.interest))),
-                e('td',null,r.isFinal?fmtFull(Math.round(r.principal_repay)):'—'),
-                e('td',null,
-                  e('span',{className:`pay-badge pay-${r.status}`},
-                    r.status==='done'?'Paid':r.status==='miss'?'Missed':r.status==='exp'?'Expected':'Upcoming'
-                  )
-                )
-              )
-            )
+          e('div',{style:{flex:1,background:'#FBF4E8',borderRadius:8,padding:'7px 10px'}},
+            e('div',{style:{fontSize:9,color:'#8A6030',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px'}},'Expected'),
+            e('div',{style:{fontSize:13,fontWeight:700,color:'#8A6030',marginTop:2}},
+              fmtFull(Math.round(totalInterest+principal)))
+          ),
+          e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:8,padding:'7px 10px'}},
+            e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px'}},'Remaining'),
+            e('div',{style:{fontSize:13,fontWeight:700,color:'#1C1C1E',marginTop:2}},
+              fmtFull(Math.round(Math.max(0,totalInterest+principal-schedule.reduce((s,r)=>s+r.totalPaid,0)))))
           )
-        )
+        ),
+
+        // Per-row schedule
+        ...schedule.map((r,ri)=>{
+          const nearMaturity = r.isFinal || (daysLeft<=30);
+          return e('div',{key:ri,style:{
+            background: r.status==='missed'?'#FFF8F8': r.status==='due'?'#FFFBF0': r.status==='paid'||r.status==='early'?'#F8FBF8':'#FAFAF8',
+            borderRadius:10,padding:'10px 12px',marginBottom:6,
+            border: r.status==='missed'?'1px solid #FFE5E5': r.status==='due'?'1px solid #FFE8A0': '1px solid #EDEBE6'
+          }},
+            // Row header: payment number, due date, status
+            e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
+              e('div',null,
+                e('div',{style:{fontSize:12,fontWeight:700,color:'#1C1C1E'}},
+                  `Payment ${r.num}`+(r.isFinal?' (Final)':'')),
+                e('div',{style:{fontSize:10,color:'#9E9A94',marginTop:1}},`Due: ${fmtDate(r.dueDate)} · ${r.slotDays}d period`)
+              ),
+              statusBadge(r.status)
+            ),
+            // Amounts due
+            e('div',{style:{display:'flex',gap:6}},
+              e('div',{style:{flex:1,background:'rgba(0,0,0,0.03)',borderRadius:7,padding:'6px 8px'}},
+                e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase'}},'Interest'),
+                e('div',{style:{fontSize:12,fontWeight:700,color:'#1C1C1E',marginTop:2}},fmtFull(Math.round(r.interest)))
+              ),
+              nearMaturity&&r.isFinal&&e('div',{style:{flex:1,background:'rgba(184,146,106,0.1)',borderRadius:7,padding:'6px 8px'}},
+                e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase'}},'Principal'),
+                e('div',{style:{fontSize:12,fontWeight:700,color:'#B8926A',marginTop:2}},fmtFull(Math.round(r.principalDue)))
+              ),
+              e('div',{style:{flex:1,background:'rgba(0,0,0,0.03)',borderRadius:7,padding:'6px 8px'}},
+                e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase'}},'Total Due'),
+                e('div',{style:{fontSize:12,fontWeight:700,color:'#1C1C1E',marginTop:2}},fmtFull(Math.round(r.totalDue)))
+              ),
+              (r.status==='paid'||r.status==='early'||r.status==='late'||r.status==='partial')&&
+                e('div',{style:{flex:1,background:'rgba(61,110,66,0.08)',borderRadius:7,padding:'6px 8px'}},
+                  e('div',{style:{fontSize:9,color:'#6E9E72',fontWeight:600,textTransform:'uppercase'}},'Received'),
+                  e('div',{style:{fontSize:12,fontWeight:700,color:'#3D6E42',marginTop:2}},fmtFull(Math.round(r.totalPaid)))
+                )
+            ),
+            // Show paid date if logged
+            r.loggedDate&&e('div',{style:{marginTop:6,fontSize:10,color:'#9E9A94'}},
+              `Received on: ${fmtDate(r.loggedDate)}`+(r.status==='early'?' · Paid early':r.status==='late'?' · Paid late':'')
+            )
+          );
+        })
       )
     ),
+
     drag>0&&e('div',{className:'badge badge-gold',style:{marginTop:8,fontSize:10}},`${inv.currency} currency risk: ${drag}%/yr`)
   );
 }
@@ -927,7 +1070,7 @@ function RECard({inv}){
       e('div',null,
         e('div',{style:{fontSize:14,fontWeight:600,color:'#1C1C1E'}},inv.name||'Property'),
         e('div',{style:{fontSize:11,color:'#9E9A94',marginTop:2}},
-          `${inv.currency||'USD'} · ${start?years.toFixed(1)+' yrs held':''}${rent>0?' · Rental':' · No rent data'}`)
+          `${inv.currency||'USD'} · ${start?years.toFixed(1)+' yrs held (since '+start.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+')':''}${rent>0?' · Rental':' · No rent data'}`)
       ),
       e('div',{style:{textAlign:'right'}},
         e('div',{style:{fontSize:16,fontWeight:700,color:'#1C1C1E',fontFamily:"'DM Sans',sans-serif"}},fmtFull(currentVal)),
@@ -1394,7 +1537,8 @@ function InvestTab({data,setData}){
 
 function InvestForm({data,setData,existing,onClose}){
   const blank={name:'',type:'Stocks / ETF',currency:'USD',amountUSD:0,amountLocal:0,exchangeRate:1,
-    nominalReturnPct:0,realReturnPct:0,interestRate:0,principalUSD:0,termYears:0,
+    nominalReturnPct:0,realReturnPct:0,interestRate:0,principalUSD:0,termYears:1,
+    payIntervalMonths:12,payments:[],
     startDate:'',maturityDate:'',propertyValue:0,monthlyRent:0,monthlyMortgage:0,
     purchasePrice:0,mortgageBalance:0,propertyTax:0,maintenancePct:1,weightOz:0,pricePerOz:0,
     costBasis:0,currentMarketValue:0,notes:''};
@@ -1500,12 +1644,94 @@ function InvestForm({data,setData,existing,onClose}){
       ),
       !isForeign&&e(FormInput,{label:'Principal (USD)',value:form.amountUSD,onChange:v=>ff('amountUSD',v)}),
       e('div',{className:'grid-2'},
-        e(FormInput,{label:'Interest Rate %',value:form.interestRate,onChange:v=>ff('interestRate',v),step:0.1}),
-        e(FormInput,{label:'Term (years)',value:form.termYears,onChange:v=>ff('termYears',v),step:0.5})
+        e(FormInput,{label:'Annual Interest Rate %',value:form.interestRate,onChange:v=>ff('interestRate',v),step:0.1,placeholder:'e.g. 10'}),
+        e(FormInput,{label:'Interest Period (years)',value:form.termYears,onChange:v=>ff('termYears',v),step:0.5,placeholder:'e.g. 1 = annual'})
       ),
       e('div',{className:'grid-2'},
         e(FormInput,{label:'Start Date',value:form.startDate,onChange:v=>ff('startDate',v),type:'date'}),
         e(FormInput,{label:'Maturity Date',value:form.maturityDate,onChange:v=>ff('maturityDate',v),type:'date'})
+      ),
+      e('div',{className:'form-group'},
+        e('label',{className:'form-label'},'Payment Interval'),
+        e('select',{className:'form-select',value:form.payIntervalMonths||12,onChange:ev=>ff('payIntervalMonths',+ev.target.value)},
+          e('option',{value:1},'Monthly'),
+          e('option',{value:2},'Every 2 Months'),
+          e('option',{value:3},'Quarterly (3 mo)'),
+          e('option',{value:6},'Half-Yearly (6 mo)'),
+          e('option',{value:12},'Annually (12 mo)'),
+          e('option',{value:24},'Every 2 Years')
+        )
+      ),
+      // Date-based interest preview
+      (()=>{
+        const s=form.startDate?new Date(form.startDate):null;
+        const m=form.maturityDate?new Date(form.maturityDate):null;
+        const p=+form.amountUSD||0;
+        const r=+form.interestRate||0;
+        const term=+form.termYears||1;
+        if(!s||!m||!p||!r) return null;
+        const daysTotal=(m-s)/(1000*60*60*24);
+        const yearsActive=daysTotal/365;
+        const totalInterest=p*(r/100)*yearsActive;
+        const intervalMonths=+form.payIntervalMonths||12;
+        const intervalYears=intervalMonths/12;
+        const perPayment=p*(r/100)*intervalYears;
+        return e('div',{style:{background:'#1A2B1C',borderRadius:12,padding:'12px 14px',marginTop:4}},
+          e('div',{style:{fontSize:9,color:'rgba(168,197,172,0.6)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Interest Preview (date-adjusted)'),
+          e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
+            e('span',{style:{fontSize:11,color:'rgba(255,255,255,0.55)'}},'Active Period'),
+            e('span',{style:{fontSize:12,fontWeight:600,color:'#FFFFFF'}},`${yearsActive.toFixed(2)} yrs (${Math.round(daysTotal)} days)`)
+          ),
+          e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
+            e('span',{style:{fontSize:11,color:'rgba(255,255,255,0.55)'}},'Total Interest'),
+            e('span',{style:{fontSize:12,fontWeight:700,color:'#7ECB8F'}},`$${Math.round(totalInterest).toLocaleString()}`)
+          ),
+          e('div',{style:{display:'flex',justifyContent:'space-between'}},
+            e('span',{style:{fontSize:11,color:'rgba(255,255,255,0.55)'}},'Per Payment (every '+intervalMonths+' mo)'),
+            e('span',{style:{fontSize:12,fontWeight:700,color:'#C8A96E'}},`$${Math.round(perPayment).toLocaleString()}`)
+          )
+        );
+      })()
+    ),
+    // Payment log section for lending
+    isLending&&(form.startDate&&form.maturityDate)&&e('div',{className:'card'},
+      e(SectionHeader,{title:'Payment Log',action:
+        e('button',{
+          className:'btn btn-sm btn-outline',
+          onClick:()=>{
+            const newPay={id:Date.now(),date:'',amount:0,notes:''};
+            ff('payments',[...(form.payments||[]),newPay]);
+          }
+        },'+ Log Payment')
+      }),
+      (form.payments||[]).length===0&&e('div',{style:{fontSize:12,color:'#B0ABA5',textAlign:'center',padding:'12px 0'}},'No payments logged yet. Tap "+ Log Payment" to record a received payment.'),
+      ...(form.payments||[]).map((pay,pi)=>
+        e('div',{key:pay.id,style:{background:'#F9FAF9',borderRadius:12,padding:'12px 14px',marginBottom:8}},
+          e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
+            e('div',{style:{fontSize:12,fontWeight:600,color:'#1C1C1E'}},`Payment #${pi+1}`),
+            e('button',{
+              onClick:()=>ff('payments',(form.payments||[]).filter((_,i)=>i!==pi)),
+              style:{background:'none',border:'none',color:'#B83030',fontSize:11,cursor:'pointer',fontWeight:600}
+            },'Remove')
+          ),
+          e('div',{className:'grid-2'},
+            e('div',{className:'form-group',style:{marginBottom:0}},
+              e('label',{className:'form-label'},'Date Received'),
+              e('input',{className:'form-input',type:'date',value:pay.date||'',
+                onChange:ev=>{const p=[...(form.payments||[])];p[pi]={...p[pi],date:ev.target.value};ff('payments',p);}})
+            ),
+            e('div',{className:'form-group',style:{marginBottom:0}},
+              e('label',{className:'form-label'},'Amount Received'),
+              e('input',{className:'form-input',type:'number',value:pay.amount||'',placeholder:'0',
+                onChange:ev=>{const p=[...(form.payments||[])];p[pi]={...p[pi],amount:+ev.target.value||0};ff('payments',p);}})
+            )
+          ),
+          e('div',{className:'form-group',style:{marginTop:8,marginBottom:0}},
+            e('label',{className:'form-label'},'Notes (optional)'),
+            e('input',{className:'form-input',type:'text',value:pay.notes||'',placeholder:'e.g. partial, delayed...',
+              onChange:ev=>{const p=[...(form.payments||[])];p[pi]={...p[pi],notes:ev.target.value};ff('payments',p);}})
+          )
+        )
       )
     ),
 
@@ -2104,9 +2330,9 @@ function InsightsTab({data,setData}){
         desc:'Monthly cash in pocket after all property costs including mortgage payments.'
       },
       {
-        title:'Private Lending Accrued Interest',
-        formula:'Accrued = Principal × (Interest Rate% ÷ 100) × Years Elapsed',
-        desc:'Simple interest calculated from start date to today. Does not compound.'
+        title:'Private Lending Interest (Date-Accurate)',
+        formula:'Total Interest = Principal × (Rate% ÷ 100) × (Actual Days ÷ 365)',
+        desc:'Interest is calculated using the exact number of calendar days between start and maturity dates divided by 365, not by a rounded term. E.g. Jan 1 to Aug 1 = 212 days = 0.581 years at 10%/yr.'
       },
       {
         title:'FIRE Number',
