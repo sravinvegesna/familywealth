@@ -544,7 +544,38 @@ function HomeTab({data}){
   // Live investment totals (always up to date from investments array)
   const liveInvRE = investments.filter(i=>i.type==='Real Estate'||i.type==='Plot / Land').reduce((s,i)=>s+(+i.propertyValue||+i.amountUSD||0),0);
   const liveInvGold = investments.filter(i=>i.type==='Gold / Silver').reduce((s,i)=>s+(+i.amountUSD||0),0);
-  const liveInvLending = investments.filter(i=>i.type==='Private Lending').reduce((s,i)=>s+(+i.principalUSD||+i.amountUSD||0),0);
+  // Private lending NW value — avoid double-counting sequential loans.
+  // Overlapping date windows = separate capital (additive).
+  // Non-overlapping (sequential) = same capital recycled (take max at any point).
+  // Algorithm: sweep a timeline of all loans, find the max total capital deployed
+  // simultaneously. Loans without dates are assumed concurrent with everything.
+  const liveInvLending = (()=>{
+    const loans = investments.filter(i=>i.type==='Private Lending').map(i=>({
+      principal: +i.principalUSD||+i.amountUSD||0,
+      start: i.startDate ? new Date(i.startDate).getTime() : null,
+      end:   i.maturityDate ? new Date(i.maturityDate).getTime() : null
+    }));
+    if(loans.length===0) return 0;
+    // Separate dated vs undated loans
+    const dated   = loans.filter(l=>l.start!==null&&l.end!==null);
+    const undated = loans.filter(l=>l.start===null||l.end===null);
+    // For dated loans: collect all unique time boundaries and evaluate total
+    // capital deployed in each interval, take the maximum
+    if(dated.length===0) return loans.reduce((s,l)=>s+l.principal,0);
+    const points = [...new Set(dated.flatMap(l=>[l.start,l.end]))].sort((a,b)=>a-b);
+    let maxConcurrent = 0;
+    for(let pi=0;pi<points.length-1;pi++){
+      const mid = (points[pi]+points[pi+1])/2;
+      const concurrent = dated.filter(l=>l.start<=mid&&l.end>mid).reduce((s,l)=>s+l.principal,0);
+      if(concurrent>maxConcurrent) maxConcurrent=concurrent;
+    }
+    // Also check single-point loans (start==end) or last point
+    const atLast = dated.filter(l=>l.start<=points[points.length-1]&&l.end>=points[points.length-1]).reduce((s,l)=>s+l.principal,0);
+    if(atLast>maxConcurrent) maxConcurrent=atLast;
+    // Undated loans are always "active" — add their principal on top
+    const undatedTotal = undated.reduce((s,l)=>s+l.principal,0);
+    return maxConcurrent + undatedTotal;
+  })();
   const liveInvStocks = investments.filter(i=>!['Real Estate','Plot / Land','Gold / Silver','Private Lending'].includes(i.type)).reduce((s,i)=>s+(+i.currentMarketValue||+i.amountUSD||0),0);
   const liveInvMortgages = investments.filter(i=>i.type==='Real Estate').reduce((s,i)=>s+(+i.mortgageBalance||0),0);
   const liveTotalInv = liveInvRE+liveInvGold+liveInvLending+liveInvStocks;
@@ -712,77 +743,61 @@ function HomeTab({data}){
           e('div',{className:'hero-stat-sub'},`${latestM?'Salary+':''}RE+Lending`)
         )
       ),
-      // ── Income breakdown strip (embedded in hero) ─────────────────────────
+      // ── Income breakdown strip (top 3 + others) ────────────────────────────
       (hasInvIncome||latestM)&&e('div',{style:{
         marginTop:12,paddingTop:12,borderTop:'1px solid rgba(255,255,255,0.08)'
       }},
         e('div',{style:{fontSize:9,fontWeight:700,color:'rgba(168,197,172,0.5)',textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Income Breakdown'),
         e('div',{style:{display:'flex',flexDirection:'column',gap:5}},
-          latestM&&(latestM.totalIncome||0)>0&&e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-            e('div',{style:{display:'flex',alignItems:'center',gap:6}},
-              e('div',{style:{width:6,height:6,borderRadius:1,background:'#7ECB8F'}}),
-              e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},'Salary / W2')
-            ),
-            e('div',{style:{fontSize:12,fontWeight:700,color:'#FFFFFF'}},fmt(latestM.totalIncome))
-          ),
-          ...reBreakdown.filter(r=>r.rent>0).map((r,i)=>
-            e('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+          ...(()=>{
+            const incomeItems=[];
+            if(latestM&&(latestM.totalIncome||0)>0) incomeItems.push({dot:'#7ECB8F',label:'Salary / W2',val:latestM.totalIncome,color:'#FFFFFF'});
+            reBreakdown.filter(r=>r.rent>0).forEach(r=>incomeItems.push({dot:'#3D7EAA',label:r.name+' (rent)',val:r.rent,color:'#FFFFFF'}));
+            lendingBreakdown.forEach(l=>incomeItems.push({dot:'#C8A96E',label:l.name+' (interest)',val:l.monthly,color:'#FFFFFF'}));
+            const top=incomeItems.slice(0,3);
+            const rest=incomeItems.slice(3);
+            const othersVal=rest.reduce((s,x)=>s+x.val,0);
+            const rows=[...top];
+            if(rest.length>0) rows.push({dot:'#9E9A94',label:`${rest.length} other source${rest.length>1?'s':''}`,val:othersVal,color:'rgba(255,255,255,0.7)'});
+            return rows.map((item,i)=>e('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
               e('div',{style:{display:'flex',alignItems:'center',gap:6}},
-                e('div',{style:{width:6,height:6,borderRadius:1,background:'#3D7EAA'}}),
-                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},r.name+' (rent)')
+                e('div',{style:{width:6,height:6,borderRadius:1,background:item.dot}}),
+                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},item.label)
               ),
-              e('div',{style:{fontSize:12,fontWeight:700,color:'#FFFFFF'}},fmt(r.rent))
-            )
-          ),
-          ...lendingBreakdown.map((l,i)=>
-            e('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-              e('div',{style:{display:'flex',alignItems:'center',gap:6}},
-                e('div',{style:{width:6,height:6,borderRadius:1,background:'#C8A96E'}}),
-                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},l.name+' (interest)')
-              ),
-              e('div',{style:{fontSize:12,fontWeight:700,color:'#FFFFFF'}},fmt(l.monthly))
-            )
-          )
+              e('div',{style:{fontSize:12,fontWeight:700,color:item.color}},fmt(item.val))
+            ));
+          })()
         )
       ),
-      // ── Cash flow breakdown strip ─────────────────────────────────────────
+      // ── Cash flow breakdown strip (top 3 + others) ───────────────────────
       (hasInvExpenses||latestM)&&e('div',{style:{
         marginTop:10,paddingTop:10,borderTop:'1px solid rgba(255,255,255,0.08)'
       }},
         e('div',{style:{fontSize:9,fontWeight:700,color:'rgba(168,197,172,0.5)',textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Cash Flow Breakdown'),
         e('div',{style:{display:'flex',flexDirection:'column',gap:5}},
-          latestM&&e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-            e('div',{style:{display:'flex',alignItems:'center',gap:6}},
-              e('div',{style:{width:6,height:6,borderRadius:1,background:'#7ECB8F'}}),
-              e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},'Salary cashflow')
-            ),
-            e('div',{style:{fontSize:12,fontWeight:700,color:latestM.cashflow>=0?'#7ECB8F':'#E07070'}},fmt(latestM.cashflow||0))
-          ),
-          ...reBreakdown.filter(r=>r.rent>0).map((r,i)=>
-            e('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+          ...(()=>{
+            const cfItems=[];
+            if(latestM) cfItems.push({dot:'#7ECB8F',label:'Salary',val:latestM.cashflow||0,signed:true});
+            reBreakdown.filter(r=>r.rent>0).forEach(r=>cfItems.push({dot:'#3D7EAA',label:r.name,val:r.cf,signed:true,sub:'NOI'}));
+            lendingBreakdown.forEach(l=>cfItems.push({dot:'#C8A96E',label:l.name,val:l.monthly,signed:false}));
+            const top=cfItems.slice(0,3);
+            const rest=cfItems.slice(3);
+            const othersVal=rest.reduce((s,x)=>s+x.val,0);
+            const rows=[...top];
+            if(rest.length>0) rows.push({dot:'#9E9A94',label:`${rest.length} other`,val:othersVal,signed:true});
+            const rendered=rows.map((item,i)=>e('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
               e('div',{style:{display:'flex',alignItems:'center',gap:6}},
-                e('div',{style:{width:6,height:6,borderRadius:1,background:'#3D7EAA'}}),
-                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},r.name+' (NOI)')
+                e('div',{style:{width:6,height:6,borderRadius:1,background:item.dot}}),
+                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},item.label+(item.sub?' ('+item.sub+')':''))
               ),
-              e('div',{style:{display:'flex',alignItems:'center',gap:6}},
-                e('div',{style:{fontSize:10,color:'rgba(255,255,255,0.35)'}},'rent-mort-tax-maint'),
-                e('div',{style:{fontSize:12,fontWeight:700,color:r.cf>=0?'#7ECB8F':'#E07070'}},fmt(r.cf))
-              )
-            )
-          ),
-          ...lendingBreakdown.map((l,i)=>
-            e('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-              e('div',{style:{display:'flex',alignItems:'center',gap:6}},
-                e('div',{style:{width:6,height:6,borderRadius:1,background:'#C8A96E'}}),
-                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},l.name)
-              ),
-              e('div',{style:{fontSize:12,fontWeight:700,color:'#C8A96E'}},fmt(l.monthly))
-            )
-          ),
-          e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:4,paddingTop:6,borderTop:'1px solid rgba(255,255,255,0.08)'}},
-            e('div',{style:{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.8)'}},'Net Cash Flow'),
-            e('div',{style:{fontSize:14,fontWeight:700,color:augCashflow>=0?'#7ECB8F':'#E07070'}},fmt(augCashflow))
-          )
+              e('div',{style:{fontSize:12,fontWeight:700,color:item.val>=0?'#7ECB8F':'#E07070'}},fmt(item.val))
+            ));
+            rendered.push(e('div',{key:'total',style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:4,paddingTop:6,borderTop:'1px solid rgba(255,255,255,0.08)'}},
+              e('div',{style:{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.8)'}},'Net Cash Flow'),
+              e('div',{style:{fontSize:14,fontWeight:700,color:augCashflow>=0?'#7ECB8F':'#E07070'}},fmt(augCashflow))
+            ));
+            return rendered;
+          })()
         )
       )
     ),
@@ -961,7 +976,7 @@ function HomeTab({data}){
     privateLoans.length>0&&e(CollapsibleSection,{
       title:'Private Lending',
       count:privateLoans.length,
-      total:fmtFull(privateLoans.reduce((s,i)=>s+(+i.principalUSD||+i.amountUSD||0),0)),
+      total:fmtFull(liveInvLending),
       accentColor:'#C8A96E',
       key:'loans'
     },
