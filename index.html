@@ -224,6 +224,45 @@ body{font-family:'DM Sans',sans-serif;color:#1C1C1E;-webkit-overflow-scrolling:t
 .picker-row{display:flex;gap:10px;margin-bottom:16px;}
 .picker-row .form-group{flex:1;margin-bottom:0;}
 
+/* ── Placeholder lighter ── */
+.form-input::placeholder,.form-textarea::placeholder{color:#C8C4BC;font-weight:400;}
+
+/* ── Interest payment table ── */
+.pay-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;}
+.pay-table th{text-align:left;color:#B0ABA5;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.8px;padding:0 6px 8px 0;border-bottom:1px solid #EEEBE5;}
+.pay-table th:last-child{text-align:right;}
+.pay-table td{padding:8px 6px 8px 0;border-bottom:1px solid #F4F2EE;color:#1C1C1E;vertical-align:middle;}
+.pay-table td:last-child{text-align:right;}
+.pay-table tr:last-child td{border-bottom:none;}
+.pay-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.pay-done{background:#EFF5EF;color:#3D6E42;}
+.pay-exp{background:#FBF4E8;color:#8A6030;}
+.pay-miss{background:#FFF0EF;color:#B83030;}
+.pay-fut{background:#F4F2EE;color:#9E9A94;}
+
+/* ── Inv card redesign ── */
+.inv-card-v2{background:#FFFFFF;border-radius:16px;border:1px solid #EDEBE6;margin-bottom:10px;overflow:hidden;}
+.inv-card-v2-header{padding:14px 16px 12px;border-bottom:1px solid #F4F2EE;}
+.inv-card-v2-type-bar{height:3px;width:100%;}
+.inv-card-v2-body{padding:14px 16px;}
+.inv-card-v2-actions{padding:10px 16px 14px;display:flex;gap:8px;}
+
+/* ── NW snapshot rows ── */
+.nw-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #F4F2EE;}
+.nw-row:last-child{border-bottom:none;}
+.nw-row-label{font-size:12px;color:#6B6663;display:flex;align-items:center;gap:6px;}
+.nw-row-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.nw-row-value{font-size:13px;font-weight:600;color:#1C1C1E;}
+.nw-row-value.green{color:#3D6E42;}
+.nw-row-value.red{color:#B83030;}
+
+/* ── RE snapshot ── */
+.re-snap{background:#F9FAF9;border-radius:12px;padding:12px 14px;margin-top:8px;}
+.re-snap-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.re-snap-row:last-child{margin-bottom:0;}
+.re-snap-label{font-size:11px;color:#9E9A94;}
+.re-snap-value{font-size:12px;font-weight:600;color:#1C1C1E;}
+
 /* ── Force light on iOS dark mode ── */
 @media(prefers-color-scheme:dark){
 html,body,#root,.app,.content{background:#FAFAF8 !important;color:#1C1C1E !important;}
@@ -450,14 +489,43 @@ function SectionHeader({title,action}){
 function HomeTab({data}){
   const {monthly={},networth={},investments=[],tax={}} = data;
   
-  // Latest NW snapshot
+  // Latest NW snapshot — augmented with live investment values
   const nwKeys = Object.keys(networth).sort();
   const latestNWKey = nwKeys[nwKeys.length-1];
   const prevNWKey = nwKeys[nwKeys.length-2];
   const latestNW = latestNWKey ? networth[latestNWKey] : null;
   const prevNW = prevNWKey ? networth[prevNWKey] : null;
-  const nwValue = latestNW ? latestNW.netWorth||0 : 0;
-  const nwDelta = latestNW && prevNW ? nwValue - (prevNW.netWorth||0) : 0;
+  // Live investment totals (always up to date from investments array)
+  const liveInvRE = investments.filter(i=>i.type==='Real Estate'||i.type==='Plot / Land').reduce((s,i)=>s+(+i.propertyValue||+i.amountUSD||0),0);
+  const liveInvGold = investments.filter(i=>i.type==='Gold / Silver').reduce((s,i)=>s+(+i.amountUSD||0),0);
+  const liveInvLending = investments.filter(i=>i.type==='Private Lending').reduce((s,i)=>s+(+i.principalUSD||+i.amountUSD||0),0);
+  const liveInvStocks = investments.filter(i=>!['Real Estate','Plot / Land','Gold / Silver','Private Lending'].includes(i.type)).reduce((s,i)=>s+(+i.currentMarketValue||+i.amountUSD||0),0);
+  const liveInvMortgages = investments.filter(i=>i.type==='Real Estate').reduce((s,i)=>s+(+i.mortgageBalance||0),0);
+  const liveTotalInv = liveInvRE+liveInvGold+liveInvLending+liveInvStocks;
+  // Merge: use saved manual assets + live investment values
+  const savedAssets = latestNW ? (Object.values(latestNW.assets||{}).reduce((s,v)=>s+(+v||0),0)) : 0;
+  const savedLiabs = latestNW ? (Object.values(latestNW.liabilities||{}).reduce((s,v)=>s+(+v||0),0)) : 0;
+  const liveTotal = savedAssets + liveTotalInv;
+  const liveLiabs = savedLiabs + liveInvMortgages;
+  const nwValue = investments.length>0 ? (liveTotal - liveLiabs) : (latestNW ? latestNW.netWorth||0 : 0);
+  const prevNWVal = prevNW ? prevNW.netWorth||0 : 0;
+  const nwDelta = latestNW ? nwValue - prevNWVal : 0;
+  // Asset breakdown for home page
+  const homeAssets = latestNW ? [
+    {label:'Checking & Emergency',value:(+latestNW.assets?.ck||0)+(+latestNW.assets?.em||0),color:'#7A9E7E'},
+    {label:'Retirement (401k/IRA)',value:(+latestNW.assets?.k4||0)+(+latestNW.assets?.ro||0),color:'#7B5EA7'},
+    {label:'Real Estate',value:liveInvRE+(+latestNW.assets?.hm||0)+(+latestNW.assets?.rp||0),color:'#3D7EAA'},
+    {label:'Private Lending',value:liveInvLending,color:'#C8A96E'},
+    {label:'Stocks & Funds',value:liveInvStocks+(+latestNW.assets?.br||0),color:'#4E7A52'},
+    {label:'Gold & Metals',value:liveInvGold,color:'#B8926A'},
+    {label:'Other Assets',value:(+latestNW.assets?.ti||0)+(+latestNW.assets?.s5||0)+(+latestNW.assets?.oa||0)+(+latestNW.assets?.bz||0)+(+latestNW.assets?.cr||0)+(+latestNW.assets?.vc||0),color:'#B0ABA5'},
+  ].filter(a=>a.value>0) : [];
+  const homeLiabs = latestNW ? [
+    {label:'Primary Mortgage',value:+latestNW.liabilities?.mg||0,color:'#B83030'},
+    {label:'Inv. Mortgages',value:liveInvMortgages,color:'#C0392B'},
+    {label:'Auto / Student Loans',value:(+latestNW.liabilities?.au||0)+(+latestNW.liabilities?.st||0),color:'#D47C0F'},
+    {label:'Credit Cards & Other',value:(+latestNW.liabilities?.cc||0)+(+latestNW.liabilities?.ot||0)+(+latestNW.liabilities?.rm||0),color:'#E07070'},
+  ].filter(a=>a.value>0) : [];
 
   // Latest monthly
   const mKeys = Object.keys(monthly).sort();
@@ -474,13 +542,9 @@ function HomeTab({data}){
     v: (networth[k].netWorth||0)/1000
   }));
 
-  // Asset allocation from latest NW
-  const allocData = latestNW ? ALLOC_COLORS.map(a=>({
-    value: Math.max(0, latestNW[a.key]||0),
-    color: a.color,
-    label: a.label
-  })) : [];
-  const totalAssets = latestNW ? latestNW.totalAssets||0 : 0;
+  // totalAssets for legacy compat
+  const totalAssets = liveTotal;
+  const allocData = homeAssets;
 
   // Income & tax history (last 5 years)
   const taxHistory = taxYears.slice(0,5).reverse().map(y=>({
@@ -539,25 +603,51 @@ function HomeTab({data}){
       e('div',{style:{fontSize:10,color:'#9E9A94',textAlign:'center',marginTop:4}},'Values in $K')
     ),
 
-    // Asset Allocation
-    totalAssets>0&&e('div',{className:'card'},
-      e('div',{className:'card-title'},'Asset Allocation'),
-      e('div',{style:{display:'flex',gap:16,alignItems:'center'}},
-        e(DonutChart,{data:allocData}),
+    // Assets Breakdown
+    homeAssets.length>0&&e('div',{className:'card'},
+      e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}},
+        e('div',{className:'card-title',style:{marginBottom:0}},'Assets Breakdown'),
+        e('div',{style:{fontSize:14,fontWeight:700,color:'#3D6E42'}},fmtFull(Math.round(liveTotal)))
+      ),
+      e('div',{style:{display:'flex',gap:12,alignItems:'flex-start'}},
+        e(DonutChart,{data:homeAssets.map(a=>({value:a.value,color:a.color})),size:100}),
         e('div',{style:{flex:1}},
-          ...ALLOC_COLORS.map(a=>{
-            const val = latestNW?latestNW[a.key]||0:0;
-            const p = totalAssets>0?(val/totalAssets*100):0;
-            if(val<=0) return null;
-            return e('div',{key:a.key,className:'allocation-row'},
-              e('div',{style:{display:'flex',alignItems:'center',flex:1}},
-                e('div',{className:'allocation-dot',style:{background:a.color}}),
-                e('div',{className:'allocation-label'},a.label)
+          ...homeAssets.map((a,i)=>{
+            const p=liveTotal>0?(a.value/liveTotal*100):0;
+            return e('div',{key:i,className:'nw-row',style:{padding:'6px 0'}},
+              e('div',{className:'nw-row-label'},
+                e('div',{className:'nw-row-dot',style:{background:a.color}}),
+                a.label
               ),
-              e('div',{className:'allocation-pct'},`${p.toFixed(0)}%`)
+              e('div',{style:{textAlign:'right'}},
+                e('div',{className:'nw-row-value'},fmtFull(Math.round(a.value))),
+                e('div',{style:{fontSize:10,color:'#B0ABA5'}},`${p.toFixed(0)}%`)
+              )
             );
-          }).filter(Boolean)
+          })
         )
+      )
+    ),
+
+    // Liabilities Breakdown
+    homeLiabs.length>0&&e('div',{className:'card'},
+      e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}},
+        e('div',{className:'card-title',style:{marginBottom:0}},'Liabilities Breakdown'),
+        e('div',{style:{fontSize:14,fontWeight:700,color:'#B83030'}},fmtFull(Math.round(liveLiabs)))
+      ),
+      ...homeLiabs.map((a,i)=>
+        e('div',{key:i,className:'nw-row'},
+          e('div',{className:'nw-row-label'},
+            e('div',{className:'nw-row-dot',style:{background:a.color}}),
+            a.label
+          ),
+          e('div',{className:'nw-row-value red'},fmtFull(Math.round(a.value)))
+        )
+      ),
+      e('div',{style:{marginTop:10,paddingTop:10,borderTop:'1px solid #F4F2EE',
+        display:'flex',justifyContent:'space-between',alignItems:'center'}},
+        e('div',{style:{fontSize:12,fontWeight:600,color:'#1C1C1E'}},'Net Worth'),
+        e('div',{style:{fontSize:16,fontWeight:700,color:nwValue>=0?'#3D6E42':'#B83030'}},fmtFull(Math.round(nwValue)))
       )
     ),
 
@@ -672,88 +762,215 @@ function LoanCard({inv}){
   const start = inv.startDate ? new Date(inv.startDate) : null;
   const mat = inv.maturityDate ? new Date(inv.maturityDate) : null;
   const now = new Date();
-  let elapsed=0, daysLeft=0, pctElapsed=0, accrued=0;
+  const principal = +inv.principalUSD||+inv.amountUSD||0;
+  const rate = +inv.interestRate||0;
+  const term = +inv.termYears||0;
+  let daysLeft=0, pctElapsed=0, accrued=0;
   if(start&&mat){
     const total = mat-start;
     const done = now-start;
     pctElapsed = Math.min(100,Math.max(0,(done/total)*100));
     daysLeft = Math.max(0,Math.ceil((mat-now)/(1000*60*60*24)));
     const yearsElapsed = done/(1000*60*60*24*365);
-    accrued = (+inv.principalUSD||+inv.amountUSD||0) * (+inv.interestRate||0)/100 * yearsElapsed;
+    accrued = principal * rate/100 * yearsElapsed;
   }
-  const realRet = calcRealReturn(+inv.interestRate||0, inv.currency||'USD');
+  const realRet = calcRealReturn(rate, inv.currency||'USD');
   const drag = CURRENCY_RISK[inv.currency||'USD']||0;
+  const annualInterest = principal * rate/100;
+  const totalInterest = principal * rate/100 * (term||1);
+  // Build payment schedule rows (annual payments)
+  const payRows = [];
+  if(start && term>0){
+    for(let y=1;y<=Math.ceil(term);y++){
+      const payDate = new Date(start);
+      payDate.setFullYear(payDate.getFullYear()+y);
+      const isFinal = y>=term;
+      const isLast = y===Math.ceil(term);
+      const partialFactor = (isLast&&term!==Math.floor(term))?(term-Math.floor(term)):1;
+      const interest = annualInterest * partialFactor;
+      const principal_repay = isFinal ? principal : 0;
+      const isPast = payDate < now;
+      const isCurrent = !isPast && (y===1||(y===Math.ceil(term)));
+      const statusKey = inv[`pay_status_y${y}`]||'';
+      const status = isPast ? (statusKey==='missed'?'miss':(statusKey==='partial'?'exp':'done')) : 'fut';
+      payRows.push({y, payDate, interest, principal_repay, isFinal, status, isPast});
+    }
+  }
+  const [showTable, setShowTable] = useState(false);
   return e('div',{style:{marginBottom:12,paddingBottom:12,borderBottom:'1px solid #F4F2EE'}},
-    e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}},
+    e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}},
       e('div',null,
         e('div',{style:{fontSize:14,fontWeight:600,color:'#1C1C1E'}},inv.name||'Loan'),
-        e('div',{style:{fontSize:11,color:'#9E9A94'}},`${inv.currency||'USD'} · ${inv.interestRate||0}% interest`)
+        e('div',{style:{fontSize:11,color:'#9E9A94',marginTop:2}},`${inv.currency||'USD'} · ${rate}% p.a. · ${term}yr term`)
       ),
       e('div',{style:{textAlign:'right'}},
-        e('div',{style:{fontSize:16,fontFamily:"'DM Sans',sans-serif"}},fmtFull(+inv.principalUSD||+inv.amountUSD||0)),
-        e('div',{style:{fontSize:11,color:realRet>=0?'#3D6E42':'#B83030'}},`Real: ${pct(realRet)}`)
+        e('div',{style:{fontSize:16,fontWeight:700,color:'#1C1C1E',fontFamily:"'DM Sans',sans-serif"}},fmtFull(principal)),
+        e('div',{style:{fontSize:11,color:realRet>=0?'#3D6E42':'#B83030',marginTop:2}},`Real: ${pct(realRet)}/yr`)
       )
     ),
+    // Stats row
+    e('div',{style:{display:'flex',gap:8,marginBottom:10}},
+      e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 10px'}},
+        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Annual Interest'),
+        e('div',{style:{fontSize:13,fontWeight:700,color:'#3D6E42',marginTop:3}},fmtFull(Math.round(annualInterest)))
+      ),
+      e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 10px'}},
+        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Total Interest'),
+        e('div',{style:{fontSize:13,fontWeight:700,color:'#1C1C1E',marginTop:3}},fmtFull(Math.round(totalInterest)))
+      ),
+      e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 10px'}},
+        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Accrued'),
+        e('div',{style:{fontSize:13,fontWeight:700,color:'#B8926A',marginTop:3}},fmtFull(Math.round(accrued)))
+      )
+    ),
+    // Timeline
     start&&mat&&e('div',null,
       e('div',{className:'timeline-bg'},e('div',{className:'timeline-fill',style:{width:`${pctElapsed}%`}})),
-      e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:10,color:'#9E9A94'}},
+      e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:10,color:'#B0ABA5',marginTop:3}},
         e('span',null,start.toLocaleDateString('en-US',{month:'short',year:'numeric'})),
-        e('span',null,`${pctElapsed.toFixed(0)}% elapsed · ${daysLeft}d left`),
+        e('span',null,`${pctElapsed.toFixed(0)}% · ${daysLeft}d left`),
         e('span',null,mat.toLocaleDateString('en-US',{month:'short',year:'numeric'}))
-      ),
-      e('div',{style:{marginTop:6,fontSize:12,color:'#3D6E42',fontWeight:600}},
-        `Interest accrued: ${fmtFull(Math.round(accrued))}`
       )
     ),
-    drag>0&&e('div',{className:'badge badge-gold',style:{marginTop:6,fontSize:10}},`⚠ ${inv.currency} risk: ${drag}% annual drag`)
+    // Payment schedule toggle
+    payRows.length>0&&e('div',{style:{marginTop:10}},
+      e('button',{
+        onClick:()=>setShowTable(p=>!p),
+        style:{background:'none',border:'none',fontSize:11,color:'#6E9E72',fontWeight:600,
+          cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:4}
+      }, showTable?'▲ Hide Schedule':'▼ Payment Schedule'),
+      showTable&&e('div',{style:{marginTop:8,overflowX:'auto'}},
+        e('table',{className:'pay-table'},
+          e('thead',null,
+            e('tr',null,
+              e('th',null,'Year'),
+              e('th',null,'Due Date'),
+              e('th',null,'Interest'),
+              e('th',null,'Principal'),
+              e('th',null,'Status')
+            )
+          ),
+          e('tbody',null,
+            ...payRows.map(r=>
+              e('tr',{key:r.y},
+                e('td',null,`Y${r.y}`),
+                e('td',null,r.payDate.toLocaleDateString('en-US',{month:'short',year:'numeric'})),
+                e('td',null,fmtFull(Math.round(r.interest))),
+                e('td',null,r.isFinal?fmtFull(Math.round(r.principal_repay)):'—'),
+                e('td',null,
+                  e('span',{className:`pay-badge pay-${r.status}`},
+                    r.status==='done'?'Paid':r.status==='miss'?'Missed':r.status==='exp'?'Expected':'Upcoming'
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    ),
+    drag>0&&e('div',{className:'badge badge-gold',style:{marginTop:8,fontSize:10}},`${inv.currency} currency risk: ${drag}%/yr`)
   );
 }
 
 function RECard({inv}){
   const isPlot = inv.type==='Plot / Land';
+  const start = inv.startDate?new Date(inv.startDate):null;
+  const years = start?(new Date()-start)/(1000*60*60*24*365):0;
+  const currentVal = +inv.propertyValue||+inv.amountUSD||0;
+  const purchasePrice = +inv.purchasePrice||0;
+  const appreciation = purchasePrice>0 ? currentVal - purchasePrice : 0;
+  const appreciationPct = purchasePrice>0 ? (appreciation/purchasePrice*100) : 0;
+  const annualAppreciationPct = years>0&&purchasePrice>0 ? (appreciationPct/years) : 0;
+
   if(isPlot){
-    const start = inv.startDate?new Date(inv.startDate):null;
-    const years = start?(new Date()-start)/(1000*60*60*24*365):0;
-    const totalRet = (+inv.nominalReturnPct||0)*years;
     return e('div',{style:{marginBottom:10,paddingBottom:10,borderBottom:'1px solid #F4F2EE'}},
-      e('div',{style:{display:'flex',justifyContent:'space-between'}},
+      e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
         e('div',null,
-          e('div',{style:{fontSize:14,fontWeight:600}},inv.name||'Plot'),
-          e('div',{style:{fontSize:11,color:'#9E9A94'}},`${years.toFixed(1)} yrs held · ${pct(+inv.nominalReturnPct||0)}/yr`)
+          e('div',{style:{fontSize:14,fontWeight:600,color:'#1C1C1E'}},inv.name||'Plot'),
+          e('div',{style:{fontSize:11,color:'#9E9A94',marginTop:2}},`${years.toFixed(1)} yrs held · ${inv.currency||'USD'}`)
         ),
         e('div',{style:{textAlign:'right'}},
-          e('div',{style:{fontSize:16,fontFamily:"'DM Sans',sans-serif"}},fmtFull(+inv.amountUSD||0)),
-          e('div',{style:{fontSize:11,color:'#3D6E42'}},`Total: +${pct(totalRet)}`)
+          e('div',{style:{fontSize:16,fontWeight:700,color:'#1C1C1E',fontFamily:"'DM Sans',sans-serif"}},fmtFull(currentVal)),
+          purchasePrice>0&&e('div',{style:{fontSize:11,color:appreciation>=0?'#3D6E42':'#B83030',marginTop:2}},
+            `${appreciation>=0?'+':''}${fmtFull(Math.round(appreciation))} (${annualAppreciationPct.toFixed(1)}%/yr)`)
+        )
+      ),
+      purchasePrice>0&&e('div',{style:{display:'flex',gap:8}},
+        e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 10px'}},
+          e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Purchase Price'),
+          e('div',{style:{fontSize:13,fontWeight:700,color:'#1C1C1E',marginTop:3}},fmtFull(purchasePrice))
+        ),
+        e('div',{style:{flex:1,background:'#EFF5EF',borderRadius:10,padding:'8px 10px'}},
+          e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Total Gain'),
+          e('div',{style:{fontSize:13,fontWeight:700,color:'#3D6E42',marginTop:3}},
+            `${appreciation>=0?'+':''}${fmtFull(Math.round(appreciation))}`)
         )
       )
     );
   }
+
+  // Rental property
   const rent=+inv.monthlyRent||0, mort=+inv.monthlyMortgage||0;
   const propTax=(+inv.propertyTax||0)/12;
-  const maint=(+inv.propertyValue||0)*(+inv.maintenancePct||0)/100/12;
+  const maint=currentVal*(+inv.maintenancePct||1)/100/12;
   const noi=rent-propTax-maint;
   const cf=rent-mort-propTax-maint;
-  const equity=(+inv.propertyValue||0)-(+inv.mortgageBalance||0);
-  const capRate=inv.propertyValue?(noi*12/(+inv.propertyValue)*100):0;
+  const equity=currentVal-(+inv.mortgageBalance||0);
+  const capRate=currentVal>0?(noi*12/currentVal*100):0;
+  const annualRent=rent*12;
+  const annualNOI=noi*12;
+  const grossYield=currentVal>0?(annualRent/currentVal*100):0;
+  const totalReturn=appreciation+(annualNOI*(years||1));
+
   return e('div',{style:{marginBottom:10,paddingBottom:10,borderBottom:'1px solid #F4F2EE'}},
-    e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
+    e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}},
       e('div',null,
-        e('div',{style:{fontSize:14,fontWeight:600}},inv.name||'Property'),
-        e('div',{style:{fontSize:11,color:'#9E9A94'}},`${inv.currency||'USD'} · ${inv.startDate?'Purchased '+inv.startDate:''}`)
+        e('div',{style:{fontSize:14,fontWeight:600,color:'#1C1C1E'}},inv.name||'Property'),
+        e('div',{style:{fontSize:11,color:'#9E9A94',marginTop:2}},
+          `${inv.currency||'USD'} · ${start?years.toFixed(1)+' yrs held':''}${rent>0?' · Rental':' · No rent data'}`)
       ),
       e('div',{style:{textAlign:'right'}},
-        e('div',{style:{fontSize:16,fontFamily:"'DM Sans',sans-serif"}},fmtFull(+inv.propertyValue||+inv.amountUSD||0)),
-        e('div',{style:{fontSize:11,color:'#3D6E42'}},`Equity: ${fmtFull(equity)}`)
+        e('div',{style:{fontSize:16,fontWeight:700,color:'#1C1C1E',fontFamily:"'DM Sans',sans-serif"}},fmtFull(currentVal)),
+        e('div',{style:{fontSize:11,color:'#3D6E42',marginTop:2}},`Equity: ${fmtFull(equity)}`)
       )
     ),
-    e('div',{className:'grid-2'},
-      e('div',{className:'stat-tile'},
-        e('div',{className:'stat-tile-label'},'Monthly CF'),
-        e('div',{className:'stat-tile-value',style:{color:cf>=0?'#3D6E42':'#B83030',fontSize:16}},fmt(cf))
+    // 3-metric row
+    e('div',{style:{display:'flex',gap:6,marginBottom:10}},
+      e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 8px'}},
+        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Mo. CF'),
+        e('div',{style:{fontSize:14,fontWeight:700,color:cf>=0?'#3D6E42':'#B83030',marginTop:3}},fmt(cf))
       ),
-      e('div',{className:'stat-tile'},
-        e('div',{className:'stat-tile-label'},'Cap Rate'),
-        e('div',{className:'stat-tile-value',style:{fontSize:16}},pct(capRate))
+      e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 8px'}},
+        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Cap Rate'),
+        e('div',{style:{fontSize:14,fontWeight:700,color:'#1C1C1E',marginTop:3}},pct(capRate))
+      ),
+      e('div',{style:{flex:1,background:'#F4F2EE',borderRadius:10,padding:'8px 8px'}},
+        e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Gross Yield'),
+        e('div',{style:{fontSize:14,fontWeight:700,color:'#1C1C1E',marginTop:3}},pct(grossYield))
+      )
+    ),
+    // Rental income snapshot
+    rent>0&&e('div',{className:'re-snap'},
+      e('div',{className:'re-snap-row'},
+        e('div',{className:'re-snap-label'},'Monthly Rent'),
+        e('div',{className:'re-snap-value'},fmtFull(rent))
+      ),
+      e('div',{className:'re-snap-row'},
+        e('div',{className:'re-snap-label'},'Mortgage + Tax + Maint.'),
+        e('div',{className:'re-snap-value'},fmtFull(Math.round(mort+propTax+maint)))
+      ),
+      e('div',{className:'re-snap-row'},
+        e('div',{className:'re-snap-label'},'Net NOI/mo'),
+        e('div',{className:`re-snap-value`,style:{color:noi>=0?'#3D6E42':'#B83030'}},fmtFull(Math.round(noi)))
+      ),
+      e('div',{className:'re-snap-row'},
+        e('div',{className:'re-snap-label'},'Annual Rental Income'),
+        e('div',{className:'re-snap-value'},fmtFull(Math.round(annualRent)))
+      ),
+      purchasePrice>0&&e('div',{className:'re-snap-row'},
+        e('div',{className:'re-snap-label'},'Appreciation vs Purchase'),
+        e('div',{className:'re-snap-value',style:{color:appreciation>=0?'#3D6E42':'#B83030'}},
+          `${appreciation>=0?'+':''}${fmtFull(Math.round(appreciation))} (${appreciationPct.toFixed(1)}%)`)
       )
     )
   );
@@ -1113,11 +1330,7 @@ function InvestTab({data,setData}){
       )
     ),
 
-    e('div',{style:{display:'flex',gap:10,marginBottom:14}},
-      e('button',{className:'btn btn-primary',style:{flex:2},onClick:()=>setShowForm(true)},'+ Add Investment'),
-      e('button',{className:'btn btn-outline',style:{flex:1},onClick:handleExportInv},'Export'),
-      e('button',{className:'btn btn-outline',style:{flex:1},onClick:handleImportInv},'Import')
-    ),
+    e('button',{className:'btn btn-primary btn-full',style:{marginBottom:14},onClick:()=>setShowForm(true)},'+ Add Investment'),
 
     investments.length===0&&e('div',{className:'empty-state'},
       
@@ -1128,25 +1341,50 @@ function InvestTab({data,setData}){
     ...investments.map(inv=>{
       const realRet=calcRealReturn(+inv.nominalReturnPct||+inv.interestRate||0,inv.currency||'USD');
       const drag=CURRENCY_RISK[inv.currency||'USD']||0;
+      const typeColor=typeColors[inv.type]||'#9E9A94';
+      const value=+inv.amountUSD||0;
+      // secondary metric per type
+      let metricLabel='', metricVal='', metricColor='#9E9A94';
+      if(inv.type==='Private Lending'){
+        metricLabel='Interest Rate'; metricVal=pct(+inv.interestRate||0)+'/yr';
+      } else if(inv.type==='Real Estate'){
+        const pv=+inv.propertyValue||value;
+        const rent=+inv.monthlyRent||0;
+        const yield_=pv>0?(rent*12/pv*100):0;
+        metricLabel='Gross Yield'; metricVal=pct(yield_);
+      } else if(inv.type==='Gold / Silver'){
+        metricLabel='Weight'; metricVal=inv.weightOz?(+inv.weightOz).toFixed(2)+' oz':'—';
+      } else if(['Stocks / ETF','Mutual Fund'].includes(inv.type)){
+        const basis=+inv.costBasis||0;
+        const curr=+inv.currentMarketValue||value;
+        const gain=curr-basis;
+        if(basis>0){metricLabel='Gain/Loss';metricVal=(gain>=0?'+':'')+fmtFull(Math.round(gain));metricColor=gain>=0?'#3D6E42':'#B83030';}
+      }
       return e('div',{key:inv.id,className:'inv-card'},
+        // Color bar top
+        e('div',{style:{height:3,background:typeColor,borderRadius:'16px 16px 0 0',margin:'-16px -16px 14px'}}),
         e('div',{className:'inv-card-header'},
-          e('div',null,
+          e('div',{style:{flex:1,minWidth:0}},
             e('div',{className:'inv-card-name'},inv.name||'Investment'),
-            e('div',{className:'inv-card-type'},
-              e('span',{className:'badge',style:{background:typeColors[inv.type]+'20',color:typeColors[inv.type]}},inv.type),
-              inv.currency&&inv.currency!=='USD'&&e('span',{className:'badge badge-gold',style:{marginLeft:4}},inv.currency)
+            e('div',{style:{marginTop:4,display:'flex',gap:6,flexWrap:'wrap'}},
+              e('span',{className:'badge',style:{background:typeColor+'18',color:typeColor}},inv.type),
+              inv.currency&&inv.currency!=='USD'&&e('span',{className:'badge',style:{background:'#F9F5EE',color:'#8A6030'}},inv.currency)
             )
           ),
-          e('div',null,
-            e('div',{className:'inv-card-value'},fmtFull(+inv.amountUSD||0)),
-            e('div',{className:`inv-card-ret`,style:{color:realRet>=0?'#3D6E42':'#B83030'}},
+          e('div',{style:{textAlign:'right',flexShrink:0,marginLeft:12}},
+            e('div',{className:'inv-card-value'},fmtFull(value)),
+            e('div',{style:{fontSize:11,color:realRet>=0?'#3D6E42':'#B83030',marginTop:2,fontWeight:600}},
               `Real: ${pct(realRet)}/yr`
             )
           )
         ),
-        drag>0&&e('div',{className:'badge badge-gold',style:{fontSize:10,marginBottom:6}},`${inv.currency} drag: ${drag}%/yr`),
+        metricLabel&&e('div',{style:{display:'flex',justifyContent:'space-between',
+          background:'#F9FAF9',borderRadius:8,padding:'7px 10px',marginBottom:10}},
+          e('span',{style:{fontSize:11,color:'#9E9A94'}},metricLabel),
+          e('span',{style:{fontSize:11,fontWeight:700,color:metricColor}},metricVal)
+        ),
         e('div',{style:{display:'flex',gap:8}},
-          e('button',{className:'btn btn-sm btn-outline',onClick:()=>handleEdit(inv)},'Edit'),
+          e('button',{className:'btn btn-sm btn-outline',style:{flex:1},onClick:()=>handleEdit(inv)},'Edit'),
           e('button',{className:'btn btn-sm btn-danger',onClick:()=>handleDelete(inv.id)},'Remove')
         )
       );
@@ -1158,7 +1396,7 @@ function InvestForm({data,setData,existing,onClose}){
   const blank={name:'',type:'Stocks / ETF',currency:'USD',amountUSD:0,amountLocal:0,exchangeRate:1,
     nominalReturnPct:0,realReturnPct:0,interestRate:0,principalUSD:0,termYears:0,
     startDate:'',maturityDate:'',propertyValue:0,monthlyRent:0,monthlyMortgage:0,
-    mortgageBalance:0,propertyTax:0,maintenancePct:1,weightOz:0,pricePerOz:0,
+    purchasePrice:0,mortgageBalance:0,propertyTax:0,maintenancePct:1,weightOz:0,pricePerOz:0,
     costBasis:0,currentMarketValue:0,notes:''};
   const [form,setForm]=useState(existing||blank);
   const ff=(k,v)=>setForm(prev=>({...prev,[k]:v}));
@@ -1277,7 +1515,8 @@ function InvestForm({data,setData,existing,onClose}){
         e(FormInput,{label:`Property Value (${form.currency})`,value:form.amountLocal,onChange:v=>ff('amountLocal',v)}),
         e(FormInput,{label:`Exchange Rate (1 USD = X ${form.currency})`,value:form.exchangeRate,onChange:v=>ff('exchangeRate',v),step:0.01})
       ),
-      !isForeign&&e(FormInput,{label:'Property Value (USD)',value:form.propertyValue||form.amountUSD,onChange:v=>{ff('propertyValue',v);ff('amountUSD',v);}}),
+      !isForeign&&e(FormInput,{label:'Current Property Value (USD)',value:form.propertyValue||form.amountUSD,onChange:v=>{ff('propertyValue',v);ff('amountUSD',v);}}),
+      e(FormInput,{label:'Purchase Price (USD)',value:form.purchasePrice,onChange:v=>ff('purchasePrice',v),placeholder:'Original price paid'}),
       e('div',{className:'grid-2'},
         e(FormInput,{label:'Monthly Rent',value:form.monthlyRent,onChange:v=>ff('monthlyRent',v)}),
         e(FormInput,{label:'Monthly Mortgage',value:form.monthlyMortgage,onChange:v=>ff('monthlyMortgage',v)}),
@@ -1295,6 +1534,7 @@ function InvestForm({data,setData,existing,onClose}){
         e(FormInput,{label:`Exchange Rate (1 USD = X ${form.currency})`,value:form.exchangeRate,onChange:v=>ff('exchangeRate',v),step:0.01})
       ),
       !isForeign&&e(FormInput,{label:'Current Value (USD)',value:form.amountUSD,onChange:v=>ff('amountUSD',v)}),
+      e(FormInput,{label:'Purchase Price (USD)',value:form.purchasePrice,onChange:v=>ff('purchasePrice',v),placeholder:'Original price paid'}),
       e('div',{className:'grid-2'},
         e(FormInput,{label:'Expected Appreciation %',value:form.nominalReturnPct,onChange:v=>ff('nominalReturnPct',v),step:0.1}),
         e(FormInput,{label:'Purchase Date',value:form.startDate,onChange:v=>ff('startDate',v),type:'date'})
