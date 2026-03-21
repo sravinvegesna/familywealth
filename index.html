@@ -534,758 +534,476 @@ function CollapsibleSection({title,count,total,subtitle,accentColor,children}){
 // \u2500\u2500\u2500 TAB: HOME / DASHBOARD \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function HomeTab({data}){
   const {monthly={},networth={},investments=[],tax={}} = data;
-  
-  // Latest NW snapshot \u2014 augmented with live investment values
+  const [detailPanel,setDetailPanel] = useState(null); // 'assets'|'liabilities'|'income'|'expenses'|'savings'|null
+
+  // ── Derived data ──────────────────────────────────────────────────────────
   const nwKeys = Object.keys(networth).sort();
   const latestNWKey = nwKeys[nwKeys.length-1];
-  const prevNWKey = nwKeys[nwKeys.length-2];
-  const latestNW = latestNWKey ? networth[latestNWKey] : null;
-  const prevNW = prevNWKey ? networth[prevNWKey] : null;
-  // Live investment totals (always up to date from investments array)
+  const prevNWKey   = nwKeys[nwKeys.length-2];
+  const latestNW    = latestNWKey ? networth[latestNWKey] : null;
+  const prevNW      = prevNWKey   ? networth[prevNWKey]   : null;
+  const nwA = latestNW?.assets      || {};
+  const nwL = latestNW?.liabilities || {};
+
   const liveInvRE = investments.filter(i=>i.type==='Real Estate'||i.type==='Plot / Land').reduce((s,i)=>s+(+i.propertyValue||+i.amountUSD||0),0);
   const liveInvGold = investments.filter(i=>i.type==='Gold / Silver').reduce((s,i)=>s+(+i.amountUSD||0),0);
-  // Max-concurrent algorithm for portfolio display/allocation — avoids double-counting
-  // sequential non-overlapping loans that rotate the same capital
-  // NW uses liveInvLendingNW (computed below after nowMs/nwA/manualCash are available)
   const liveInvLending = (()=>{
-    const loans = investments.filter(i=>i.type==='Private Lending').map(i=>({
-      principal: +i.principalUSD||+i.amountUSD||0,
-      start: i.startDate ? new Date(i.startDate).getTime() : null,
-      end:   i.maturityDate ? new Date(i.maturityDate).getTime() : null
+    const loans=investments.filter(i=>i.type==='Private Lending').map(i=>({
+      principal:+i.principalUSD||+i.amountUSD||0,
+      start:i.startDate?new Date(i.startDate).getTime():null,
+      end:i.maturityDate?new Date(i.maturityDate).getTime():null
     }));
-    if(loans.length===0) return 0;
-    const dated   = loans.filter(l=>l.start!==null&&l.end!==null);
-    const undated = loans.filter(l=>l.start===null||l.end===null);
-    if(dated.length===0) return loans.reduce((s,l)=>s+l.principal,0);
-    const points = [...new Set(dated.flatMap(l=>[l.start,l.end]))].sort((a,b)=>a-b);
-    let maxC=0;
-    for(let pi=0;pi<points.length-1;pi++){
-      const mid=(points[pi]+points[pi+1])/2;
+    if(!loans.length) return 0;
+    const dated=loans.filter(l=>l.start!==null&&l.end!==null);
+    const undated=loans.filter(l=>l.start===null||l.end===null);
+    if(!dated.length) return loans.reduce((s,l)=>s+l.principal,0);
+    const pts=[...new Set(dated.flatMap(l=>[l.start,l.end]))].sort((a,b)=>a-b);
+    let mx=0;
+    for(let pi=0;pi<pts.length-1;pi++){
+      const mid=(pts[pi]+pts[pi+1])/2;
       const c=dated.filter(l=>l.start<=mid&&l.end>mid).reduce((s,l)=>s+l.principal,0);
-      if(c>maxC) maxC=c;
+      if(c>mx) mx=c;
     }
-    const atLast=dated.filter(l=>l.start<=points[points.length-1]&&l.end>=points[points.length-1]).reduce((s,l)=>s+l.principal,0);
-    if(atLast>maxC) maxC=atLast;
-    return maxC + undated.reduce((s,l)=>s+l.principal,0);
+    const atLast=dated.filter(l=>l.start<=pts[pts.length-1]&&l.end>=pts[pts.length-1]).reduce((s,l)=>s+l.principal,0);
+    if(atLast>mx) mx=atLast;
+    return mx+undated.reduce((s,l)=>s+l.principal,0);
   })();
   const liveInvStocks = investments.filter(i=>!['Real Estate','Plot / Land','Gold / Silver','Private Lending'].includes(i.type)).reduce((s,i)=>s+(+i.currentMarketValue||+i.amountUSD||0),0);
   const liveInvMortgages = investments.filter(i=>i.type==='Real Estate').reduce((s,i)=>s+(+i.mortgageBalance||0),0);
-  const liveTotalInv = liveInvRE+liveInvGold+liveInvLending+liveInvStocks;
-  // Merge: saved manual assets (from Worth tab) + live investment values
-  const savedAssets = Object.values(latestNW?.assets||{}).reduce((s,v)=>s+(+v||0),0);
-  const savedLiabs  = Object.values(latestNW?.liabilities||{}).reduce((s,v)=>s+(+v||0),0);
-  const liveTotal   = savedAssets + liveTotalInv;
-  const liveLiabs   = savedLiabs + liveInvMortgages;
-  // nwA/manualCash must come before liveInvLendingNW and liveTotalNW
-  const nwA = latestNW?.assets || {};
-  const nwL = latestNW?.liabilities || {};
-  const homeAssets = [
-    {label:'Checking & Emergency', value:(+nwA.ck||0)+(+nwA.em||0),           color:'#7A9E7E'},
-    {label:'Retirement (401k/IRA)',value:(+nwA.k4||0)+(+nwA.ro||0),            color:'#7B5EA7'},
-    {label:'Real Estate',          value:liveInvRE+(+nwA.hm||0)+(+nwA.rp||0), color:'#3D7EAA'},
-    {label:'Private Lending',      value:liveInvLending,                        color:'#C8A96E'},
-    {label:'Stocks & Funds',       value:liveInvStocks+(+nwA.br||0),            color:'#4E7A52'},
-    {label:'Gold & Metals',        value:liveInvGold,                           color:'#B8926A'},
-    {label:'Other Assets',         value:(+nwA.ti||0)+(+nwA.s5||0)+(+nwA.oa||0)+(+nwA.bz||0)+(+nwA.cr||0)+(+nwA.vc||0), color:'#B0ABA5'},
-  ].filter(a=>a.value>0);
-  const homeLiabs = [
-    {label:'Primary Mortgage',      value:+nwL.mg||0,                                    color:'#B83030'},
-    {label:'Inv. Mortgages',        value:liveInvMortgages,                              color:'#C0392B'},
-    {label:'Auto / Student Loans',  value:(+nwL.au||0)+(+nwL.st||0),                    color:'#D47C0F'},
-    {label:'Credit Cards & Other',  value:(+nwL.cc||0)+(+nwL.ot||0)+(+nwL.rm||0),      color:'#E07070'},
-  ].filter(a=>a.value>0);
 
-  // Latest monthly
+  const savedAssets = Object.values(nwA).reduce((s,v)=>s+(+v||0),0);
+  const savedLiabs  = Object.values(nwL).reduce((s,v)=>s+(+v||0),0);
+  const liveTotal   = savedAssets + liveInvRE + liveInvGold + liveInvLending + liveInvStocks;
+  const liveLiabs   = savedLiabs + liveInvMortgages;
+
+  const now = new Date(); const nowMs = now.getTime();
+  const manualCash = (+nwA.ck||0)+(+nwA.em||0);
+  const liveInvLendingNW = (()=>{
+    const loans=investments.filter(i=>i.type==='Private Lending').map(i=>({
+      principal:+i.principalUSD||+i.amountUSD||0,
+      start:i.startDate?new Date(i.startDate).getTime():null,
+      end:i.maturityDate?new Date(i.maturityDate).getTime():null
+    }));
+    if(!loans.length) return 0;
+    if(manualCash>0){
+      return loans.filter(l=>l.start===null||l.end===null||(l.start<=nowMs&&l.end>=nowMs)).reduce((s,l)=>s+l.principal,0);
+    }
+    const dated=loans.filter(l=>l.start!==null&&l.end!==null);
+    const undated=loans.filter(l=>l.start===null||l.end===null);
+    if(!dated.length) return loans.reduce((s,l)=>s+l.principal,0);
+    const pts=[...new Set(dated.flatMap(l=>[l.start,l.end]))].sort((a,b)=>a-b);
+    let mx=0;
+    for(let pi=0;pi<pts.length-1;pi++){
+      const mid=(pts[pi]+pts[pi+1])/2;
+      const c=dated.filter(l=>l.start<=mid&&l.end>mid).reduce((s,l)=>s+l.principal,0);
+      if(c>mx) mx=c;
+    }
+    const atLast=dated.filter(l=>l.start<=pts[pts.length-1]&&l.end>=pts[pts.length-1]).reduce((s,l)=>s+l.principal,0);
+    if(atLast>mx) mx=atLast;
+    return mx+undated.reduce((s,l)=>s+l.principal,0);
+  })();
+
+  const liveTotalNW = savedAssets + liveInvRE + liveInvGold + liveInvLendingNW + liveInvStocks;
+  const nwValue   = liveTotalNW - liveLiabs;
+  const prevNWVal = prevNW ? prevNW.netWorth||0 : 0;
+  const nwDelta   = (latestNW||investments.length>0) ? nwValue - prevNWVal : 0;
+
+  // Monthly data
   const mKeys = Object.keys(monthly).sort();
   const latestMKey = mKeys[mKeys.length-1];
-  const latestM = latestMKey ? monthly[latestMKey] : null;
+  const latestM    = latestMKey ? monthly[latestMKey] : null;
+  const taxYears   = Object.keys(tax).sort().reverse();
 
-  // Tax - latest year
-  const taxYears = Object.keys(tax).sort().reverse();
-  const latestTax = taxYears[0] ? tax[taxYears[0]] : null;
-
-  // NW trend (last 8)
-  const nwTrend = nwKeys.slice(-8).map(k=>({
-    label: k.slice(5),
-    v: (networth[k].netWorth||0)/1000
-  }));
-
-  // totalAssets for legacy compat
-  const totalAssets = liveTotal;
-  const allocData = homeAssets;
-
-  // Income & tax history (last 5 years)
-  const taxHistory = taxYears.slice(0,5).reverse().map(y=>({
-    label:y,
-    v:(tax[y].w2Total||0)/1000,
-    v2:(tax[y].fedTax||0)/1000
-  }));
-
-  // Private lending investments
-  const privateLoans = investments.filter(i=>i.type==='Private Lending');
-  const realEstate = investments.filter(i=>i.type==='Real Estate'||i.type==='Plot / Land');
-  const stocks = investments.filter(i=>['Stocks / ETF','Mutual Fund','Crypto','Fixed Deposit','Bonds','Other'].includes(i.type));
-
-  // \u2500\u2500 Investment-derived monthly income \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-  const now = new Date();
-  const nowMs = now.getTime();
-
-  // \u2500\u2500 Net Worth: cash assets + active lending adjustment \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-  // If the user has manually entered cash assets (checking/emergency), those
-  // balances already reflect money that was lent out (it left the bank account).
-  // So we must NOT add active lending on top \u2014 doing so double-counts.
-  // Rule: if manual cash assets > 0, liveInvLending for NW = only loans that
-  // are currently active AND whose principal exceeds what cash already covers.
-  // Simpler safe rule: if cash assets entered, use max-concurrent ACTIVE-ONLY
-  // (loans where today is within start..maturity). Matured loans' capital has
-  // already returned to cash and is captured in the manual cash balance.
-  const manualCash = (nwA.ck||0)+(nwA.em||0);
-  const liveInvLendingNW = (()=>{
-    const loans = investments.filter(i=>i.type==='Private Lending').map(i=>({
-      principal: +i.principalUSD||+i.amountUSD||0,
-      start: i.startDate ? new Date(i.startDate).getTime() : null,
-      end:   i.maturityDate ? new Date(i.maturityDate).getTime() : null
-    }));
-    if(loans.length===0) return 0;
-    // If manual cash assets entered: only count CURRENTLY ACTIVE loans
-    // (principal is still outstanding, not yet returned to cash)
-    if(manualCash>0){
-      const activeNow = loans.filter(l=>{
-        if(l.start===null||l.end===null) return true; // undated = assume active
-        return l.start<=nowMs && l.end>=nowMs;
-      });
-      return activeNow.reduce((s,l)=>s+l.principal,0);
-    }
-    // No manual cash: use max-concurrent algorithm (same as before)
-    const dated   = loans.filter(l=>l.start!==null&&l.end!==null);
-    const undated = loans.filter(l=>l.start===null||l.end===null);
-    if(dated.length===0) return loans.reduce((s,l)=>s+l.principal,0);
-    const points = [...new Set(dated.flatMap(l=>[l.start,l.end]))].sort((a,b)=>a-b);
-    let maxC=0;
-    for(let pi=0;pi<points.length-1;pi++){
-      const mid=(points[pi]+points[pi+1])/2;
-      const c=dated.filter(l=>l.start<=mid&&l.end>mid).reduce((s,l)=>s+l.principal,0);
-      if(c>maxC) maxC=c;
-    }
-    const atLast=dated.filter(l=>l.start<=points[points.length-1]&&l.end>=points[points.length-1]).reduce((s,l)=>s+l.principal,0);
-    if(atLast>maxC) maxC=atLast;
-    return maxC + undated.reduce((s,l)=>s+l.principal,0);
-  })();
-  // liveTotalNW uses cash-adjusted lending value for accurate NW
-  const liveTotalNW = savedAssets + liveInvRE + liveInvGold + liveInvLendingNW + liveInvStocks;
-  const nwValue     = liveTotalNW - liveLiabs;
-  const prevNWVal   = prevNW ? prevNW.netWorth||0 : 0;
-  const nwDelta     = (latestNW||investments.length>0) ? nwValue - prevNWVal : 0;
-
-  // \u2500\u2500 Lending income: only ACTIVE loans (today between start and maturity) \u2500\u2500
-  // Accrual: monthly interest accruing this month regardless of payment schedule
-  // Real: only interest actually RECEIVED this month (logged payments in current month)
-  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  const thisMonthEnd   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23, 59, 59).getTime();
+  // Investment income this month
+  const thisMonthStart = new Date(now.getFullYear(),now.getMonth(),1).getTime();
+  const thisMonthEnd   = new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59).getTime();
 
   const lendingBreakdown = investments.filter(i=>i.type==='Private Lending').map(i=>{
     const principal=+i.principalUSD||+i.amountUSD||0;
     const rate=+i.interestRate||0;
     const startMs=i.startDate?new Date(i.startDate).getTime():null;
     const endMs=i.maturityDate?new Date(i.maturityDate).getTime():null;
-    const isActive   = startMs===null||endMs===null ? true : (startMs<=nowMs && endMs>=nowMs);
-    const isMatured  = endMs!==null && endMs<nowMs;
-    const isUpcoming = startMs!==null && startMs>nowMs;
-
-    // Total expected = full principal + all interest over loan life
+    const isActive=startMs===null||endMs===null?true:(startMs<=nowMs&&endMs>=nowMs);
+    const isMatured=endMs!==null&&endMs<nowMs;
     let totalExpected=principal;
-    if(startMs&&endMs){
-      const totalDays=(endMs-startMs)/(1000*60*60*24);
-      totalExpected=principal+principal*(rate/100)*(totalDays/365);
-    }
-    // Total received from all logged payments
+    if(startMs&&endMs){const td=(endMs-startMs)/86400000;totalExpected=principal+principal*(rate/100)*(td/365);}
     const totalReceived=(i.payments||[]).reduce((s,p)=>s+(+p.amount||0),0);
-    // Outstanding receivable = what was expected but not yet paid
-    // For active loans: only count PAST portions (not future interest yet due)
-    // For matured loans: everything unpaid is outstanding
     let outstandingReceivable=0;
-    if(isMatured){
-      outstandingReceivable=Math.max(0,totalExpected-totalReceived);
-    } else if(isActive&&startMs&&endMs){
-      // Interest accrued so far (up to today)
-      const daysElapsed=Math.max(0,(nowMs-startMs)/(1000*60*60*24));
-      const accruedSoFar=principal*(rate/100)*(daysElapsed/365);
-      const expectedSoFar=principal+accruedSoFar; // principal always outstanding until maturity
-      outstandingReceivable=Math.max(0,expectedSoFar-totalReceived);
+    if(isMatured) outstandingReceivable=Math.max(0,totalExpected-totalReceived);
+    else if(isActive&&startMs&&endMs){
+      const de=Math.max(0,(nowMs-startMs)/86400000);
+      outstandingReceivable=Math.max(0,principal+principal*(rate/100)*(de/365)-totalReceived);
     }
-
-    // Accrual: proportional daily interest for this calendar month (active only)
     let accrualMonthly=0;
     if(isActive&&principal>0&&rate>0){
-      const mStart=Math.max(startMs||thisMonthStart,thisMonthStart);
-      const mEnd=Math.min(endMs||thisMonthEnd,thisMonthEnd);
-      const daysInPeriod=Math.max(0,(mEnd-mStart)/(1000*60*60*24));
-      accrualMonthly=principal*(rate/100)*(daysInPeriod/365);
+      const mS=Math.max(startMs||thisMonthStart,thisMonthStart);
+      const mE=Math.min(endMs||thisMonthEnd,thisMonthEnd);
+      accrualMonthly=principal*(rate/100)*(Math.max(0,(mE-mS)/86400000)/365);
     }
-    // Real cash received this month (logged payments)
-    const realMonthly=(i.payments||[]).filter(p=>{
-      const pd=new Date(p.date).getTime();
-      return pd>=thisMonthStart && pd<=thisMonthEnd;
-    }).reduce((s,p)=>s+(+p.amount||0),0);
-
-    return {
-      name:i.name||'Loan',principal,rate,
-      accrualMonthly,realMonthly,
-      totalExpected,totalReceived,outstandingReceivable,
-      isActive,isMatured,isUpcoming
-    };
+    const realMonthly=(i.payments||[]).filter(p=>{const pd=new Date(p.date).getTime();return pd>=thisMonthStart&&pd<=thisMonthEnd;}).reduce((s,p)=>s+(+p.amount||0),0);
+    return {name:i.name||'Loan',principal,rate,accrualMonthly,realMonthly,totalExpected,totalReceived,outstandingReceivable,isActive,isMatured};
   });
 
-  // \u2500\u2500 RE breakdown: real vs accrual cashflow \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-  // Real CF: rent received - mortgage paid - logged expenses this month
-  // Accrual CF: rent - mortgage - estimated tax/mo - estimated maint/mo
   const reBreakdown = investments.filter(i=>i.type==='Real Estate').map(i=>{
-    const rent=+i.monthlyRent||0, mort=+i.monthlyMortgage||0;
-    // propTax is optional \u2014 used only for NOI/cap rate accrual calcs, NOT for real CF
-    // because monthlyMortgage now represents the full PITI payment (mortgage + escrow/tax)
+    const rent=+i.monthlyRent||0,mort=+i.monthlyMortgage||0;
     const propTax=(+i.propertyTax||0)/12;
     const maint=(+i.propertyValue||+i.amountUSD||0)*(+i.maintenancePct||1)/100/12;
-    const noi=rent-propTax-maint;               // excludes mortgage (for cap rate)
-    const accrualCF=rent-mort-maint;            // mort already includes tax; maint estimated
-    // Real: rent - full monthly payment (PITI) - logged one-off expenses this month
-    const loggedExpenses=(i.expenses||[]).filter(e=>{
-      const ed=new Date(e.date).getTime();
-      return ed>=thisMonthStart && ed<=thisMonthEnd;
-    }).reduce((s,e)=>s+(+e.amount||0),0);
-    const realCF=rent-mort-loggedExpenses;      // mort=PITI, no estimated maint
-    return {name:i.name||'Property',rent,mort,propTax,maint,noi,accrualCF,realCF,loggedExpenses};
+    const loggedExp=(i.expenses||[]).filter(e=>{const ed=new Date(e.date).getTime();return ed>=thisMonthStart&&ed<=thisMonthEnd;}).reduce((s,e)=>s+(+e.amount||0),0);
+    return {name:i.name||'Property',rent,mort,propTax,maint,noi:rent-propTax-maint,accrualCF:rent-mort-maint,realCF:rent-mort-loggedExp};
   });
 
-  // \u2500\u2500 Aggregate income & cashflow in both modes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-  const invMonthlyRental     = reBreakdown.reduce((s,r)=>s+r.rent,0);
-  const invREAccrualNOI      = reBreakdown.reduce((s,r)=>s+r.accrualCF,0);
-  const invRERealCF          = reBreakdown.reduce((s,r)=>s+r.realCF,0);
-  const invLendingAccrual    = lendingBreakdown.filter(l=>l.isActive).reduce((s,l)=>s+l.accrualMonthly,0);
-  const invLendingReal       = lendingBreakdown.reduce((s,l)=>s+l.realMonthly,0);
-  // For RE expenses summary
-  const invREMonthlyExpenses = reBreakdown.reduce((s,r)=>s+r.mort+r.propTax+r.maint,0);
+  const invLendingAccrual = lendingBreakdown.filter(l=>l.isActive).reduce((s,l)=>s+l.accrualMonthly,0);
+  const invRentalIncome   = reBreakdown.reduce((s,r)=>s+r.rent,0);
+  const invREAccrualNOI   = reBreakdown.reduce((s,r)=>s+r.accrualCF,0);
+  const invRERealCF       = reBreakdown.reduce((s,r)=>s+r.realCF,0);
+  const invLendingReal    = lendingBreakdown.reduce((s,l)=>s+l.realMonthly,0);
 
-  // Totals shown in hero
-  const invMonthlyLendingIncome = invLendingAccrual; // used for income display
-  const totalInvMonthlyIncome = invMonthlyRental + invLendingAccrual;
-  const invREMonthlyNOI = invREAccrualNOI; // legacy name kept
-
-  // Two cashflow totals
+  const salaryIncome  = latestM?.totalIncome||0;
+  const augIncome     = salaryIncome + invRentalIncome + invLendingAccrual;
+  const augExpenses   = latestM?.totalExpenses||0;
+  const augSaved      = latestM?.totalSaved||0;
+  const augSavingsRate= augIncome>0?(augSaved/augIncome*100):(latestM?.savingsRate||0);
   const accrualCashflow = (latestM?.cashflow||0) + invREAccrualNOI + invLendingAccrual;
-  const realCashflow    = (latestM?.cashflow||0) + invRERealCF + invLendingReal;
-  // Hero card uses accrual (expected this month)
-  const augCashflow = accrualCashflow;
 
-  // Augmented totals for hero card
-  const augIncome = (latestM?.totalIncome||0) + totalInvMonthlyIncome;
-  const augSaved = latestM?.totalSaved||0;
-  const augSavingsRate = augIncome>0 ? (augSaved/augIncome*100) : (latestM?.savingsRate||0);
-  const hasInvIncome = totalInvMonthlyIncome > 0;
-  const hasInvExpenses = invREMonthlyExpenses > 0;
+  // Asset breakdown for detail panel
+  const homeAssets = [
+    {label:'Checking & Emergency',value:(+nwA.ck||0)+(+nwA.em||0),color:'#7A9E7E'},
+    {label:'Retirement (401k/IRA)',value:(+nwA.k4||0)+(+nwA.ro||0),color:'#7B5EA7'},
+    {label:'Real Estate',          value:liveInvRE+(+nwA.hm||0)+(+nwA.rp||0),color:'#3D7EAA'},
+    {label:'Private Lending',      value:liveInvLending,color:'#C8A96E'},
+    {label:'Stocks & Funds',       value:liveInvStocks+(+nwA.br||0),color:'#4E7A52'},
+    {label:'Gold & Metals',        value:liveInvGold,color:'#B8926A'},
+    {label:'Other',                value:(+nwA.ti||0)+(+nwA.s5||0)+(+nwA.oa||0)+(+nwA.bz||0)+(+nwA.cr||0)+(+nwA.vc||0),color:'#B0ABA5'},
+  ].filter(a=>a.value>0);
+  const homeLiabs = [
+    {label:'Primary Mortgage',    value:+nwL.mg||0,color:'#B83030'},
+    {label:'Inv. Mortgages',      value:liveInvMortgages,color:'#C0392B'},
+    {label:'Auto / Student',      value:(+nwL.au||0)+(+nwL.st||0),color:'#D47C0F'},
+    {label:'Cards & Other',       value:(+nwL.cc||0)+(+nwL.ot||0)+(+nwL.rm||0),color:'#E07070'},
+  ].filter(a=>a.value>0);
 
-  // Cash accumulation (last 8 months saved)
-  const cashTrend = mKeys.slice(-8).map(k=>({
-    label:k.slice(5),
-    v:(monthly[k].totalSaved||0)/1000
-  }));
+  // Income sources for detail panel & chart
+  const incomeItems = [];
+  if(salaryIncome>0) incomeItems.push({label:'Salary / W2',val:salaryIncome,color:'#7A9E7E'});
+  reBreakdown.filter(r=>r.rent>0).forEach(r=>incomeItems.push({label:r.name+' (rent)',val:r.rent,color:'#3D7EAA'}));
+  lendingBreakdown.filter(l=>l.isActive&&l.accrualMonthly>0).forEach(l=>incomeItems.push({label:l.name+' (interest)',val:l.accrualMonthly,color:'#C8A96E'}));
+  if(latestM){['div','oi','rental'].forEach(k=>{if(+latestM[k]>0) incomeItems.push({label:k==='div'?'Dividends':k==='oi'?'Other Income':'Rental (manual)',val:+latestM[k],color:'#9E9A94'});});}
 
-  return e('div',null,
-    // Hero NW card
-    e('div',{className:'hero-card'},
-      e('div',{className:'hero-label'},'Net Worth'),
-      e('div',{className:'hero-value'},fmtFull(nwValue)),
-      nwDelta!==0&&e('div',{className:`hero-delta ${nwDelta>=0?'pos':'neg'}`},
-        `${nwDelta>=0?'\u25b2':'\u25bc'} ${fmtFull(Math.abs(nwDelta))} vs prev snapshot`
+  // Expense breakdown for detail
+  const expFields=[['hs','Housing'],['fd','Food'],['tr','Transport'],['ins','Insurance'],['ut','Utilities'],['cc','Credit Cards'],['hc','Healthcare'],['sb','Subscriptions'],['dn','Dining'],['tv','Travel'],['ps','Personal'],['db','Debt Payments'],['rm','Rent'],['ox','Other']];
+  const expItems = expFields.map(([k,l])=>({label:l,val:+latestM?.[k]||0})).filter(x=>x.val>0);
+
+  // Trends: last 8 months NW
+  const nwTrend = nwKeys.slice(-8).map(k=>({label:k.slice(5),v:(networth[k].netWorth||0)/1000}));
+
+  // Trends: last 8 months income by source (stacked)
+  const last8mKeys = mKeys.slice(-8);
+  const incomeTrend = last8mKeys.map(k=>{
+    const m=monthly[k];
+    const mStart=new Date(k+'-01').getTime();
+    const mEnd=new Date(+k.slice(0,4), +k.slice(5,7), 0, 23,59,59).getTime();
+    const lendIncome=investments.filter(i=>i.type==='Private Lending').reduce((s,i)=>{
+      const p=+i.principalUSD||+i.amountUSD||0, r=+i.interestRate||0;
+      const sMs=i.startDate?new Date(i.startDate).getTime():null;
+      const eMs=i.maturityDate?new Date(i.maturityDate).getTime():null;
+      const act=sMs===null||eMs===null?true:(sMs<=mEnd&&eMs>=mStart);
+      if(!act||!p||!r) return s;
+      const dS=Math.max(sMs||mStart,mStart), dE=Math.min(eMs||mEnd,mEnd);
+      return s+p*(r/100)*(Math.max(0,(dE-dS)/86400000)/365);
+    },0);
+    const rentIncome=investments.filter(i=>i.type==='Real Estate').reduce((s,i)=>s+(+i.monthlyRent||0),0);
+    return {label:k.slice(5),salary:m.totalIncome||0,rent:rentIncome,lending:lendIncome};
+  });
+
+  // Savings trend
+  const savingsTrend = last8mKeys.map(k=>({label:k.slice(5),v:(monthly[k].totalSaved||0)/1000}));
+
+  // NW growth MoM %
+  const nwMoM = nwKeys.length>=2 ? ((nwValue - prevNWVal)/Math.abs(prevNWVal||1)*100) : null;
+
+  // Private lending & RE collapsibles
+  const privateLoans = investments.filter(i=>i.type==='Private Lending');
+  const realEstate   = investments.filter(i=>i.type==='Real Estate'||i.type==='Plot / Land');
+
+  // ── Detail Panel Overlay ──────────────────────────────────────────────────
+  if(detailPanel){
+    const panels = {
+      assets:{
+        title:'Asset Breakdown',
+        color:'#3D6E42',
+        items:homeAssets,
+        total:liveTotal,
+        totalLabel:'Total Assets',
+        positive:true
+      },
+      liabilities:{
+        title:'Liability Breakdown',
+        color:'#B83030',
+        items:homeLiabs,
+        total:liveLiabs,
+        totalLabel:'Total Liabilities',
+        positive:false
+      },
+      income:{
+        title:'Income Breakdown',
+        color:'#3D7EAA',
+        items:incomeItems.map(i=>({...i,value:i.val})),
+        total:augIncome,
+        totalLabel:'Total Income',
+        positive:true,
+        period:latestMKey?new Date(latestMKey+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'}):''
+      },
+      expenses:{
+        title:'Expense Breakdown',
+        color:'#C0392B',
+        items:expItems.map(i=>({...i,value:i.val})),
+        total:augExpenses,
+        totalLabel:'Total Expenses',
+        positive:false,
+        period:latestMKey?new Date(latestMKey+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'}):''
+      },
+      savings:{
+        title:'Savings Details',
+        color:'#7B5EA7',
+        items:[
+          {label:'Cash / Emergency',value:+latestM?.cs||0,color:'#7A9E7E'},
+          {label:'401k / IRA',value:+latestM?.k||0,color:'#7B5EA7'},
+          {label:'Brokerage',value:+latestM?.br||0,color:'#4E7A52'},
+          {label:'529 Plan',value:+latestM?.s5||0,color:'#3D7EAA'},
+        ].filter(x=>x.value>0),
+        total:augSaved,
+        totalLabel:'Total Saved',
+        positive:true,
+        period:latestMKey?new Date(latestMKey+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'}):''
+      }
+    };
+    const p = panels[detailPanel];
+    const panelTotal = p.total||1;
+    return e('div',null,
+      // Back header
+      e('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:16}},
+        e('button',{
+          onClick:()=>setDetailPanel(null),
+          style:{background:'none',border:'none',fontSize:14,color:'#3D6E42',fontWeight:700,cursor:'pointer',padding:'6px 0',display:'flex',alignItems:'center',gap:4}
+        },'\u2190 Dashboard'),
+        e('div',{style:{fontSize:16,fontWeight:700,color:'#1C1C1E'}},p.title)
       ),
-      e('div',{className:'hero-grid'},
-        e('div',{className:'hero-stat'},
-          e('div',{className:'hero-stat-label'},'Monthly Income'),
-          e('div',{className:'hero-stat-value'},fmt(augIncome)),
-          e('div',{className:'hero-stat-sub'},
-            latestMKey
-              ? new Date(latestMKey+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'})
-              : hasInvIncome ? 'From investments' : 'No data'
-          )
-        ),
-        e('div',{className:'hero-stat'},
-          e('div',{className:'hero-stat-label'},'Savings Rate'),
-          e('div',{className:'hero-stat-value'},pct(augSavingsRate)),
-          e('div',{className:'hero-stat-sub'},`Saved ${fmt(augSaved)}`)
-        ),
-        e('div',{className:'hero-stat'},
-          e('div',{className:'hero-stat-label'},'Invest. Income'),
-          e('div',{className:'hero-stat-value',style:{color:'#C8A96E'}},fmt(totalInvMonthlyIncome)),
-          e('div',{className:'hero-stat-sub'},
-            invMonthlyRental>0&&invMonthlyLendingIncome>0 ? `Rent+Lending/mo`
-            : invMonthlyRental>0 ? `${investments.filter(i=>i.type==='Real Estate'&&+i.monthlyRent>0).length} prop.`
-            : invMonthlyLendingIncome>0 ? `${investments.filter(i=>i.type==='Private Lending').length} loans`
-            : 'None yet'
-          )
-        ),
-        e('div',{className:'hero-stat'},
-          e('div',{className:'hero-stat-label'},'Net Cash Flow'),
-          e('div',{className:'hero-stat-value',style:{color:accrualCashflow>=0?'#7ECB8F':'#E07070'}},fmt(accrualCashflow)),
-          e('div',{className:'hero-stat-sub',style:{display:'flex',flexDirection:'column',gap:1}},
-            e('span',null,'Accrual (expected)'),
-            realCashflow!==accrualCashflow&&e('span',{style:{color:realCashflow>=0?'#A8D8B0':'#E8A0A0'}},`Real: ${fmt(realCashflow)}`)
-          )
-        )
+      // Total chip
+      e('div',{style:{background:p.positive?'#EFF5EF':'#FFF0EF',borderRadius:14,padding:'14px 18px',marginBottom:14,display:'flex',justifyContent:'space-between',alignItems:'center'}},
+        e('div',{style:{fontSize:12,color:'#9E9A94',fontWeight:600}},p.totalLabel+(p.period?' \u2014 '+p.period:'')),
+        e('div',{style:{fontSize:22,fontWeight:700,color:p.positive?'#3D6E42':'#B83030',letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmtFull(Math.round(p.total)))
       ),
-      // \u2500\u2500 Income breakdown strip (top 3 + others) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-      (hasInvIncome||latestM)&&e('div',{style:{
-        marginTop:12,paddingTop:12,borderTop:'1px solid rgba(255,255,255,0.08)'
-      }},
-        e('div',{style:{fontSize:9,fontWeight:700,color:'rgba(168,197,172,0.5)',textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Income Breakdown'),
-        e('div',{style:{display:'flex',flexDirection:'column',gap:5}},
-          ...(()=>{
-            const incomeItems=[];
-            if(latestM&&(latestM.totalIncome||0)>0) incomeItems.push({dot:'#7ECB8F',label:'Salary / W2',val:latestM.totalIncome,color:'#FFFFFF'});
-            reBreakdown.filter(r=>r.rent>0).forEach(r=>incomeItems.push({dot:'#3D7EAA',label:r.name+' (rent)',val:r.rent,color:'#FFFFFF'}));
-            lendingBreakdown.filter(l=>l.isActive).forEach(l=>incomeItems.push({dot:'#C8A96E',label:l.name+' (accrual)',val:l.accrualMonthly,color:'rgba(200,169,110,0.9)'}));
-            const top=incomeItems.slice(0,3);
-            const rest=incomeItems.slice(3);
-            const othersVal=rest.reduce((s,x)=>s+x.val,0);
-            const rows=[...top];
-            if(rest.length>0) rows.push({dot:'#9E9A94',label:`${rest.length} other source${rest.length>1?'s':''}`,val:othersVal,color:'rgba(255,255,255,0.7)'});
-            return rows.map((item,i)=>e('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-              e('div',{style:{display:'flex',alignItems:'center',gap:6}},
-                e('div',{style:{width:6,height:6,borderRadius:1,background:item.dot}}),
-                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},item.label)
-              ),
-              e('div',{style:{fontSize:12,fontWeight:700,color:item.color}},fmt(item.val))
-            ));
-          })()
-        )
-      ),
-      // \u2500\u2500 Cash flow breakdown strip (top 3 + others) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-      (hasInvExpenses||latestM)&&e('div',{style:{
-        marginTop:10,paddingTop:10,borderTop:'1px solid rgba(255,255,255,0.08)'
-      }},
-        e('div',{style:{fontSize:9,fontWeight:700,color:'rgba(168,197,172,0.5)',textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Cash Flow Breakdown'),
-        e('div',{style:{display:'flex',flexDirection:'column',gap:5}},
-          ...(()=>{
-            const cfItems=[];
-            if(latestM) cfItems.push({dot:'#7ECB8F',label:'Salary',val:latestM.cashflow||0,signed:true});
-            reBreakdown.filter(r=>r.rent>0).forEach(r=>cfItems.push({dot:'#3D7EAA',label:r.name,val:r.accrualCF,signed:true,sub:'est. NOI'}));
-            lendingBreakdown.filter(l=>l.isActive).forEach(l=>cfItems.push({dot:'#C8A96E',label:l.name,val:l.accrualMonthly,signed:false,sub:'accrual'}));
-            const top=cfItems.slice(0,3);
-            const rest=cfItems.slice(3);
-            const othersVal=rest.reduce((s,x)=>s+x.val,0);
-            const rows=[...top];
-            if(rest.length>0) rows.push({dot:'#9E9A94',label:`${rest.length} other`,val:othersVal,signed:true});
-            const rendered=rows.map((item,i)=>e('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-              e('div',{style:{display:'flex',alignItems:'center',gap:6}},
-                e('div',{style:{width:6,height:6,borderRadius:1,background:item.dot}}),
-                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},item.label+(item.sub?' ('+item.sub+')':''))
-              ),
-              e('div',{style:{fontSize:12,fontWeight:700,color:item.val>=0?'#7ECB8F':'#E07070'}},fmt(item.val))
-            ));
-            rendered.push(e('div',{key:'total',style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:4,paddingTop:6,borderTop:'1px solid rgba(255,255,255,0.08)'}},
-              e('div',{style:{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.8)'}},'Net Cash Flow'),
-              e('div',{style:{fontSize:14,fontWeight:700,color:augCashflow>=0?'#7ECB8F':'#E07070'}},fmt(augCashflow))
-            ));
-            return rendered;
-          })()
-        )
-      )
-    ),
-
-    // NW Trend
-    nwTrend.length>1&&e('div',{className:'card'},
-      e('div',{className:'card-title'},'Net Worth Trend'),
-      e(BarChart,{data:nwTrend,color:'#7B5EA7'}),
-      e('div',{style:{fontSize:10,color:'#9E9A94',textAlign:'center',marginTop:4}},'Values in $K')
-    ),
-
-    // \u2500\u2500 Wealth Snapshot: Assets + Liabilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-    (liveTotal>0||liveLiabs>0)&&e('div',{style:{background:'#FFFFFF',borderRadius:18,border:'1px solid #EDEBE6',marginBottom:12,overflow:'hidden'}},
-
-      // Header strip
-      e('div',{style:{
-        background:'linear-gradient(135deg,#1C2B1E 0%,#2A3E2C 100%)',
-        padding:'18px 20px 16px'
-      }},
-        e('div',{style:{fontSize:10,fontWeight:700,color:'rgba(168,197,172,0.6)',textTransform:'uppercase',letterSpacing:'1.4px',marginBottom:10}},'Wealth Snapshot'),
-        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-end'}},
-          e('div',null,
-            e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.45)',marginBottom:3}},'Total Assets'),
-            e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:22,fontWeight:700,color:'#FFFFFF',letterSpacing:'-0.4px'}},
-              fmtFull(Math.round(liveTotal))
-            )
-          ),
-          e('div',{style:{textAlign:'center'}},
-            e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.45)',marginBottom:3}},'Net Worth'),
-            e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:22,fontWeight:700,
-              color:nwValue>=0?'#7ECB8F':'#E07070',letterSpacing:'-0.4px'}},
-              fmtFull(Math.round(nwValue))
-            )
-          ),
-          e('div',{style:{textAlign:'right'}},
-            e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.45)',marginBottom:3}},'Total Liabilities'),
-            e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:22,fontWeight:700,color:'#E07070',letterSpacing:'-0.4px'}},
-              fmtFull(Math.round(liveLiabs))
-            )
-          )
-        ),
-        // Net worth progress bar (assets vs liabilities ratio)
-        liveTotal>0&&e('div',{style:{marginTop:14}},
-          e('div',{style:{height:6,background:'rgba(255,255,255,0.1)',borderRadius:3,overflow:'hidden'}},
-            e('div',{style:{
-              height:'100%',
-              width:`${Math.min(100,Math.max(0,(nwValue/liveTotal)*100))}%`,
-              background:'linear-gradient(90deg,#4E9A5A,#7ECB8F)',
-              borderRadius:3
-            }})
-          ),
-          e('div',{style:{display:'flex',justifyContent:'space-between',marginTop:5,fontSize:10,color:'rgba(255,255,255,0.4)'}},
-            e('span',null,`Equity ratio: ${liveTotal>0?((nwValue/liveTotal)*100).toFixed(0):0}%`),
-            e('span',null,`Leverage: ${liveLiabs>0?(liveTotal/liveLiabs).toFixed(1)+'\u00d7':'none'}`)
-          )
-        )
-      ),
-
-      // Assets section
-      e('div',{style:{padding:'16px 20px 0'}},
-        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
-          e('div',{style:{fontSize:10,fontWeight:700,color:'#6E9E72',textTransform:'uppercase',letterSpacing:'1.4px'}},'Assets'),
-          e('div',{style:{fontSize:12,fontWeight:700,color:'#3D6E42'}},fmtFull(Math.round(liveTotal)))
-        ),
-        // Donut + legend row
-        homeAssets.length===0&&e('div',{style:{fontSize:12,color:'#B0ABA5',padding:'8px 0 14px',textAlign:'center'}},'Add investments or save a Worth snapshot to see your asset breakdown.'),
-        homeAssets.length>0&&e('div',{style:{display:'flex',gap:14,alignItems:'flex-start',marginBottom:14}},
-          e(DonutChart,{data:homeAssets.map(a=>({value:a.value,color:a.color})),size:90}),
-          e('div',{style:{flex:1,display:'flex',flexDirection:'column',gap:0}},
-            ...homeAssets.map((a,i)=>{
-              const p=liveTotal>0?(a.value/liveTotal*100):0;
-              return e('div',{key:i,style:{
-                display:'flex',alignItems:'center',justifyContent:'space-between',
-                padding:'5px 0',borderBottom:i<homeAssets.length-1?'1px solid #F4F2EE':'none'
-              }},
+      // Donut + list
+      p.items.length>0&&e('div',{className:'card'},
+        e('div',{style:{display:'flex',gap:14,alignItems:'center',marginBottom:14}},
+          e(DonutChart,{data:p.items.map(a=>({value:a.value||a.val||0,color:a.color||p.color})),size:90}),
+          e('div',{style:{flex:1}},
+            ...p.items.map((a,i)=>{
+              const v=a.value||a.val||0;
+              const pct2=panelTotal>0?(v/panelTotal*100):0;
+              return e('div',{key:i,style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'5px 0',borderBottom:i<p.items.length-1?'1px solid #F4F2EE':'none'}},
                 e('div',{style:{display:'flex',alignItems:'center',gap:7,flex:1,minWidth:0}},
-                  e('div',{style:{width:8,height:8,borderRadius:2,background:a.color,flexShrink:0}}),
+                  e('div',{style:{width:8,height:8,borderRadius:2,background:a.color||p.color,flexShrink:0}}),
                   e('div',{style:{fontSize:11,color:'#4B4845',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},a.label)
                 ),
                 e('div',{style:{textAlign:'right',flexShrink:0,marginLeft:6}},
-                  e('div',{style:{fontSize:12,fontWeight:700,color:'#1C1C1E'}},fmtFull(Math.round(a.value))),
-                  e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600}},`${p.toFixed(0)}%`)
+                  e('div',{style:{fontSize:12,fontWeight:700,color:'#1C1C1E'}},fmtFull(Math.round(v))),
+                  e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600}},pct2.toFixed(0)+'%')
                 )
               );
             })
           )
         ),
-        // Asset progress bars
-        ...homeAssets.map((a,i)=>{
-          const p=liveTotal>0?(a.value/liveTotal*100):0;
-          return e('div',{key:'bar'+i,style:{marginBottom:7}},
+        // Progress bars
+        ...p.items.map((a,i)=>{
+          const v=a.value||a.val||0;
+          const pct2=panelTotal>0?(v/panelTotal*100):0;
+          return e('div',{key:'b'+i,style:{marginBottom:8}},
             e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:3}},
               e('div',{style:{display:'flex',alignItems:'center',gap:5}},
-                e('div',{style:{width:6,height:6,borderRadius:1,background:a.color}}),
-                e('div',{style:{fontSize:10,color:'#9E9A94'}},a.label)
+                e('div',{style:{width:6,height:6,borderRadius:1,background:a.color||p.color}}),
+                e('div',{style:{fontSize:11,color:'#6B6663'}},a.label)
               ),
-              e('div',{style:{fontSize:10,fontWeight:600,color:'#6B6663'}},`${p.toFixed(0)}%`)
+              e('div',{style:{fontSize:11,fontWeight:600,color:'#1C1C1E'}},fmtFull(Math.round(v)))
             ),
-            e('div',{style:{height:4,background:'#F0EDE8',borderRadius:3,overflow:'hidden'}},
-              e('div',{style:{height:'100%',width:`${p}%`,background:a.color,borderRadius:3,
-                transition:'width 0.6s cubic-bezier(0.4,0,0.2,1)'}})
+            e('div',{style:{height:5,background:'#F0EDE8',borderRadius:3,overflow:'hidden'}},
+              e('div',{style:{height:'100%',width:pct2+'%',background:a.color||p.color,borderRadius:3,transition:'width 0.5s'}})
             )
           );
         })
       ),
+      p.items.length===0&&e('div',{className:'empty-state'},e('div',{className:'empty-state-sub'},'No data recorded yet.'))
+    );
+  }
 
-      // Divider
-      e('div',{style:{height:1,background:'#F0EDE8',margin:'14px 0 0'}}),
+  // ── Main Dashboard ────────────────────────────────────────────────────────
+  return e('div',null,
 
-      // Liabilities section
-      e('div',{style:{padding:'14px 20px 0'}},
-        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
-          e('div',{style:{fontSize:10,fontWeight:700,color:'#C07070',textTransform:'uppercase',letterSpacing:'1.4px'}},'Liabilities'),
-          e('div',{style:{fontSize:12,fontWeight:700,color:'#B83030'}},fmtFull(Math.round(liveLiabs)))
-        ),
-        ...homeLiabs.map((a,i)=>{
-          const p=liveLiabs>0?(a.value/liveLiabs*100):0;
-          return e('div',{key:i,style:{marginBottom:9}},
-            e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:3}},
-              e('div',{style:{display:'flex',alignItems:'center',gap:6}},
-                e('div',{style:{width:6,height:6,borderRadius:1,background:a.color}}),
-                e('div',{style:{fontSize:11,color:'#4B4845'}},a.label)
-              ),
-              e('div',{style:{textAlign:'right'}},
-                e('div',{style:{fontSize:12,fontWeight:700,color:'#B83030'}},fmtFull(Math.round(a.value))),
-                e('div',{style:{fontSize:9,color:'#B0ABA5',fontWeight:600,textAlign:'right'}},`${p.toFixed(0)}% of debt`)
-              )
-            ),
-            e('div',{style:{height:4,background:'#F0EDE8',borderRadius:3,overflow:'hidden'}},
-              e('div',{style:{height:'100%',width:`${p}%`,background:a.color,borderRadius:3,
-                transition:'width 0.6s cubic-bezier(0.4,0,0.2,1)'}})
-            )
-          );
-        })
+    // ── 1. Net Worth Hero ──────────────────────────────────────────────────
+    e('div',{className:'hero-card'},
+      e('div',{className:'hero-label'},'Net Worth \u2014 Live'),
+      e('div',{className:'hero-value'},fmtFull(nwValue)),
+      nwDelta!==0&&e('div',{className:`hero-delta ${nwDelta>=0?'pos':'neg'}`},
+        `${nwDelta>=0?'\u25b2':'\u25bc'} ${fmtFull(Math.abs(nwDelta))} vs prev snapshot`
       ),
-
-      // Bottom net worth row
-      e('div',{style:{
-        margin:'14px 0 0',padding:'14px 20px',
-        background:'#F9FAF9',borderTop:'1px solid #F0EDE8',
-        display:'flex',justifyContent:'space-between',alignItems:'center'
-      }},
-        e('div',null,
-          e('div',{style:{fontSize:10,color:'#B0ABA5',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px',marginBottom:3}},'Net Worth'),
-          e('div',{style:{fontSize:11,color:'#9E9A94'}},'Assets minus Liabilities')
+      // Assets / Liabilities clickable tiles
+      e('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:16}},
+        e('button',{
+          onClick:()=>setDetailPanel('assets'),
+          style:{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:12,padding:'12px 14px',textAlign:'left',cursor:'pointer'}
+        },
+          e('div',{style:{fontSize:9,color:'rgba(168,197,172,0.6)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px'}},'Total Assets'),
+          e('div',{style:{fontSize:18,fontWeight:700,color:'#FFFFFF',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(liveTotal)),
+          e('div',{style:{fontSize:10,color:'rgba(168,197,172,0.55)',marginTop:3}},'Tap for breakdown \u2192')
         ),
-        e('div',{style:{textAlign:'right'}},
-          e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:22,fontWeight:700,
-            color:nwValue>=0?'#3D6E42':'#B83030',letterSpacing:'-0.3px'}},
-            fmtFull(Math.round(nwValue))
-          ),
-          nwDelta!==0&&e('div',{style:{fontSize:10,color:nwDelta>=0?'#6E9E72':'#C07070',fontWeight:600,marginTop:2}},
-            `${nwDelta>=0?'\u25b2':'\u25bc'} ${fmtFull(Math.abs(Math.round(nwDelta)))} vs last`
-          )
+        e('button',{
+          onClick:()=>setDetailPanel('liabilities'),
+          style:{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:12,padding:'12px 14px',textAlign:'left',cursor:'pointer'}
+        },
+          e('div',{style:{fontSize:9,color:'rgba(224,112,112,0.7)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px'}},'Total Liabilities'),
+          e('div',{style:{fontSize:18,fontWeight:700,color:'#E07070',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(liveLiabs)),
+          e('div',{style:{fontSize:10,color:'rgba(224,112,112,0.45)',marginTop:3}},'Tap for breakdown \u2192')
+        )
+      ),
+      // Equity bar
+      liveTotal>0&&e('div',{style:{marginTop:14}},
+        e('div',{style:{height:5,background:'rgba(255,255,255,0.1)',borderRadius:3,overflow:'hidden'}},
+          e('div',{style:{height:'100%',width:Math.min(100,Math.max(0,(nwValue/liveTotal)*100))+'%',background:'linear-gradient(90deg,#4E9A5A,#7ECB8F)',borderRadius:3}})
+        ),
+        e('div',{style:{display:'flex',justifyContent:'space-between',marginTop:5,fontSize:10,color:'rgba(255,255,255,0.35)'}},
+          e('span',null,`Equity ${liveTotal>0?((nwValue/liveTotal)*100).toFixed(0):0}%`),
+          nwMoM!==null&&e('span',{style:{color:nwMoM>=0?'rgba(126,203,143,0.7)':'rgba(224,112,112,0.7)'}},`${nwMoM>=0?'+':''}${nwMoM.toFixed(1)}% MoM`)
         )
       )
     ),
 
-    // Income & Tax history
-    taxHistory.length>0&&e('div',{className:'card'},
-      e('div',{className:'card-title'},'Gross Income vs Tax Paid'),
-      e(BarChart,{data:taxHistory,color:'#3D7EAA',color2:'#C0392B'}),
-      e('div',{style:{display:'flex',gap:12,marginTop:6}},
-        e('div',{style:{display:'flex',alignItems:'center',gap:4}},
+    // ── 2. Monthly Snapshot (tappable) ────────────────────────────────────
+    (latestM||invRentalIncome>0||invLendingAccrual>0)&&e('div',{className:'card',style:{padding:0,overflow:'hidden'}},
+      e('div',{style:{padding:'14px 16px 12px',borderBottom:'1px solid #F4F2EE'}},
+        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+          e('div',{style:{fontSize:10,fontWeight:700,color:'#6E9E72',textTransform:'uppercase',letterSpacing:'1.4px'}},'This Month'),
+          latestMKey&&e('div',{style:{fontSize:11,color:'#9E9A94'}},new Date(latestMKey+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'}))
+        )
+      ),
+      e('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0}},
+        // Income tile
+        e('button',{onClick:()=>setDetailPanel('income'),style:{background:'none',border:'none',borderRight:'1px solid #F4F2EE',borderBottom:'1px solid #F4F2EE',padding:'14px 16px',textAlign:'left',cursor:'pointer'}},
+          e('div',{style:{fontSize:9,fontWeight:700,color:'#B0ABA5',textTransform:'uppercase',letterSpacing:'1px'}},'Income'),
+          e('div',{style:{fontSize:20,fontWeight:700,color:'#1C1C1E',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(augIncome)),
+          e('div',{style:{fontSize:10,color:'#9E9A94',marginTop:3}},'Tap for sources \u2192')
+        ),
+        // Expenses tile
+        e('button',{onClick:()=>setDetailPanel('expenses'),style:{background:'none',border:'none',borderBottom:'1px solid #F4F2EE',padding:'14px 16px',textAlign:'left',cursor:'pointer'}},
+          e('div',{style:{fontSize:9,fontWeight:700,color:'#B0ABA5',textTransform:'uppercase',letterSpacing:'1px'}},'Expenses'),
+          e('div',{style:{fontSize:20,fontWeight:700,color:'#B83030',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(augExpenses)),
+          e('div',{style:{fontSize:10,color:'#9E9A94',marginTop:3}},'Tap for details \u2192')
+        ),
+        // Saved tile
+        e('button',{onClick:()=>setDetailPanel('savings'),style:{background:'none',border:'none',borderRight:'1px solid #F4F2EE',padding:'14px 16px',textAlign:'left',cursor:'pointer'}},
+          e('div',{style:{fontSize:9,fontWeight:700,color:'#B0ABA5',textTransform:'uppercase',letterSpacing:'1px'}},'Saved'),
+          e('div',{style:{fontSize:20,fontWeight:700,color:'#3D6E42',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(augSaved)),
+          e('div',{style:{fontSize:10,color:'#9E9A94',marginTop:3}},`${augSavingsRate.toFixed(0)}% rate`)
+        ),
+        // Cash flow tile
+        e('div',{style:{padding:'14px 16px'}},
+          e('div',{style:{fontSize:9,fontWeight:700,color:'#B0ABA5',textTransform:'uppercase',letterSpacing:'1px'}},'Net Cash Flow'),
+          e('div',{style:{fontSize:20,fontWeight:700,color:accrualCashflow>=0?'#3D6E42':'#B83030',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(accrualCashflow)),
+          e('div',{style:{fontSize:10,color:'#9E9A94',marginTop:3}},'Accrual basis')
+        )
+      )
+    ),
+
+    // ── 3. Net Worth Trend ─────────────────────────────────────────────────
+    nwTrend.length>1&&e('div',{className:'card'},
+      e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
+        e('div',{className:'card-title',style:{marginBottom:0}},'Net Worth Trend'),
+        e('div',{style:{fontSize:11,fontWeight:700,color:nwDelta>=0?'#3D6E42':'#B83030'}},
+          nwDelta!==0?(nwDelta>=0?'+':'')+fmtFull(Math.round(nwDelta)):''
+        )
+      ),
+      e(BarChart,{data:nwTrend,color:'#7B5EA7'}),
+      e('div',{style:{fontSize:10,color:'#B0ABA5',textAlign:'center',marginTop:4}},'Values in $K \u00b7 Last '+nwTrend.length+' snapshots')
+    ),
+
+    // ── 4. Income Sources Chart ────────────────────────────────────────────
+    incomeTrend.length>0&&(incomeTrend.some(m=>m.salary>0||m.rent>0||m.lending>0))&&e('div',{className:'card'},
+      e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
+        e('div',{className:'card-title',style:{marginBottom:0}},'Monthly Income Sources'),
+        e('div',{style:{fontSize:11,fontWeight:700,color:'#3D6E42'}},fmt(augIncome)+'/mo')
+      ),
+      // Stacked visual bars per month
+      e('div',{style:{display:'flex',alignItems:'flex-end',gap:4,height:72}},
+        ...incomeTrend.map((m,i)=>{
+          const total=m.salary+m.rent+m.lending||1;
+          const maxTotal=Math.max(...incomeTrend.map(x=>x.salary+x.rent+x.lending),1);
+          const barH=Math.max(3,(total/maxTotal)*64);
+          const sp=total>0?(m.salary/total)*barH:0;
+          const rp=total>0?(m.rent/total)*barH:0;
+          const lp=total>0?(m.lending/total)*barH:0;
+          return e('div',{key:i,style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2}},
+            e('div',{style:{display:'flex',flexDirection:'column',justifyContent:'flex-end',height:64,width:'100%',gap:1}},
+              lp>0&&e('div',{style:{height:lp,background:'#C8A96E',borderRadius:sp>0||rp>0?'0':'3px 3px 0 0',minHeight:2}}),
+              rp>0&&e('div',{style:{height:rp,background:'#3D7EAA',borderRadius:lp>0?'0':sp>0?'0':'3px 3px 0 0',minHeight:2}}),
+              sp>0&&e('div',{style:{height:sp,background:'#7A9E7E',borderRadius:'3px 3px 0 0',minHeight:2}})
+            ),
+            e('div',{style:{fontSize:9,color:'#B0ABA5',marginTop:3}},m.label)
+          );
+        })
+      ),
+      e('div',{style:{display:'flex',gap:12,marginTop:8}},
+        e('div',{style:{display:'flex',alignItems:'center',gap:4}},e('div',{style:{width:8,height:8,borderRadius:2,background:'#7A9E7E'}}),e('div',{style:{fontSize:10,color:'#9E9A94'}},'Salary')),
+        e('div',{style:{display:'flex',alignItems:'center',gap:4}},e('div',{style:{width:8,height:8,borderRadius:2,background:'#3D7EAA'}}),e('div',{style:{fontSize:10,color:'#9E9A94'}},'Rental')),
+        e('div',{style:{display:'flex',alignItems:'center',gap:4}},e('div',{style:{width:8,height:8,borderRadius:2,background:'#C8A96E'}}),e('div',{style:{fontSize:10,color:'#9E9A94'}},'Lending'))
+      )
+    ),
+
+    // ── 5. Savings Trend ──────────────────────────────────────────────────
+    savingsTrend.filter(s=>s.v>0).length>1&&e('div',{className:'card'},
+      e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
+        e('div',{className:'card-title',style:{marginBottom:0}},'Monthly Savings'),
+        e('div',{style:{fontSize:11,fontWeight:700,color:'#3D6E42'}},augSavingsRate.toFixed(0)+'% rate')
+      ),
+      e(BarChart,{data:savingsTrend,color:'#6E9E72'}),
+      e('div',{style:{fontSize:10,color:'#B0ABA5',textAlign:'center',marginTop:4}},'Values in $K')
+    ),
+
+    // ── 6. Investment Income Summary (compact) ─────────────────────────────
+    (invRentalIncome>0||invLendingAccrual>0)&&e('div',{className:'card'},
+      e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
+        e('div',{className:'card-title',style:{marginBottom:0}},'Investment Income'),
+        e('div',{style:{fontSize:13,fontWeight:700,color:'#3D6E42'}},fmt(invRentalIncome+invLendingAccrual)+'/mo')
+      ),
+      invRentalIncome>0&&e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:invLendingAccrual>0?'1px solid #F4F2EE':'none'}},
+        e('div',{style:{display:'flex',alignItems:'center',gap:8}},
           e('div',{style:{width:8,height:8,borderRadius:2,background:'#3D7EAA'}}),
-          e('div',{style:{fontSize:10,color:'#9E9A94'}},`Gross ($K)`)
+          e('div',{style:{fontSize:13,color:'#1C1C1E'}},'Rental Income')
         ),
-        e('div',{style:{display:'flex',alignItems:'center',gap:4}},
-          e('div',{style:{width:8,height:8,borderRadius:2,background:'#C0392B'}}),
-          e('div',{style:{fontSize:10,color:'#9E9A94'}},`Tax ($K)`)
-        )
+        e('div',{style:{fontSize:13,fontWeight:700,color:'#3D7EAA'}},fmt(invRentalIncome)+'/mo')
+      ),
+      invLendingAccrual>0&&e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0'}},
+        e('div',{style:{display:'flex',alignItems:'center',gap:8}},
+          e('div',{style:{width:8,height:8,borderRadius:2,background:'#C8A96E'}}),
+          e('div',{style:{fontSize:13,color:'#1C1C1E'}},'Lending Interest')
+        ),
+        e('div',{style:{fontSize:13,fontWeight:700,color:'#C8A96E'}},fmt(invLendingAccrual)+'/mo')
       )
     ),
 
-    // \u2500\u2500 Collapsible investment sections \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    // ── 7. Private Lending collapsible ─────────────────────────────────────
     privateLoans.length>0&&e(CollapsibleSection,{
-      title:'Private Lending',
-      count:privateLoans.length,
-      total:fmtFull(liveInvLending),
-      accentColor:'#C8A96E',
-      key:'loans'
-    },
-      ...privateLoans.map((inv,idx)=>e(LoanCard,{key:idx,inv}))
-    ),
+      title:'Private Lending',count:privateLoans.length,
+      total:fmtFull(liveInvLending),accentColor:'#C8A96E',key:'loans'
+    },...privateLoans.map((inv,idx)=>e(LoanCard,{key:idx,inv}))),
 
+    // ── 8. Real Estate collapsible ─────────────────────────────────────────
     realEstate.length>0&&e(CollapsibleSection,{
-      title:'Real Estate',
-      count:realEstate.length,
+      title:'Real Estate',count:realEstate.length,
       total:fmtFull(realEstate.reduce((s,i)=>s+(+i.propertyValue||+i.amountUSD||0),0)),
-      accentColor:'#3D7EAA',
-      key:'re'
-    },
-      ...realEstate.map((inv,idx)=>e(RECard,{key:idx,inv}))
-    ),
+      accentColor:'#3D7EAA',key:'re'
+    },...realEstate.map((inv,idx)=>e(RECard,{key:idx,inv}))),
 
-    stocks.length>0&&e(CollapsibleSection,{
-      title:'Stocks & Equity',
-      count:stocks.length,
-      total:fmtFull(stocks.reduce((s,i)=>s+(+i.currentMarketValue||+i.amountUSD||0),0)),
-      accentColor:'#4E7A52',
-      subtitle:`Cost basis: ${fmtFull(stocks.reduce((s,i)=>s+(+i.costBasis||+i.amountUSD||0),0))}`,
-      key:'stocks'
-    },
-      ...stocks.map((inv,idx)=>{
-        const basis=+inv.costBasis||+inv.amountUSD||0;
-        const curr=+inv.currentMarketValue||+inv.amountUSD||0;
-        const gain=curr-basis;
-        return e('div',{key:idx,className:'list-item'},
-          e('div',{className:'list-item-left'},
-            e('div',{className:'list-item-title'},inv.name||'Investment'),
-            e('div',{className:'list-item-sub'},inv.type)
-          ),
-          e('div',{className:'list-item-right'},
-            e('div',{className:'list-item-value'},fmtFull(curr)),
-            e('div',{style:{fontSize:11,color:gain>=0?'#3D6E42':'#B83030'}},
-              `${gain>=0?'+':''}${fmtFull(gain)}`
-            )
-          )
-        );
-      })
-    ),
-
-    // Cash Accumulation
-    cashTrend.length>1&&e('div',{className:'card'},
-      e('div',{className:'card-title'},'Monthly Savings'),
-      e(BarChart,{data:cashTrend,color:'#7A9E7E'}),
-      e('div',{style:{fontSize:10,color:'#9E9A94',textAlign:'center',marginTop:4}},'Values in $K')
-    ),
-
-    // \u2500\u2500 Monthly Summary (salary only) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-    latestM&&e('div',{className:'card'},
-      e('div',{className:'card-title'},'Monthly Summary \u2014 '+(latestMKey?new Date(latestMKey+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'}):'') ),
-      e('div',{className:'grid-2'},
-        e('div',{className:'stat-tile'},
-          e('div',{className:'stat-tile-label'},'Salary Income'),
-          e('div',{className:'stat-tile-value'},fmt(latestM.totalIncome||0))
-        ),
-        e('div',{className:'stat-tile'},
-          e('div',{className:'stat-tile-label'},'Expenses'),
-          e('div',{className:'stat-tile-value'},fmt(latestM.totalExpenses||0))
-        ),
-        e('div',{className:'stat-tile'},
-          e('div',{className:'stat-tile-label'},'Saved'),
-          e('div',{className:'stat-tile-value',style:{color:'#3D6E42'}},fmt(latestM.totalSaved||0))
-        ),
-        e('div',{className:'stat-tile'},
-          e('div',{className:'stat-tile-label'},'Salary CF'),
-          e('div',{className:'stat-tile-value',style:{color:(latestM.cashflow||0)>=0?'#3D6E42':'#B83030'}},fmt(latestM.cashflow||0))
-        )
-      )
-    ),
-
-    // \u2500\u2500 Investment Income & Expenses \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-    (reBreakdown.length>0||lendingBreakdown.length>0)&&e('div',{className:'card'},
-      e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}},
-        e('div',{className:'card-title',style:{marginBottom:0}},'Investment Income & Expenses'),
-        e('div',{style:{textAlign:'right'}},
-          e('div',{style:{textAlign:'right'}},
-            e('div',{style:{fontSize:11,fontWeight:700,color:invREAccrualNOI+invLendingAccrual>=0?'#3D6E42':'#B83030'}},
-              fmt(invREAccrualNOI+invLendingAccrual)+'/mo'
-            ),
-            e('div',{style:{fontSize:9,color:'#B0ABA5'}},'Accrual basis')
-          )
-        )
-      ),
-
-      // Real Estate properties
-      reBreakdown.length>0&&e('div',{style:{marginBottom:12}},
-        e('div',{style:{fontSize:10,fontWeight:700,color:'#3D7EAA',textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Real Estate'),
-        ...reBreakdown.map((r,i)=>
-          e('div',{key:i,style:{
-            background:'#F9FAF9',borderRadius:12,padding:'12px 14px',
-            marginBottom:i<reBreakdown.length-1?8:0
-          }},
-            e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
-              e('div',{style:{fontSize:13,fontWeight:600,color:'#1C1C1E'}},r.name),
-              e('div',{style:{textAlign:'right'}},
-                e('div',{style:{fontSize:13,fontWeight:700,color:r.accrualCF>=0?'#3D6E42':'#B83030'}},fmt(r.accrualCF)+'/mo'),
-                r.realCF!==r.accrualCF&&e('div',{style:{fontSize:10,color:'#B0ABA5'}},`Real: ${fmt(r.realCF)} (${r.loggedExpenses>0?fmtFull(r.loggedExpenses)+' logged':'no logged exp.'})`)
-              )
-            ),
-            // Income row
-            e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
-              e('div',{style:{display:'flex',alignItems:'center',gap:5}},
-                e('div',{style:{width:5,height:5,borderRadius:1,background:'#3D6E42'}}),
-                e('div',{style:{fontSize:11,color:'#6B6663'}},'Rental income')
-              ),
-              e('div',{style:{fontSize:12,fontWeight:600,color:'#3D6E42'}},fmt(r.rent))
-            ),
-            // Expense rows
-            r.mort>0&&e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
-              e('div',{style:{display:'flex',alignItems:'center',gap:5}},
-                e('div',{style:{width:5,height:5,borderRadius:1,background:'#B83030'}}),
-                e('div',{style:{fontSize:11,color:'#6B6663'}},'Mortgage')
-              ),
-              e('div',{style:{fontSize:12,fontWeight:600,color:'#B83030'}},`\u2212${fmt(r.mort)}`)
-            ),
-            r.propTax>0&&e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
-              e('div',{style:{display:'flex',alignItems:'center',gap:5}},
-                e('div',{style:{width:5,height:5,borderRadius:1,background:'#D47C0F'}}),
-                e('div',{style:{fontSize:11,color:'#6B6663'}},'Property tax/mo')
-              ),
-              e('div',{style:{fontSize:12,fontWeight:600,color:'#D47C0F'}},`\u2212${fmt(r.propTax)}`)
-            ),
-            r.maint>0&&e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
-              e('div',{style:{display:'flex',alignItems:'center',gap:5}},
-                e('div',{style:{width:5,height:5,borderRadius:1,background:'#9E9A94'}}),
-                e('div',{style:{fontSize:11,color:'#6B6663'}},'Maintenance/mo')
-              ),
-              e('div',{style:{fontSize:12,fontWeight:600,color:'#9E9A94'}},`\u2212${fmt(r.maint)}`)
-            ),
-            // NOI divider
-            e('div',{style:{
-              display:'flex',justifyContent:'space-between',alignItems:'center',
-              marginTop:6,paddingTop:6,borderTop:'1px solid #EDEBE6'
-            }},
-              e('div',{style:{fontSize:11,color:'#9E9A94'}},'NOI (excl. mortgage)'),
-              e('div',{style:{fontSize:12,fontWeight:700,color:r.noi>=0?'#3D6E42':'#B83030'}},fmt(r.noi))
-            )
-          )
-        )
-      ),
-
-      // Private Lending
-      lendingBreakdown.length>0&&e('div',null,
-        reBreakdown.length>0&&e('div',{style:{height:1,background:'#F0EDE8',margin:'4px 0 12px'}}),
-        e('div',{style:{fontSize:10,fontWeight:700,color:'#C8A96E',textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Private Lending'),
-        ...lendingBreakdown.map((l,i)=>
-          e('div',{key:i,style:{
-            background: l.isMatured?'#F9F9F9':'#FFFBF4',
-            borderRadius:12,padding:'12px 14px',
-            marginBottom:i<lendingBreakdown.length-1?8:0,
-            opacity: l.isMatured?0.6:1,
-            border: l.isMatured?'1px solid #EDEBE6':'1px solid #F5EDDB'
-          }},
-            e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
-              e('div',null,
-                e('div',{style:{fontSize:13,fontWeight:600,color:'#1C1C1E'}},l.name),
-                e('div',{style:{
-                  display:'inline-block',fontSize:9,fontWeight:700,marginTop:3,
-                  padding:'2px 6px',borderRadius:10,
-                  background: l.isMatured&&l.outstandingReceivable>0?'#FFF5E8':l.isMatured?'#F0EDE8':l.isActive?'#EFF5EF':'#FFF8E8',
-                  color: l.isMatured&&l.outstandingReceivable>0?'#C8700A':l.isMatured?'#9E9A94':l.isActive?'#3D6E42':'#C8860A'
-                }},
-                  l.isMatured&&l.outstandingReceivable>0?'Matured \u2014 unpaid balance':
-                  l.isMatured?'Matured \u2014 fully settled':
-                  l.isActive?'Active':'Not yet started'
-                )
-              ),
-              l.isActive
-                ? e('div',{style:{textAlign:'right'}},
-                    e('div',{style:{fontSize:13,fontWeight:700,color:'#C8A96E'}},fmt(l.accrualMonthly)+'/mo'),
-                    e('div',{style:{fontSize:9,color:'#B0ABA5'}},'Accrual this month'),
-                    l.realMonthly>0&&e('div',{style:{fontSize:10,fontWeight:600,color:'#3D6E42',marginTop:2}},`\u2713 ${fmt(l.realMonthly)} received`)
-                  )
-                : l.isMatured&&l.outstandingReceivable>0
-                  ? e('div',{style:{textAlign:'right'}},
-                      e('div',{style:{fontSize:12,fontWeight:700,color:'#C8700A'}},fmtFull(Math.round(l.outstandingReceivable))),
-                      e('div',{style:{fontSize:9,color:'#B0ABA5'}},'Outstanding receivable'),
-                      e('div',{style:{fontSize:9,color:'#9E9A94',marginTop:1}},`${fmtFull(Math.round(l.totalReceived))} of ${fmtFull(Math.round(l.totalExpected))} received`)
-                    )
-                  : e('div',{style:{fontSize:11,color:'#9E9A94',fontStyle:'italic'}},'Fully settled')
-            ),
-            e('div',{style:{display:'flex',justifyContent:'space-between'}},
-              e('div',{style:{fontSize:11,color:'#9E9A94'}},`${l.rate}%/yr on ${fmtFull(l.principal)}`),
-              e('div',{style:{fontSize:11,color:'#B0ABA5'}},`${fmtFull(Math.round(l.accrualMonthly*12))}/yr est.`)
-            )
-          )
-        )
-      ),
-
-      // Total row
-      e('div',{style:{
-        marginTop:12,padding:'12px 14px',
-        background:'#1A2B1C',borderRadius:12
-      }},
-        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
-          e('div',null,
-            e('div',{style:{fontSize:9,color:'rgba(168,197,172,0.6)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px',marginBottom:2}},'Accrual Net CF'),
-            e('div',{style:{fontSize:10,color:'rgba(255,255,255,0.35)'}},'Expected this month')
-          ),
-          e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:20,fontWeight:700,
-            color:(invREAccrualNOI+invLendingAccrual)>=0?'#7ECB8F':'#E07070',letterSpacing:'-0.3px'}},
-            fmt(invREAccrualNOI+invLendingAccrual)+'/mo'
-          )
-        ),
-        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:6,borderTop:'1px solid rgba(255,255,255,0.08)'}},
-          e('div',null,
-            e('div',{style:{fontSize:9,color:'rgba(168,197,172,0.45)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px',marginBottom:2}},'Real CF (cash in hand)'),
-            e('div',{style:{fontSize:10,color:'rgba(255,255,255,0.25)'}},'Rent + logged payments \u2212 mortgage \u2212 logged exp.')
-          ),
-          e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:16,fontWeight:700,
-            color:(invRERealCF+invLendingReal)>=0?'#5CA870':'#C07070',letterSpacing:'-0.2px'}},
-            fmt(invRERealCF+invLendingReal)+'/mo'
-          )
-        )
-      )
-    ),
-
-    !latestNW&&!latestM&&e('div',{className:'empty-state'},
+    // ── Empty state ────────────────────────────────────────────────────────
+    !latestNW&&!latestM&&investments.length===0&&e('div',{className:'empty-state'},
       e('div',{style:{width:40,height:40,margin:'0 auto 16px',opacity:0.3}},
         e('svg',{viewBox:'0 0 48 48',fill:'none',xmlns:'http://www.w3.org/2000/svg'},
           e('path',{d:'M24 44C24 44 8 32 8 18C8 10.268 15.163 4 24 4C32.837 4 40 10.268 40 18C40 32 24 44 24 44Z',fill:'#3D6E42'}),
@@ -1297,7 +1015,6 @@ function HomeTab({data}){
     )
   );
 }
-
 function buildLoanSchedule(inv) {
   // Builds payment schedule driven by actual start/maturity dates + payment interval
   const start = inv.startDate ? new Date(inv.startDate) : null;
