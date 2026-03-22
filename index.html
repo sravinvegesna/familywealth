@@ -398,17 +398,22 @@ function Toast(){
 
 function BarChart({data,height=80,color='#7A9E7E',color2}){
   if(!data||!data.length) return null;
-  const max=Math.max(...data.map(d=>Math.max(d.v||0,d.v2||0)),1);
+  // Use absolute values for bar heights; negative values still render
+  const absVals = data.map(d=>Math.abs(d.v||0));
+  const absV2   = data.map(d=>Math.abs(d.v2||0));
+  const max=Math.max(...absVals,...absV2,0.001);
   return e('div',{className:'bar-chart',style:{height}},
-    ...data.map((d,i)=>
-      e('div',{key:i,className:'bar-col'},
+    ...data.map((d,i)=>{
+      const isNeg = (d.v||0)<0;
+      const barColor = color2 ? color : (isNeg?'#E07070':color);
+      return e('div',{key:i,className:'bar-col'},
         e('div',{style:{display:'flex',alignItems:'flex-end',gap:2,height:height-20,width:'100%'}},
-          e('div',{className:'bar-fill',style:{height:`${((d.v||0)/max)*100}%`,background:color,flex:1}}),
-          color2&&d.v2!=null?e('div',{className:'bar-fill',style:{height:`${(d.v2/max)*100}%`,background:color2,flex:1}}):null
+          e('div',{className:'bar-fill',style:{height:`${(absVals[i]/max)*100}%`,background:barColor,flex:1}}),
+          color2&&d.v2!=null?e('div',{className:'bar-fill',style:{height:`${(absV2[i]/max)*100}%`,background:color2,flex:1}}):null
         ),
-        e('div',{className:'bar-label'},d.label)
-      )
-    )
+        e('div',{className:'bar-label',style:{color:isNeg&&!color2?'#E07070':undefined}},d.label)
+      );
+    })
   );
 }
 
@@ -693,12 +698,19 @@ function HomeTab({data}){
   const expFields=[['hs','Housing'],['fd','Food'],['tr','Transport'],['ins','Insurance'],['ut','Utilities'],['cc','Credit Cards'],['hc','Healthcare'],['sb','Subscriptions'],['dn','Dining'],['tv','Travel'],['ps','Personal'],['db','Debt Payments'],['rm','Rent'],['ox','Other']];
   const expItems = expFields.map(([k,l])=>({label:l,val:+latestM?.[k]||0})).filter(x=>x.val>0);
 
-  // Trends: last 8 months NW
-  const nwTrend = nwKeys.slice(-8).map(k=>({label:k.slice(5),v:(networth[k].netWorth||0)/1000}));
+  // Trends: last 8 months NW — always append live NW as latest point
+  const nwTrendSaved = nwKeys.slice(-8).map(k=>({label:k.slice(5),v:(networth[k].netWorth||0)/1000}));
+  // If the live NW differs from the last saved snapshot (or no snapshots), append live point
+  const nowLabel = String(now.getMonth()+1).padStart(2,'0');
+  const lastSavedNW = nwTrendSaved.length ? nwTrendSaved[nwTrendSaved.length-1].v : null;
+  const liveNWK = Math.round(nwValue)/1000;
+  const nwTrend = (lastSavedNW===null || Math.abs(lastSavedNW-liveNWK)>0.01)
+    ? [...nwTrendSaved, {label:nowLabel,v:liveNWK,live:true}]
+    : nwTrendSaved;
 
   // Trends: last 8 months income by source (stacked)
   const last8mKeys = mKeys.slice(-8);
-  const incomeTrend = last8mKeys.map(k=>{
+  const incomeTrendFromHistory = last8mKeys.map(k=>{
     const m=monthly[k];
     const mStart=new Date(k+'-01').getTime();
     const mEnd=new Date(+k.slice(0,4), +k.slice(5,7), 0, 23,59,59).getTime();
@@ -714,6 +726,12 @@ function HomeTab({data}){
     const rentIncome=investments.filter(i=>i.type==='Real Estate').reduce((s,i)=>s+(+i.monthlyRent||0),0);
     return {label:k.slice(5),salary:m.totalIncome||0,rent:rentIncome,lending:lendIncome};
   });
+  // Always ensure current month appears in income trend
+  const curMonthLabel = String(now.getMonth()+1).padStart(2,'0');
+  const alreadyHasCurrent = incomeTrendFromHistory.some(x=>x.label===curMonthLabel);
+  const incomeTrend = (!alreadyHasCurrent&&(salaryIncome>0||invRentalIncome>0||invLendingAccrual>0))
+    ? [...incomeTrendFromHistory, {label:curMonthLabel,salary:salaryIncome,rent:invRentalIncome,lending:invLendingAccrual}]
+    : incomeTrendFromHistory;
 
   // Savings trend
   const savingsTrend = last8mKeys.map(k=>({label:k.slice(5),v:(monthly[k].totalSaved||0)/1000}));
@@ -914,7 +932,7 @@ function HomeTab({data}){
     ),
 
     // ── 3. Net Worth Trend ─────────────────────────────────────────────────
-    nwTrend.length>1&&e('div',{className:'card'},
+    nwTrend.length>=1&&e('div',{className:'card'},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
         e('div',{className:'card-title',style:{marginBottom:0}},'Net Worth Trend'),
         e('div',{style:{fontSize:11,fontWeight:700,color:nwDelta>=0?'#3D6E42':'#B83030'}},
@@ -926,7 +944,7 @@ function HomeTab({data}){
     ),
 
     // ── 4. Income Sources Chart ────────────────────────────────────────────
-    incomeTrend.length>0&&(incomeTrend.some(m=>m.salary>0||m.rent>0||m.lending>0))&&e('div',{className:'card'},
+    (incomeTrend.some(m=>m.salary>0||m.rent>0||m.lending>0)||(invRentalIncome>0||invLendingAccrual>0||salaryIncome>0))&&e('div',{className:'card'},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
         e('div',{className:'card-title',style:{marginBottom:0}},'Monthly Income Sources'),
         e('div',{style:{fontSize:11,fontWeight:700,color:'#3D6E42'}},fmt(augIncome)+'/mo')
@@ -958,7 +976,7 @@ function HomeTab({data}){
     ),
 
     // ── 5. Savings Trend ──────────────────────────────────────────────────
-    savingsTrend.filter(s=>s.v>0).length>1&&e('div',{className:'card'},
+    savingsTrend.filter(s=>s.v>0).length>=1&&e('div',{className:'card'},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
         e('div',{className:'card-title',style:{marginBottom:0}},'Monthly Savings'),
         e('div',{style:{fontSize:11,fontWeight:700,color:'#3D6E42'}},augSavingsRate.toFixed(0)+'% rate')
