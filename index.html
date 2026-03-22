@@ -16,321 +16,25 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
-<style>
-/* ══ Reset ══ */
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-:root{color-scheme:light;}
-html,body{height:100%;overflow:hidden;background:#FFFBF0 !important;color:#2C2416 !important;}
-body{font-family:'DM Sans',sans-serif;color:#2C2416;-webkit-overflow-scrolling:touch;}
-#root{height:100%;display:flex;flex-direction:column;background:#FFFBF0;}
-
-/* ══ Splash ══ */
-#splash{position:fixed;inset:0;background:#1C2B1E;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.5s ease;}
-#splash.hide{opacity:0;pointer-events:none;}
-.splash-leaf{width:52px;height:52px;animation:leafpop 0.9s cubic-bezier(0.34,1.56,0.64,1) forwards;}
-@keyframes leafpop{0%{opacity:0;transform:scale(0.3) rotate(-15deg);}100%{opacity:1;transform:scale(1) rotate(0deg);}}
-.splash-title{font-family:‘DM Sans’,sans-serif;color:#FFF;font-size:28px;margin-top:16px;letter-spacing:-0.4px;font-weight:300;}
-.splash-word{color:#A8C5AC;font-size:28px;font-weight:300;margin-left:4px;}
-.splash-sub{color:rgba(168,197,172,0.5);font-size:13px;margin-top:6px;font-weight:400;letter-spacing:0.8px;}
-.splash-bar-bg{width:140px;height:2px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:52px;overflow:hidden;}
-.splash-bar{height:100%;background:linear-gradient(90deg,#4A8A52,#86D498);border-radius:2px;animation:loadbar 1.6s ease forwards;}
-@keyframes loadbar{0%{width:0%}100%{width:100%}}
-
-/* ══ App shell ══ */
-.app{display:flex;flex-direction:column;height:100%;max-width:430px;margin:0 auto;background:#FFFBF0;}
-
-/* ══ Header ══ */
-.header{padding:0 18px;position:sticky;top:0;z-index:100;flex-shrink:0;background:#FFFBF0;border-bottom:1px solid #F0E8D0;}
-.header-top{display:flex;align-items:center;justify-content:space-between;padding:13px 0 10px;}
-.header-title{font-family:‘DM Sans’,sans-serif;color:#2C2416;font-size:20px;font-weight:300;letter-spacing:-0.4px;}
-.header-title span{font-weight:800;color:#2A5C35;font-size:20px;margin-left:2px;}
-.year-badge{background:#F5C842;color:#2C2416;padding:5px 13px;border-radius:100px;font-size:11px;font-weight:800;letter-spacing:0.3px;}
-
-/* ══ Tab bar ══ */
-.tab-bar{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:0;}
-.tab-bar::-webkit-scrollbar{display:none;}
-.tab-btn{flex-shrink:0;padding:9px 14px 11px;font-family:‘DM Sans’,sans-serif;font-size:13px;font-weight:500;color:#B8A880;background:none;border:none;border-bottom:2.5px solid transparent;cursor:pointer;transition:color .15s,border-color .15s;white-space:nowrap;}
-.tab-btn.active{color:#2C2416;border-bottom-color:#F5C842;font-weight:700;}
-
-/* ══ Content ══ */
-.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px 64px;background:#FFFBF0;}
-
-/* ══ Cards ══ */
-.card{background:#FFFFFF;border-radius:20px;padding:18px 20px;margin-bottom:11px;box-shadow:0 1px 3px rgba(44,36,22,0.05),0 6px 20px rgba(44,36,22,0.07);}
-.card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.8px;color:#C8B888;margin-bottom:14px;}
-.card-value{font-family:‘DM Sans’,sans-serif;font-size:28px;color:#2C2416;line-height:1;letter-spacing:-0.5px;font-weight:700;}
-.card-sub{font-size:12px;color:#9E8E60;margin-top:4px;}
-
-/* ══ Hero card ══ */
-.hero-card{background:linear-gradient(145deg,#1A2E1C 0%,#243C28 55%,#1C3020 100%);border-radius:26px;padding:24px 20px 20px;margin-bottom:11px;box-shadow:0 14px 48px rgba(26,46,28,0.32),0 4px 12px rgba(0,0,0,0.14);position:relative;overflow:hidden;}
-.hero-card::before{content:’’;position:absolute;top:-60px;right:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(245,200,66,0.08) 0%,transparent 65%);pointer-events:none;}
-.hero-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:rgba(245,200,66,0.5);margin-bottom:6px;}
-.hero-value{font-family:‘DM Sans’,sans-serif;font-size:38px;color:#FFF;line-height:1;letter-spacing:-1px;font-weight:700;}
-.hero-delta{font-size:12px;margin-top:7px;font-weight:500;}
-.hero-delta.pos{color:#86D498;}
-.hero-delta.neg{color:#FF7B7B;}
-.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;}
-.hero-stat{background:rgba(255,255,255,0.07);border-radius:16px;padding:13px 14px;border:1px solid rgba(255,255,255,0.06);}
-.hero-stat-label{font-size:9px;color:rgba(245,200,66,0.4);font-weight:700;text-transform:uppercase;letter-spacing:1.2px;}
-.hero-stat-value{font-size:17px;font-family:‘DM Sans’,sans-serif;color:#FFF;margin-top:5px;letter-spacing:-0.4px;font-weight:600;}
-.hero-stat-sub{font-size:10px;color:rgba(255,255,255,0.3);margin-top:2px;}
-
-/* ══ Summary grid ══ */
-.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px;}
-.summary-box{background:#FFF;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(44,36,22,0.05),0 4px 14px rgba(44,36,22,0.06);}
-.summary-box-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:#C8B888;}
-.summary-box-value{font-family:‘DM Sans’,sans-serif;font-size:22px;color:#2C2416;margin-top:6px;letter-spacing:-0.3px;font-weight:700;}
-.summary-box-value.green{color:#2A5C35;}
-.summary-box-value.red{color:#C0392B;}
-
-/* ══ Grids ══ */
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-
-/* ══ Stat tiles ══ */
-.stat-tile{background:#FFF8E0;border-radius:16px;padding:14px 15px;}
-.stat-tile-label{font-size:9px;font-weight:700;color:#C8A840;text-transform:uppercase;letter-spacing:1.1px;}
-.stat-tile-value{font-family:‘DM Sans’,sans-serif;font-size:20px;color:#2C2416;margin-top:5px;letter-spacing:-0.2px;font-weight:600;}
-.stat-tile-sub{font-size:11px;color:#9E8E60;margin-top:2px;}
-
-/* ══ Bar chart ══ */
-.bar-chart{display:flex;align-items:flex-end;gap:5px;height:76px;margin-top:10px;}
-.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
-.bar-fill{width:100%;border-radius:6px 6px 0 0;min-height:3px;}
-.bar-label{font-size:9px;color:#C8B888;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
-
-/* ══ Donut ══ */
-.donut-canvas{width:110px;height:110px;flex-shrink:0;}
-.allocation-row{display:flex;align-items:center;margin-bottom:9px;}
-.allocation-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-right:9px;}
-.allocation-label{font-size:12px;color:#2C2416;flex:1;}
-.allocation-pct{font-size:12px;font-weight:600;color:#2C2416;}
-
-/* ══ Forms ══ */
-.form-group{margin-bottom:12px;}
-.form-label{font-size:10px;font-weight:700;color:#C8B888;text-transform:uppercase;letter-spacing:1.1px;display:block;margin-bottom:5px;}
-.form-input{width:100%;border:1.5px solid #F0E0A8;border-radius:14px;padding:13px 15px;font-family:‘DM Sans’,sans-serif;font-size:15px;color:#2C2416;background:#FFFDF5;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;-webkit-text-fill-color:#2C2416;}
-.form-input:focus{border-color:#F5C842;box-shadow:0 0 0 3px rgba(245,200,66,0.18);}
-.form-select{width:100%;border:1.5px solid #F0E0A8;border-radius:14px;padding:13px 38px 13px 15px;font-family:‘DM Sans’,sans-serif;font-size:15px;color:#2C2416;background:#FFFDF5;outline:none;-webkit-appearance:none;appearance:none;-webkit-text-fill-color:#2C2416;background-image:url(“data:image/svg+xml,%3Csvg xmlns=‘http://www.w3.org/2000/svg’ width=‘10’ height=‘6’ viewBox=‘0 0 10 6’%3E%3Cpath d=‘M1 1l4 4 4-4’ stroke=’%23C8B888’ stroke-width=‘1.5’ fill=‘none’ stroke-linecap=‘round’ stroke-linejoin=‘round’/%3E%3C/svg%3E”);background-repeat:no-repeat;background-position:right 15px center;transition:border-color .15s;}
-.form-select:focus{border-color:#F5C842;box-shadow:0 0 0 3px rgba(245,200,66,0.18);}
-.form-textarea{width:100%;border:1.5px solid #F0E0A8;border-radius:14px;padding:13px 15px;font-family:‘DM Sans’,sans-serif;font-size:15px;color:#2C2416;background:#FFFDF5;outline:none;resize:none;min-height:80px;-webkit-text-fill-color:#2C2416;transition:border-color .15s;}
-.form-textarea:focus{border-color:#F5C842;box-shadow:0 0 0 3px rgba(245,200,66,0.18);}
-.form-input::placeholder,.form-textarea::placeholder{color:#D4C080;font-weight:400;}
-
-/* ══ Section header ══ */
-.section-header{font-size:10px;font-weight:700;color:#8A7040;text-transform:uppercase;letter-spacing:1.8px;margin:20px 0 10px;}
-
-/* ══ Buttons ══ */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:14px 24px;border-radius:16px;font-family:‘DM Sans’,sans-serif;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:opacity .15s,transform .1s;-webkit-appearance:none;}
-.btn:active{opacity:.82;transform:scale(.97);}
-.btn-primary{background:#2A5C35;color:#FFF;box-shadow:0 4px 18px rgba(42,92,53,0.32);}
-.btn-full{width:100%;}
-.btn-sm{padding:9px 16px;font-size:12px;border-radius:12px;font-weight:600;}
-.btn-outline{background:#FFF;border:1.5px solid #F0E0A8;color:#6A5030;font-weight:600;box-shadow:0 1px 4px rgba(44,36,22,0.06);}
-.btn-danger{background:transparent;color:#C8B888;border:none;font-weight:500;}
-.btn-gold{background:#F5C842;color:#2C2416;box-shadow:0 4px 18px rgba(245,200,66,0.36);font-weight:800;}
-
-/* ══ Progress ══ */
-.progress-bg{background:#F0E0A8;border-radius:100px;height:6px;overflow:hidden;margin-top:8px;}
-.progress-fill{height:100%;border-radius:100px;transition:width .7s cubic-bezier(.4,0,.2,1);}
-
-/* ══ Toggle ══ */
-.toggle-row{display:flex;background:#F5ECC8;border-radius:16px;padding:4px;margin-bottom:16px;}
-.toggle-btn{flex:1;padding:9px 8px;border-radius:13px;border:none;font-family:‘DM Sans’,sans-serif;font-size:12px;font-weight:600;color:#9E8E60;background:transparent;cursor:pointer;transition:all .2s;}
-.toggle-btn.active{background:#FFF;color:#2C2416;box-shadow:0 2px 10px rgba(44,36,22,0.10);}
-
-/* ══ Live panel ══ */
-.live-panel{background:linear-gradient(145deg,#1A2E1C,#1C3020);border-radius:20px;padding:18px 20px;margin-top:12px;box-shadow:0 8px 28px rgba(26,46,28,0.22);}
-.live-panel-label{font-size:9px;color:rgba(245,200,66,0.4);text-transform:uppercase;letter-spacing:1.4px;font-weight:700;margin-bottom:4px;}
-.live-panel-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
-.live-panel-key{font-size:12px;color:rgba(255,255,255,0.38);}
-.live-panel-val{font-size:13px;font-weight:600;color:#FFF;}
-.live-panel-val.gold{color:#F5C842;}
-.live-panel-val.green{color:#86D498;}
-.live-panel-val.red{color:#FF7B7B;}
-
-/* ══ List items ══ */
-.list-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #F5ECC8;}
-.list-item:last-child{border-bottom:none;}
-.list-item-left{flex:1;min-width:0;padding-right:10px;}
-.list-item-title{font-size:14px;font-weight:500;color:#2C2416;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.list-item-sub{font-size:11px;color:#9E8E60;margin-top:2px;}
-.list-item-right{text-align:right;flex-shrink:0;}
-.list-item-value{font-size:14px;font-weight:600;color:#2C2416;}
-
-/* ══ Badges ══ */
-.badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.3px;}
-.badge-sage{background:#D8F0DC;color:#2A5C35;}
-.badge-gold{background:#FFF0C0;color:#8A6020;}
-.badge-red{background:#FFE8E8;color:#C0392B;}
-.badge-blue{background:#E0EEFF;color:#1E5C9E;}
-.badge-purple{background:#EEE8FF;color:#5B3E8A;}
-
-/* ══ Toast ══ */
-.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(90px);background:#1A2E1C;color:#FFF;padding:13px 26px;border-radius:100px;font-size:13px;font-weight:600;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,0.25);}
-.toast.show{transform:translateX(-50%) translateY(0);}
-
-/* ══ Insight cards ══ */
-.insight-card{border-radius:20px;padding:18px;margin-bottom:10px;border:none;}
-.insight-title{font-size:13px;font-weight:700;color:#2C2416;margin-bottom:5px;}
-.insight-text{font-size:12px;color:#6A5030;line-height:1.6;}
-
-/* ══ Tax ══ */
-.tax-summary{background:linear-gradient(145deg,#1A2E1C,#1C3020);border-radius:24px;padding:22px;color:#FFF;margin-bottom:14px;box-shadow:0 10px 36px rgba(26,46,28,0.26);}
-.tax-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:rgba(255,255,255,0.72);}
-.tax-row.total{border-top:1px solid rgba(255,255,255,0.08);margin-top:8px;padding-top:12px;font-weight:700;color:#FFF;}
-.tax-refund{text-align:center;margin-top:16px;padding:16px;background:rgba(245,200,66,0.08);border-radius:18px;border:1px solid rgba(245,200,66,0.2);}
-.tax-refund-label{font-size:9px;color:rgba(245,200,66,0.5);text-transform:uppercase;letter-spacing:1.4px;font-weight:700;}
-.tax-refund-value{font-family:‘DM Sans’,sans-serif;font-size:32px;margin-top:6px;font-weight:700;letter-spacing:-0.6px;}
-
-/* ══ Investment cards ══ */
-.inv-card{background:#FFF;border-radius:20px;padding:18px;margin-bottom:10px;box-shadow:0 1px 3px rgba(44,36,22,0.05),0 6px 20px rgba(44,36,22,0.07);}
-.inv-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
-.inv-card-name{font-size:15px;font-weight:600;color:#2C2416;}
-.inv-card-type{font-size:11px;color:#9E8E60;margin-top:2px;}
-.inv-card-value{font-family:‘DM Sans’,sans-serif;font-size:20px;color:#2C2416;text-align:right;letter-spacing:-0.3px;font-weight:700;}
-.inv-card-ret{font-size:11px;text-align:right;margin-top:2px;font-weight:600;}
-
-/* ══ icard v3 ══ */
-.icard{background:#FFF;border-radius:20px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(44,36,22,0.05),0 6px 20px rgba(44,36,22,0.07);}
-.icard-accent{height:4px;width:100%;}
-.icard-body{padding:16px 18px 10px;}
-.icard-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
-.icard-name{font-size:15px;font-weight:600;color:#2C2416;line-height:1.3;}
-.icard-sub{font-size:11px;color:#9E8E60;margin-top:3px;}
-.icard-value{font-size:20px;font-weight:700;color:#2C2416;letter-spacing:-0.4px;font-family:‘DM Sans’,sans-serif;text-align:right;}
-.icard-ret{font-size:11px;font-weight:600;margin-top:2px;text-align:right;}
-.icard-metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px;}
-.icard-metric{background:#FFFBF0;border-radius:13px;padding:10px 12px;border:1px solid #F5ECC8;}
-.icard-metric-label{font-size:9px;font-weight:700;color:#C8B888;text-transform:uppercase;letter-spacing:.8px;}
-.icard-metric-value{font-size:14px;font-weight:700;color:#2C2416;margin-top:3px;letter-spacing:-0.2px;}
-.icard-actions{display:flex;gap:7px;padding:0 18px 16px;}
-.icard-btn{flex:1;padding:10px 0;border-radius:12px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:‘DM Sans’,sans-serif;transition:opacity .15s;}
-.icard-btn:active{opacity:.7;}
-.icard-btn-edit{background:#FFF8E0;color:#6A5030;}
-.icard-btn-log{background:#D8F0DC;color:#2A5C35;}
-.icard-btn-del{background:transparent;color:#C8A880;border:1.5px solid #F0E0A8;}
-
-/* ══ Type group header ══ */
-.type-group-header{display:flex;align-items:center;gap:8px;margin:20px 0 9px;}
-.type-group-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0;}
-.type-group-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.6px;color:#C8B888;flex:1;}
-.type-group-total{font-size:13px;font-weight:700;color:#2C2416;}
-
-/* ══ Timeline ══ */
-.timeline-bg{height:5px;background:#F0E0A8;border-radius:100px;margin:9px 0;}
-.timeline-fill{height:100%;border-radius:100px;background:#2A5C35;}
-
-/* ══ Info banner ══ */
-.info-banner{background:#FFF8D0;border:1px solid #F0D880;border-radius:16px;padding:12px 16px;font-size:12px;color:#6A5020;margin-bottom:12px;}
-
-/* ══ FIRE ══ */
-.fire-card{background:linear-gradient(145deg,#1A2E1C,#1C3020);border-radius:24px;padding:22px;color:#FFF;margin-bottom:12px;box-shadow:0 10px 36px rgba(26,46,28,0.24);}
-
-/* ══ History ══ */
-.hist-item{background:#FFF;border-radius:18px;padding:15px 18px;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(44,36,22,0.05),0 4px 14px rgba(44,36,22,0.06);}
-.hist-item-left{flex:1;min-width:0;padding-right:10px;}
-.hist-item-title{font-size:14px;font-weight:600;color:#2C2416;}
-.hist-item-sub{font-size:11px;color:#9E8E60;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
-/* ══ Divider ══ */
-.divider{height:1px;background:#F5ECC8;margin:14px 0;}
-
-/* ══ NW ══ */
-.asset-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
-.nw-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F5ECC8;}
-.nw-row:last-child{border-bottom:none;}
-.nw-row-label{font-size:12px;color:#6A5030;display:flex;align-items:center;gap:6px;}
-.nw-row-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.nw-row-value{font-size:13px;font-weight:600;color:#2C2416;}
-.nw-row-value.green{color:#2A5C35;}
-.nw-row-value.red{color:#C0392B;}
-
-/* ══ RE snapshot ══ */
-.re-snap{background:#FFFBF0;border-radius:14px;padding:13px 15px;margin-top:9px;border:1px solid #F5ECC8;}
-.re-snap-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
-.re-snap-row:last-child{margin-bottom:0;}
-.re-snap-label{font-size:11px;color:#9E8E60;}
-.re-snap-value{font-size:12px;font-weight:600;color:#2C2416;}
-
-/* ══ Inv card v2 compat ══ */
-.inv-card-v2{background:#FFF;border-radius:20px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(44,36,22,0.05),0 6px 20px rgba(44,36,22,0.07);}
-.inv-card-v2-header{padding:16px 18px 12px;border-bottom:1px solid #F5ECC8;}
-.inv-card-v2-body{padding:14px 18px;}
-.inv-card-v2-actions{padding:10px 18px 16px;display:flex;gap:8px;}
-
-/* ══ Empty state ══ */
-.empty-state{text-align:center;padding:52px 24px;}
-.empty-state-title{font-size:16px;font-weight:600;color:#2C2416;margin-bottom:6px;}
-.empty-state-sub{font-size:13px;color:#9E8E60;line-height:1.6;}
-
-/* ══ Benchmarks ══ */
-.bench-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
-.bench-label{font-size:12px;color:#2C2416;flex:1;}
-.bench-value{font-size:12px;font-weight:700;min-width:44px;text-align:right;}
-.bench-bar-bg{flex:2;height:5px;background:#F0E0A8;border-radius:100px;}
-.bench-bar-fill{height:100%;border-radius:100px;}
-
-/* ══ Pickers ══ */
-.picker-row{display:flex;gap:10px;margin-bottom:16px;}
-.picker-row .form-group{flex:1;margin-bottom:0;}
-
-/* ══ Payment table ══ */
-.pay-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;}
-.pay-table th{text-align:left;color:#C8B888;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.9px;padding:0 6px 9px 0;border-bottom:1px solid #F0E0A8;}
-.pay-table th:last-child{text-align:right;}
-.pay-table td{padding:9px 6px 9px 0;border-bottom:1px solid #FFF5D8;color:#2C2416;vertical-align:middle;}
-.pay-table td:last-child{text-align:right;}
-.pay-table tr:last-child td{border-bottom:none;}
-.pay-badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;}
-.pay-done{background:#D8F0DC;color:#2A5C35;}
-.pay-exp{background:#FFF0C0;color:#8A6020;}
-.pay-miss{background:#FFE8E8;color:#C0392B;}
-.pay-late{background:#FFE8E8;color:#C0392B;}
-.pay-early{background:#D8F0DC;color:#2A5C35;}
-.pay-partial{background:#FFF0C0;color:#8A6020;}
-.pay-fut{background:#FFF5D8;color:#9E8E60;}
-
-/* ══ FAB ══ */
-.fab{position:fixed;bottom:30px;right:calc(50% - 215px + 20px);width:54px;height:54px;border-radius:27px;background:#F5C842;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(245,200,66,0.5),0 2px 8px rgba(0,0,0,0.1);z-index:200;transition:transform .15s;-webkit-appearance:none;}
-.fab:active{transform:scale(.90);}
-
-/* ══ Bottom sheet ══ */
-.sheet-overlay{position:fixed;inset:0;background:rgba(26,46,28,0.45);z-index:300;display:flex;align-items:flex-end;justify-content:center;}
-.sheet{background:#FFFBF0;border-radius:28px 28px 0 0;width:100%;max-width:430px;padding:0 0 48px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.sheet-handle{width:40px;height:4px;background:#F0E0A8;border-radius:100px;margin:14px auto 0;}
-.sheet-header{padding:18px 22px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F0E0A8;}
-.sheet-title{font-size:18px;font-weight:700;color:#2C2416;}
-.sheet-close{background:#F5ECC8;border:none;width:32px;height:32px;border-radius:100px;cursor:pointer;font-size:18px;color:#6A5030;display:flex;align-items:center;justify-content:center;line-height:1;}
-.sheet-body{padding:20px 22px;}
-
-/* ══ iOS dark mode override ══ */
-@media(prefers-color-scheme:dark){
-html,body,#root,.app,.content{background:#FFFBF0 !important;color:#2C2416 !important;}
-.card,.summary-box,.inv-card,.icard,.hist-item,.form-input,.form-select,.form-textarea{background:#FFF !important;-webkit-text-fill-color:#2C2416 !important;color:#2C2416 !important;border-color:#F0E0A8 !important;}
-.stat-tile{background:#FFF8E0 !important;}
-.icard-metric{background:#FFFBF0 !important;border-color:#F5ECC8 !important;}
-.toggle-row,.progress-bg,.bench-bar-bg,.timeline-bg{background:#F5ECC8 !important;}
-.toggle-btn.active{background:#FFF !important;color:#2C2416 !important;}
-.header{background:#FFFBF0 !important;border-bottom-color:#F0E8D0 !important;}
-.tab-btn{color:#B8A880 !important;}
-.tab-btn.active{color:#2C2416 !important;}
-.card-title,.form-label,.bar-label,.stat-tile-label,.summary-box-label,.list-item-sub,.hist-item-sub,.empty-state-sub,.insight-text,.allocation-pct{color:#C8B888 !important;}
-.card-value,.stat-tile-value,.summary-box-value,.list-item-title,.list-item-value,.inv-card-name,.inv-card-value,.icard-name,.icard-value,.hist-item-title,.empty-state-title,.insight-title,.bench-label,.allocation-label,.header-title{color:#2C2416 !important;}
-}
-</style>
+<link rel="stylesheet" href="styles.css">
 
 </head>
 <body>
 <div id="splash">
-  <svg class="splash-leaf" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M24 44C24 44 8 32 8 18C8 10.268 15.163 4 24 4C32.837 4 40 10.268 40 18C40 32 24 44 24 44Z" fill="#254D2A"/>
-    <path d="M24 44C24 44 8 32 8 18C8 10.268 15.163 4 24 4" fill="#5A9460"/>
-    <path d="M24 44L24 20" stroke="#A8C5AC" stroke-width="1.5" stroke-linecap="round"/>
-  </svg>
-  <div class="splash-title">Family<span class="splash-word">Wealth</span></div>
-  <div class="splash-sub">Your private financial home</div>
-  <div class="splash-bar-bg"><div class="splash-bar"></div></div>
+  <div class="splash-ring">
+    <svg class="splash-leaf" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M24 44C24 44 8 32 8 18C8 10.268 15.163 4 24 4C32.837 4 40 10.268 40 18C40 32 24 44 24 44Z" fill="#1A3C20"/>
+      <path d="M24 44C24 44 8 32 8 18C8 10.268 15.163 4 24 4" fill="#4A8A52"/>
+      <path d="M24 44L24 20" stroke="#A8D8AC" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="splash-wordmark">Family<span>Wealth</span></div>
+  <div class="splash-tagline">Your private financial home</div>
+  <div class="splash-dots">
+    <div class="splash-dot"></div>
+    <div class="splash-dot"></div>
+    <div class="splash-dot"></div>
+  </div>
 </div>
 <div id="root"></div>
 
@@ -339,10 +43,10 @@ html,body,#root,.app,.content{background:#FFFBF0 !important;color:#2C2416 !impor
 const e = React.createElement;
 const {useState,useEffect,useRef,useCallback,useMemo} = React;
 
-// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── Constants ───────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'fw_v6';
 const TABS = ['Home','Monthly','Tax','Invest','Worth','History','Insights'];
-const TAB_ICONS = ['\ud83c\udfe0','','','','','\ud83d\uddc2','\ud83d\udca1'];
+const TAB_ICONS = ['\\ud83c\\udfe0','','','','','\\ud83d\\uddc2','\\ud83d\\udca1'];
 const INV_TYPES = ['Private Lending','Real Estate','Plot / Land','Gold / Silver','Stocks / ETF','Mutual Fund','Crypto','Fixed Deposit','Bonds','Other'];
 const CURRENCIES = ['USD','INR','AED','EUR','GBP','SGD','CAD','AUD','JPY','TRY','BRL','MXN'];
 const CURRENCY_RISK = {USD:0,INR:3.5,EUR:1.5,GBP:2.0,AED:0.2,SGD:0.8,CAD:2.2,AUD:2.8,JPY:3.0,TRY:28.0,BRL:8.0,MXN:5.0};
@@ -355,7 +59,7 @@ const ALLOC_COLORS = [
 ];
 const FILING_STATUS = [{v:'mfj',l:'Married Filing Jointly'},{v:'single',l:'Single'},{v:'hoh',l:'Head of Household'},{v:'mfs',l:'Married Filing Separately'}];
 
-// \u2500\u2500\u2500 Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── Utilities ────────────────────────────────────────────────────────────────
 const fmt = (n,dec=0)=>{
   if(n===undefined||n===null||isNaN(n)) return '$0';
   const abs = Math.abs(n);
@@ -403,7 +107,7 @@ function standardDeduction(status){
   return {mfj:29200,single:14600,mfs:14600,hoh:21900}[status]||29200;
 }
 
-// \u2500\u2500\u2500 Storage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── Storage ──────────────────────────────────────────────────────────────────
 function loadData(){
   try{
     const raw=localStorage.getItem(STORAGE_KEY);
@@ -419,7 +123,7 @@ function defaultData(){
   return {monthly:{},tax:{},networth:{},investments:[],goals:{savings:0,nw:0,invest:0}};
 }
 
-// \u2500\u2500\u2500 Toast \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── Toast ────────────────────────────────────────────────────────────────────
 let toastTimer=null;
 function showToast(msg){
   const el=document.getElementById('toast-el');
@@ -430,7 +134,7 @@ function showToast(msg){
   toastTimer=setTimeout(()=>el.classList.remove('show'),2200);
 }
 
-// \u2500\u2500\u2500 Small Components \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── Small Components ─────────────────────────────────────────────────────────
 function Toast(){
   return e('div',{id:'toast-el',className:'toast'});
 }
@@ -532,11 +236,11 @@ function SectionHeader({title,action}){
   );
 }
 
-// \u2500\u2500\u2500 Collapsible Section \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── Collapsible Section ──────────────────────────────────────────────────────
 function CollapsibleSection({title,count,total,subtitle,accentColor,children}){
   const [open,setOpen] = useState(false);
   return e('div',{className:'card',style:{padding:0,overflow:'hidden'}},
-    // Header \u2014 always visible, tap to expand
+    // Header \\u2014 always visible, tap to expand
     e('button',{
       onClick:()=>setOpen(p=>!p),
       style:{
@@ -565,7 +269,7 @@ function CollapsibleSection({title,count,total,subtitle,accentColor,children}){
         fontSize:11,color:'#C8B888',fontWeight:600,flexShrink:0,
         transform:open?'rotate(180deg)':'rotate(0deg)',
         transition:'transform 0.2s'
-      }},'\u25bc')
+      }},'\\u25bc')
     ),
     // Collapsible body
     open&&e('div',{style:{
@@ -575,12 +279,12 @@ function CollapsibleSection({title,count,total,subtitle,accentColor,children}){
   );
 }
 
-// \u2500\u2500\u2500 TAB: HOME / DASHBOARD \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── TAB: HOME / DASHBOARD ───────────────────────────────────────────────────
 function HomeTab({data}){
   const {monthly={},networth={},investments=[],tax={}} = data;
   const [detailPanel,setDetailPanel] = useState(null); // 'assets'|'liabilities'|'income'|'expenses'|'savings'|null
 
-  // ── Derived data ──────────────────────────────────────────────────────────
+  // \u2500\u2500 Derived data \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   const nwKeys = Object.keys(networth).sort();
   const latestNWKey = nwKeys[nwKeys.length-1];
   const prevNWKey   = nwKeys[nwKeys.length-2];
@@ -737,7 +441,7 @@ function HomeTab({data}){
   const expFields=[['hs','Housing'],['fd','Food'],['tr','Transport'],['ins','Insurance'],['ut','Utilities'],['cc','Credit Cards'],['hc','Healthcare'],['sb','Subscriptions'],['dn','Dining'],['tv','Travel'],['ps','Personal'],['db','Debt Payments'],['rm','Rent'],['ox','Other']];
   const expItems = expFields.map(([k,l])=>({label:l,val:+latestM?.[k]||0})).filter(x=>x.val>0);
 
-  // Trends: last 8 months NW — always append live NW as latest point
+  // Trends: last 8 months NW \u2014 always append live NW as latest point
   const nwTrendSaved = nwKeys.slice(-8).map(k=>({label:k.slice(5),v:(networth[k].netWorth||0)/1000}));
   // If the live NW differs from the last saved snapshot (or no snapshots), append live point
   const nowLabel = String(now.getMonth()+1).padStart(2,'0');
@@ -782,7 +486,7 @@ function HomeTab({data}){
   const privateLoans = investments.filter(i=>i.type==='Private Lending');
   const realEstate   = investments.filter(i=>i.type==='Real Estate'||i.type==='Plot / Land');
 
-  // ── Detail Panel Overlay ──────────────────────────────────────────────────
+  // \u2500\u2500 Detail Panel Overlay \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   if(detailPanel){
     const panels = {
       assets:{
@@ -842,12 +546,12 @@ function HomeTab({data}){
         e('button',{
           onClick:()=>setDetailPanel(null),
           style:{background:'none',border:'none',fontSize:14,color:'#2A5C35',fontWeight:700,cursor:'pointer',padding:'6px 0',display:'flex',alignItems:'center',gap:4}
-        },'\u2190 Dashboard'),
+        },'\\u2190 Dashboard'),
         e('div',{style:{fontSize:16,fontWeight:700,color:'#2C2416'}},p.title)
       ),
       // Total chip
       e('div',{style:{background:p.positive?'#FFF8D0':'#FFF0EF',borderRadius:20,padding:'14px 18px',marginBottom:14,display:'flex',justifyContent:'space-between',alignItems:'center'}},
-        e('div',{style:{fontSize:12,color:'#9E8E60',fontWeight:600}},p.totalLabel+(p.period?' \u2014 '+p.period:'')),
+        e('div',{style:{fontSize:12,color:'#9E8E60',fontWeight:600}},p.totalLabel+(p.period?' \\u2014 '+p.period:'')),
         e('div',{style:{fontSize:22,fontWeight:700,color:p.positive?'#2A5C35':'#C0392B',letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmtFull(Math.round(p.total)))
       ),
       // Donut + list
@@ -893,15 +597,15 @@ function HomeTab({data}){
     );
   }
 
-  // ── Main Dashboard ────────────────────────────────────────────────────────
+  // \u2500\u2500 Main Dashboard \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   return e('div',null,
 
-    // ── 1. Net Worth Hero ──────────────────────────────────────────────────
+    // \u2500\u2500 1. Net Worth Hero \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     e('div',{className:'hero-card'},
-      e('div',{className:'hero-label'},'Net Worth \u2014 Live'),
+      e('div',{className:'hero-label'},'Net Worth \\u2014 Live'),
       e('div',{className:'hero-value'},fmtFull(nwValue)),
       nwDelta!==0&&e('div',{className:`hero-delta ${nwDelta>=0?'pos':'neg'}`},
-        `${nwDelta>=0?'\u25b2':'\u25bc'} ${fmtFull(Math.abs(nwDelta))} vs prev snapshot`
+        `${nwDelta>=0?'\\u25b2':'\\u25bc'} ${fmtFull(Math.abs(nwDelta))} vs prev snapshot`
       ),
       // Assets / Liabilities clickable tiles
       e('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:16}},
@@ -911,7 +615,7 @@ function HomeTab({data}){
         },
           e('div',{style:{fontSize:9,color:'rgba(168,197,172,0.6)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px'}},'Total Assets'),
           e('div',{style:{fontSize:18,fontWeight:700,color:'#FFFFFF',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(liveTotal)),
-          e('div',{style:{fontSize:10,color:'rgba(168,197,172,0.55)',marginTop:3}},'Tap for breakdown \u2192')
+          e('div',{style:{fontSize:10,color:'rgba(168,197,172,0.55)',marginTop:3}},'Tap for breakdown \\u2192')
         ),
         e('button',{
           onClick:()=>setDetailPanel('liabilities'),
@@ -919,7 +623,7 @@ function HomeTab({data}){
         },
           e('div',{style:{fontSize:9,color:'rgba(224,112,112,0.7)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px'}},'Total Liabilities'),
           e('div',{style:{fontSize:18,fontWeight:700,color:'#FF7B7B',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(liveLiabs)),
-          e('div',{style:{fontSize:10,color:'rgba(224,112,112,0.45)',marginTop:3}},'Tap for breakdown \u2192')
+          e('div',{style:{fontSize:10,color:'rgba(224,112,112,0.45)',marginTop:3}},'Tap for breakdown \\u2192')
         )
       ),
       // Equity bar
@@ -934,7 +638,7 @@ function HomeTab({data}){
       )
     ),
 
-    // ── 2. Monthly Snapshot (tappable) ────────────────────────────────────
+    // \u2500\u2500 2. Monthly Snapshot (tappable) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     (latestM||invRentalIncome>0||invLendingAccrual>0)&&e('div',{className:'card',style:{padding:0,overflow:'hidden'}},
       e('div',{style:{padding:'14px 16px 12px',borderBottom:'1px solid #F5ECC8'}},
         e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
@@ -947,13 +651,13 @@ function HomeTab({data}){
         e('button',{onClick:()=>setDetailPanel('income'),style:{background:'none',border:'none',borderRight:'1px solid #F5ECC8',borderBottom:'1px solid #F5ECC8',padding:'14px 16px',textAlign:'left',cursor:'pointer'}},
           e('div',{style:{fontSize:9,fontWeight:700,color:'#C8B888',textTransform:'uppercase',letterSpacing:'1px'}},'Income'),
           e('div',{style:{fontSize:20,fontWeight:700,color:'#2C2416',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(augIncome)),
-          e('div',{style:{fontSize:10,color:'#9E8E60',marginTop:3}},'Tap for sources \u2192')
+          e('div',{style:{fontSize:10,color:'#9E8E60',marginTop:3}},'Tap for sources \\u2192')
         ),
         // Expenses tile
         e('button',{onClick:()=>setDetailPanel('expenses'),style:{background:'none',border:'none',borderBottom:'1px solid #F5ECC8',padding:'14px 16px',textAlign:'left',cursor:'pointer'}},
           e('div',{style:{fontSize:9,fontWeight:700,color:'#C8B888',textTransform:'uppercase',letterSpacing:'1px'}},'Expenses'),
           e('div',{style:{fontSize:20,fontWeight:700,color:'#C0392B',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(augExpenses)),
-          e('div',{style:{fontSize:10,color:'#9E8E60',marginTop:3}},'Tap for details \u2192')
+          e('div',{style:{fontSize:10,color:'#9E8E60',marginTop:3}},'Tap for details \\u2192')
         ),
         // Saved tile
         e('button',{onClick:()=>setDetailPanel('savings'),style:{background:'none',border:'none',borderRight:'1px solid #F5ECC8',padding:'14px 16px',textAlign:'left',cursor:'pointer'}},
@@ -970,7 +674,7 @@ function HomeTab({data}){
       )
     ),
 
-    // ── 3. Net Worth Trend ─────────────────────────────────────────────────
+    // \u2500\u2500 3. Net Worth Trend \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     nwTrend.length>=1&&e('div',{className:'card'},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
         e('div',{className:'card-title',style:{marginBottom:0}},'Net Worth Trend'),
@@ -979,10 +683,10 @@ function HomeTab({data}){
         )
       ),
       e(BarChart,{data:nwTrend,color:'#7B5EA7'}),
-      e('div',{style:{fontSize:10,color:'#C8B888',textAlign:'center',marginTop:4}},'Values in $K \u00b7 Last '+nwTrend.length+' snapshots')
+      e('div',{style:{fontSize:10,color:'#C8B888',textAlign:'center',marginTop:4}},'Values in $K \\u00b7 Last '+nwTrend.length+' snapshots')
     ),
 
-    // ── 4. Income Sources Chart ────────────────────────────────────────────
+    // \u2500\u2500 4. Income Sources Chart \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     (incomeTrend.some(m=>m.salary>0||m.rent>0||m.lending>0)||(invRentalIncome>0||invLendingAccrual>0||salaryIncome>0))&&e('div',{className:'card'},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
         e('div',{className:'card-title',style:{marginBottom:0}},'Monthly Income Sources'),
@@ -1014,7 +718,7 @@ function HomeTab({data}){
       )
     ),
 
-    // ── 5. Savings Trend ──────────────────────────────────────────────────
+    // \u2500\u2500 5. Savings Trend \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     savingsTrend.filter(s=>s.v>0).length>=1&&e('div',{className:'card'},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
         e('div',{className:'card-title',style:{marginBottom:0}},'Monthly Savings'),
@@ -1024,7 +728,7 @@ function HomeTab({data}){
       e('div',{style:{fontSize:10,color:'#C8B888',textAlign:'center',marginTop:4}},'Values in $K')
     ),
 
-    // ── 6. Investment Income Summary (compact) ─────────────────────────────
+    // \u2500\u2500 6. Investment Income Summary (compact) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     (invRentalIncome>0||invLendingAccrual>0)&&e('div',{className:'card'},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
         e('div',{className:'card-title',style:{marginBottom:0}},'Investment Income'),
@@ -1046,20 +750,20 @@ function HomeTab({data}){
       )
     ),
 
-    // ── 7. Private Lending collapsible ─────────────────────────────────────
+    // \u2500\u2500 7. Private Lending collapsible \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     privateLoans.length>0&&e(CollapsibleSection,{
       title:'Private Lending',count:privateLoans.length,
       total:fmtFull(liveInvLending),accentColor:'#C8A840',key:'loans'
     },...privateLoans.map((inv,idx)=>e(LoanCard,{key:idx,inv}))),
 
-    // ── 8. Real Estate collapsible ─────────────────────────────────────────
+    // \u2500\u2500 8. Real Estate collapsible \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     realEstate.length>0&&e(CollapsibleSection,{
       title:'Real Estate',count:realEstate.length,
       total:fmtFull(realEstate.reduce((s,i)=>s+(+i.propertyValue||+i.amountUSD||0),0)),
       accentColor:'#3D7EAA',key:'re'
     },...realEstate.map((inv,idx)=>e(RECard,{key:idx,inv}))),
 
-    // ── Empty state ────────────────────────────────────────────────────────
+    // \u2500\u2500 Empty state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     !latestNW&&!latestM&&investments.length===0&&e('div',{className:'empty-state'},
       e('div',{style:{width:40,height:40,margin:'0 auto 16px',opacity:0.3}},
         e('svg',{viewBox:'0 0 48 48',fill:'none',xmlns:'http://www.w3.org/2000/svg'},
@@ -1088,7 +792,7 @@ function buildLoanSchedule(inv) {
   const totalInterest = principal * (annualRate/100) * (totalDays/365);
 
   // Interest per interval period = principal * (annualRate/100) * (intervalMo/12)
-  // But the last interval may be shorter \u2014 we compute each slot's actual days.
+  // But the last interval may be shorter \\u2014 we compute each slot's actual days.
   const rows = [];
   let slotStart = new Date(start);
   let slotNum = 0;
@@ -1126,7 +830,7 @@ function buildLoanSchedule(inv) {
 
     let status;
     if (slotPayments.length > 0) {
-      // Payment was logged \u2014 was it early or late?
+      // Payment was logged \\u2014 was it early or late?
       const payDate = new Date(loggedDate);
       if (payDate <= effectiveDue) {
         status = payDate < slotStart ? 'early' : 'paid';
@@ -1172,7 +876,7 @@ function LoanCard({inv}){
   const realRet   = calcRealReturn(rate, inv.currency||'USD');
   const drag      = CURRENCY_RISK[inv.currency||'USD']||0;
 
-  // \u2500\u2500 Day-accurate interest calculations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Day-accurate interest calculations ────────────────────────────────────
   let totalDays=0, yearsActive=0, totalInterest=0, accrued=0, daysLeft=0, pctElapsed=0;
   if (start && mat) {
     totalDays    = (mat-start)/(1000*60*60*24);
@@ -1198,11 +902,11 @@ function LoanCard({inv}){
       due:    ['pay-exp','Due Now'],
       upcoming:['pay-fut','Upcoming'],
     };
-    const [cls,label] = map[s]||['pay-fut','\u2014'];
+    const [cls,label] = map[s]||['pay-fut','\\u2014'];
     return e('span',{className:`pay-badge ${cls}`},label);
   };
 
-  const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '\u2014';
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '\\u2014';
   const intervalLabel = {1:'Monthly',2:'2-Monthly',3:'Quarterly',6:'Half-Yearly',12:'Annual',24:'2-Yearly'}[intervalMo]||`${intervalMo}mo`;
 
   return e('div',{style:{marginBottom:12,paddingBottom:12,borderBottom:'1px solid #F5ECC8'}},
@@ -1211,7 +915,7 @@ function LoanCard({inv}){
       e('div',null,
         e('div',{style:{fontSize:14,fontWeight:600,color:'#2C2416'}},inv.name||'Loan'),
         e('div',{style:{fontSize:11,color:'#9E8E60',marginTop:2}},
-          `${inv.currency||'USD'} \u00b7 ${rate}% p.a. \u00b7 ${intervalLabel} payments`)
+          `${inv.currency||'USD'} \\u00b7 ${rate}% p.a. \\u00b7 ${intervalLabel} payments`)
       ),
       e('div',{style:{textAlign:'right'}},
         e('div',{style:{fontSize:16,fontWeight:700,color:'#2C2416',fontFamily:"'DM Sans',sans-serif"}},fmtFull(principal)),
@@ -1243,7 +947,7 @@ function LoanCard({inv}){
       ),
       e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:10,color:'#C8B888',marginTop:4}},
         e('span',null,fmtDate(start)),
-        e('span',null,`${pctElapsed.toFixed(0)}% \u00b7 ${daysLeft}d left`),
+        e('span',null,`${pctElapsed.toFixed(0)}% \\u00b7 ${daysLeft}d left`),
         e('span',null,fmtDate(mat))
       )
     ),
@@ -1254,7 +958,7 @@ function LoanCard({inv}){
         onClick:()=>setShowTable(p=>!p),
         style:{background:'none',border:'none',fontSize:11,color:'#2A5C35',fontWeight:600,
           cursor:'pointer',padding:'4px 0',display:'flex',alignItems:'center',gap:4}
-      }, showTable?'\u25b2 Hide Schedule':'\u25bc Payment Schedule ('+schedule.length+' payments)'),
+      }, showTable?'\\u25b2 Hide Schedule':'\\u25bc Payment Schedule ('+schedule.length+' payments)'),
 
       showTable&&e('div',{style:{marginTop:10}},
         // Summary of logged vs expected
@@ -1289,7 +993,7 @@ function LoanCard({inv}){
               e('div',null,
                 e('div',{style:{fontSize:12,fontWeight:700,color:'#2C2416'}},
                   `Payment ${r.num}`+(r.isFinal?' (Final)':'')),
-                e('div',{style:{fontSize:10,color:'#9E8E60',marginTop:1}},`Due: ${fmtDate(r.dueDate)} \u00b7 ${r.slotDays}d period`)
+                e('div',{style:{fontSize:10,color:'#9E8E60',marginTop:1}},`Due: ${fmtDate(r.dueDate)} \\u00b7 ${r.slotDays}d period`)
               ),
               statusBadge(r.status)
             ),
@@ -1315,7 +1019,7 @@ function LoanCard({inv}){
             ),
             // Show paid date if logged
             r.loggedDate&&e('div',{style:{marginTop:6,fontSize:10,color:'#9E8E60'}},
-              `Received on: ${fmtDate(r.loggedDate)}`+(r.status==='early'?' \u00b7 Paid early':r.status==='late'?' \u00b7 Paid late':'')
+              `Received on: ${fmtDate(r.loggedDate)}`+(r.status==='early'?' \\u00b7 Paid early':r.status==='late'?' \\u00b7 Paid late':'')
             )
           );
         })
@@ -1341,7 +1045,7 @@ function RECard({inv}){
       e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
         e('div',null,
           e('div',{style:{fontSize:14,fontWeight:600,color:'#2C2416'}},inv.name||'Plot'),
-          e('div',{style:{fontSize:11,color:'#9E8E60',marginTop:2}},`${years.toFixed(1)} yrs held \u00b7 ${inv.currency||'USD'}`)
+          e('div',{style:{fontSize:11,color:'#9E8E60',marginTop:2}},`${years.toFixed(1)} yrs held \\u00b7 ${inv.currency||'USD'}`)
         ),
         e('div',{style:{textAlign:'right'}},
           e('div',{style:{fontSize:16,fontWeight:700,color:'#2C2416',fontFamily:"'DM Sans',sans-serif"}},fmtFull(currentVal)),
@@ -1386,7 +1090,7 @@ function RECard({inv}){
       e('div',null,
         e('div',{style:{fontSize:14,fontWeight:600,color:'#2C2416'}},inv.name||'Property'),
         e('div',{style:{fontSize:11,color:'#9E8E60',marginTop:2}},
-          `${inv.currency||'USD'} \u00b7 ${start?years.toFixed(1)+' yrs held (since '+start.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+')':''}${rent>0?' \u00b7 Rental':' \u00b7 No rent data'}`)
+          `${inv.currency||'USD'} \\u00b7 ${start?years.toFixed(1)+' yrs held (since '+start.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+')':''}${rent>0?' \\u00b7 Rental':' \\u00b7 No rent data'}`)
       ),
       e('div',{style:{textAlign:'right'}},
         e('div',{style:{fontSize:16,fontWeight:700,color:'#2C2416',fontFamily:"'DM Sans',sans-serif"}},fmtFull(currentVal)),
@@ -1398,22 +1102,22 @@ function RECard({inv}){
       e('div',{style:{background:'#F0E0A8',borderRadius:16,padding:'9px 10px'}},
         e('div',{style:{fontSize:9,color:'#C8B888',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Mo. Cash Flow'),
         e('div',{style:{fontSize:15,fontWeight:700,color:cf>=0?'#2A5C35':'#C0392B',marginTop:3,letterSpacing:'-0.2px'}},fmt(cf)),
-        e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},'Rent\u2212Mort\u2212Tax\u2212Maint')
+        e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},'Rent\\u2212Mort\\u2212Tax\\u2212Maint')
       ),
       e('div',{style:{background:'#F0E0A8',borderRadius:16,padding:'9px 10px'}},
         e('div',{style:{fontSize:9,color:'#C8B888',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'FCF Rate'),
         e('div',{style:{fontSize:15,fontWeight:700,color:fcfRate>=0?'#2A5C35':'#C0392B',marginTop:3,letterSpacing:'-0.2px'}},pct(fcfRate)),
-        e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},`Ann.CF\u00f7${purchasePrice>0?'PurchPrice':'Value'}`)
+        e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},`Ann.CF\\u00f7${purchasePrice>0?'PurchPrice':'Value'}`)
       ),
       e('div',{style:{background:'#F0E0A8',borderRadius:16,padding:'9px 10px'}},
         e('div',{style:{fontSize:9,color:'#C8B888',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Cap Rate'),
         e('div',{style:{fontSize:15,fontWeight:700,color:'#2C2416',marginTop:3,letterSpacing:'-0.2px'}},pct(capRate)),
-        e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},'NOI\u00f7Value (excl. mort.)')
+        e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},'NOI\\u00f7Value (excl. mort.)')
       ),
       e('div',{style:{background:'#F0E0A8',borderRadius:16,padding:'9px 10px'}},
         e('div',{style:{fontSize:9,color:'#C8B888',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Gross Yield'),
         e('div',{style:{fontSize:15,fontWeight:700,color:'#2C2416',marginTop:3,letterSpacing:'-0.2px'}},pct(grossYield)),
-        e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},'Ann.Rent\u00f7CurrValue')
+        e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},'Ann.Rent\\u00f7CurrValue')
       )
     ),
     // Rental income snapshot
@@ -1443,7 +1147,7 @@ function RECard({inv}){
   );
 }
 
-// \u2500\u2500\u2500 TAB: MONTHLY \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── TAB: MONTHLY ────────────────────────────────────────────────────────────
 function MonthlyTab({data,setData}){
   const [selMonth,setSelMonth]=useState(currentMonth);
   const [selYear,setSelYear]=useState(currentYear);
@@ -1484,7 +1188,7 @@ function MonthlyTab({data,setData}){
     const newData={...data,monthly:{...data.monthly,[key]:record}};
     setData(newData);
     saveData(newData);
-    showToast('\u2705 Monthly data saved');
+    showToast('\\u2705 Monthly data saved');
   }
 
   const expenseFields=[
@@ -1566,11 +1270,11 @@ function MonthlyTab({data,setData}){
         onChange:ev=>f('notes',ev.target.value),placeholder:'Optional notes...'})
     ),
 
-    e('button',{className:'btn btn-primary btn-full',onClick:handleSave},'\ud83d\udcbe Save Month')
+    e('button',{className:'btn btn-primary btn-full',onClick:handleSave},'\\ud83d\\udcbe Save Month')
   );
 }
 
-// \u2500\u2500\u2500 TAB: TAX \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── TAB: TAX ────────────────────────────────────────────────────────────────
 function TaxTab({data,setData}){
   const [selYear,setSelYear]=useState(currentYear-1);
   const years=Array.from({length:6},(_,i)=>currentYear-i);
@@ -1617,7 +1321,7 @@ function TaxTab({data,setData}){
     const newData={...data,tax:{...data.tax,[selYear]:record}};
     setData(newData);
     saveData(newData);
-    showToast('\u2705 Tax data saved');
+    showToast('\\u2705 Tax data saved');
   }
 
   return e('div',null,
@@ -1717,7 +1421,7 @@ function TaxTab({data,setData}){
     e('button',{className:'btn btn-primary btn-full',onClick:handleSave},'Save Tax Data')
   );
 }
-// ─── QUICK LOG SHEET ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 QUICK LOG SHEET \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function QuickLogSheet({investments,onClose,onSave}){
   const lendingInvs=investments.filter(i=>i.type==='Private Lending');
   const reInvs=investments.filter(i=>i.type==='Real Estate');
@@ -1752,7 +1456,7 @@ function QuickLogSheet({investments,onClose,onSave}){
       e('div',{className:'sheet-handle'}),
       e('div',{className:'sheet-header'},
         e('div',{className:'sheet-title'},'Quick Log'),
-        e('button',{className:'sheet-close',onClick:onClose},'×')
+        e('button',{className:'sheet-close',onClick:onClose},'\u00d7')
       ),
       e('div',{className:'sheet-body'},
         (hasLending||hasRE)&&e('div',{className:'toggle-row',style:{marginBottom:16}},
@@ -1795,7 +1499,7 @@ function QuickLogSheet({investments,onClose,onSave}){
 }
 
 
-// \u2500\u2500\u2500 TAB: INVESTMENTS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── TAB: INVESTMENTS ────────────────────────────────────────────────────────
 function InvestTab({data,setData}){
   const [showForm,setShowForm]=useState(false);
   const [editId,setEditId]=useState(null);
@@ -1875,7 +1579,7 @@ function InvestTab({data,setData}){
                 e('div',{style:{width:6,height:6,borderRadius:2,background:typeColors[t]||'#9E8E60'}}),
                 e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},t)
               ),
-              e('div',{style:{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.9)'}},fmtFull(Math.round(val))+' · '+p.toFixed(0)+'%')
+              e('div',{style:{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.9)'}},fmtFull(Math.round(val))+' \u00b7 '+p.toFixed(0)+'%')
             ),
             e('div',{style:{height:4,background:'rgba(255,255,255,0.1)',borderRadius:2}},
               e('div',{style:{height:'100%',width:p+'%',background:typeColors[t]||'#9E8E60',borderRadius:2}})
@@ -1951,7 +1655,7 @@ function InvestTab({data,setData}){
               {label:'Monthly CF',value:fmt(cf),color:cf>=0?'#2A5C35':'#C0392B'},
               {label:'Cap Rate',value:pct(capRate)},
               {label:'Equity',value:fmtFull(Math.round(equity))},
-              {label:'Gross Yield',value:pv>0?pct(rent*12/pv*100):'—'},
+              {label:'Gross Yield',value:pv>0?pct(rent*12/pv*100):'\u2014'},
             ];
           } else if(isGold){
             metrics=[
@@ -1979,7 +1683,7 @@ function InvestTab({data,setData}){
                 e('div',{style:{flex:1,minWidth:0}},
                   e('div',{className:'icard-name'},inv.name||'Investment'),
                   e('div',{className:'icard-sub'},
-                    (inv.currency&&inv.currency!=='USD'?inv.currency+' · ':'')+(drag>0?`${drag}% currency drag`:'USD asset')
+                    (inv.currency&&inv.currency!=='USD'?inv.currency+' \u00b7 ':'')+(drag>0?`${drag}% currency drag`:'USD asset')
                   )
                 ),
                 e('div',{style:{flexShrink:0,marginLeft:12}},
@@ -2074,7 +1778,7 @@ function InvestForm({data,setData,existing,onClose}){
 
   return e('div',null,
     e('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:16}},
-      e('button',{className:'btn btn-sm btn-outline',onClick:onClose},'\u2190 Back'),
+      e('button',{className:'btn btn-sm btn-outline',onClick:onClose},'\\u2190 Back'),
       e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:18,color:'#2C2416'}},
         existing?'Edit Investment':'New Investment'
       )
@@ -2113,7 +1817,7 @@ function InvestForm({data,setData,existing,onClose}){
           e('span',{style:{fontSize:15,fontWeight:700,color:'#2C2416',fontFamily:"'DM Sans',sans-serif"}},
             form.amountLocal&&form.exchangeRate?
               `$${(+form.amountLocal / +form.exchangeRate).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
-              :'\u2014'
+              :'\\u2014'
           )
         )
       ),
@@ -2224,11 +1928,11 @@ function InvestForm({data,setData,existing,onClose}){
         e(FormInput,{label:'Purchase Date',value:form.startDate,onChange:v=>ff('startDate',v),type:'date'})
       ),
       e('div',{style:{fontSize:10,color:'#9E8E60',marginTop:4,padding:'0 2px',lineHeight:1.5}},
-        '\ud83d\udca1 Enter your total monthly payment (mortgage + escrow/tax) as one number. Annual Property Tax is optional \u2014 only used for Cap Rate and NOI calculations, not for cashflow.'
+        '\\ud83d\\udca1 Enter your total monthly payment (mortgage + escrow/tax) as one number. Annual Property Tax is optional \\u2014 only used for Cap Rate and NOI calculations, not for cashflow.'
       )
     ),
 
-    // RE Expense Log — inline in edit form
+    // RE Expense Log \u2014 inline in edit form
     isRE&&e('div',{className:'card'},
       e(SectionHeader,{title:'Expense Log',action:
         e('button',{
@@ -2324,7 +2028,7 @@ function InvestForm({data,setData,existing,onClose}){
     // Live Return Analysis
     e('div',{className:'live-panel'},
       e('div',{className:'live-panel-label'},'Return Analysis'),
-      e('div',{className:'live-panel-row'},e('span',{className:'live-panel-key'},isForeign?`Amount (USD = ${form.currency}\u00f7rate)`:'Amount (USD)'),e('span',{className:'live-panel-val'},fmtFull(+form.amountUSD||0))),
+      e('div',{className:'live-panel-row'},e('span',{className:'live-panel-key'},isForeign?`Amount (USD = ${form.currency}\\u00f7rate)`:'Amount (USD)'),e('span',{className:'live-panel-val'},fmtFull(+form.amountUSD||0))),
       e('div',{className:'live-panel-row'},e('span',{className:'live-panel-key'},'Nominal Return'),e('span',{className:'live-panel-val'},`${pct(nominal)}/yr`)),
       drag>0&&e('div',{className:'live-panel-row'},e('span',{className:'live-panel-key'},'Currency Drag'),e('span',{className:'live-panel-val red'},`- ${pct(drag)}/yr`)),
       e('div',{className:'live-panel-row'},e('span',{className:'live-panel-key'},'Real Return'),e('span',{className:`live-panel-val ${realRet>=0?'green':'red'}`},`${pct(realRet)}/yr`)),
@@ -2348,7 +2052,7 @@ function InvestForm({data,setData,existing,onClose}){
   );
 }
 
-// \u2500\u2500\u2500 TAB: NET WORTH \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── TAB: NET WORTH ───────────────────────────────────────────────────────────
 function WorthTab({data,setData}){
   const [selMonth,setSelMonth]=useState(currentMonth);
   const [selYear,setSelYear]=useState(currentYear);
@@ -2422,7 +2126,7 @@ function WorthTab({data,setData}){
     };
     const nd={...data,networth:{...data.networth,[key]:record}};
     setData(nd); saveData(nd);
-    showToast('\u2705 Net Worth saved');
+    showToast('\\u2705 Net Worth saved');
   }
 
   const assetFields=[
@@ -2455,7 +2159,7 @@ function WorthTab({data,setData}){
     ),
 
     totalAutoInv>0&&e('div',{className:'info-banner'},
-      `\u2139\ufe0f Auto-included from Investments: ${fmtFull(totalAutoInv)} (RE ${fmtFull(invRE)}, Gold ${fmtFull(invGold)}, Lending ${fmtFull(invLending)}, Stocks ${fmtFull(invStocks)})`
+      `\\u2139\\ufe0f Auto-included from Investments: ${fmtFull(totalAutoInv)} (RE ${fmtFull(invRE)}, Gold ${fmtFull(invGold)}, Lending ${fmtFull(invLending)}, Stocks ${fmtFull(invStocks)})`
     ),
 
     // Asset Allocation
@@ -2501,7 +2205,7 @@ function WorthTab({data,setData}){
   );
 }
 
-// \u2500\u2500\u2500 TAB: HISTORY \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── TAB: HISTORY ────────────────────────────────────────────────────────────
 function HistoryTab({data,setData}){
   const [mode,setMode]=useState('monthly');
 
@@ -2563,9 +2267,9 @@ function HistoryTab({data,setData}){
         e('div',{key,className:'hist-item'},
           e('div',{className:'hist-item-left'},
             e('div',{className:'hist-item-title'},`${monthName(m.month)} ${m.year}`),
-            e('div',{className:'hist-item-sub'},`Income ${fmtFull(m.totalIncome||0)} \u00b7 Saved ${fmtFull(m.totalSaved||0)} \u00b7 Rate ${pct(m.savingsRate||0)}`)
+            e('div',{className:'hist-item-sub'},`Income ${fmtFull(m.totalIncome||0)} \\u00b7 Saved ${fmtFull(m.totalSaved||0)} \\u00b7 Rate ${pct(m.savingsRate||0)}`)
           ),
-          e('button',{className:'btn btn-sm btn-danger',onClick:()=>handleDelete('monthly',key)},'\u00d7')
+          e('button',{className:'btn btn-sm btn-danger',onClick:()=>handleDelete('monthly',key)},'\\u00d7')
         )
       )
     ),
@@ -2576,9 +2280,9 @@ function HistoryTab({data,setData}){
         e('div',{key,className:'hist-item'},
           e('div',{className:'hist-item-left'},
             e('div',{className:'hist-item-title'},`Tax Year ${t.year}`),
-            e('div',{className:'hist-item-sub'},`W2: ${fmtFull(t.w2Total||0)} \u00b7 Fed Tax: ${fmtFull(t.fedTax||0)} \u00b7 Eff Rate: ${pct(t.effRate||0)}`)
+            e('div',{className:'hist-item-sub'},`W2: ${fmtFull(t.w2Total||0)} \\u00b7 Fed Tax: ${fmtFull(t.fedTax||0)} \\u00b7 Eff Rate: ${pct(t.effRate||0)}`)
           ),
-          e('button',{className:'btn btn-sm btn-danger',onClick:()=>handleDelete('tax',key)},'\u00d7')
+          e('button',{className:'btn btn-sm btn-danger',onClick:()=>handleDelete('tax',key)},'\\u00d7')
         )
       )
     ),
@@ -2589,16 +2293,16 @@ function HistoryTab({data,setData}){
         e('div',{key,className:'hist-item'},
           e('div',{className:'hist-item-left'},
             e('div',{className:'hist-item-title'},`${monthName(n.month)} ${n.year}`),
-            e('div',{className:'hist-item-sub'},`NW: ${fmtFull(n.netWorth||0)} \u00b7 Assets: ${fmtFull(n.totalAssets||0)}`)
+            e('div',{className:'hist-item-sub'},`NW: ${fmtFull(n.netWorth||0)} \\u00b7 Assets: ${fmtFull(n.totalAssets||0)}`)
           ),
-          e('button',{className:'btn btn-sm btn-danger',onClick:()=>handleDelete('networth',key)},'\u00d7')
+          e('button',{className:'btn btn-sm btn-danger',onClick:()=>handleDelete('networth',key)},'\\u00d7')
         )
       )
     )
   );
 }
 
-// \u2500\u2500\u2500 TAB: INSIGHTS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── TAB: INSIGHTS ────────────────────────────────────────────────────────────
 function InsightsTab({data,setData}){
   const {monthly={},networth={},investments=[],goals={}} = data;
   const [goalForm,setGoalForm]=useState({savings:goals.savings||0,nw:goals.nw||0,invest:goals.invest||0});
@@ -2644,28 +2348,28 @@ function InsightsTab({data,setData}){
       color:'rgba(61,126,170,0.1)',
       
       title:`3-Month Avg Cash Flow: ${fmtFull(Math.round(avgCF))}`,
-      text:avgCF>=0?`Positive average cash flow of ${fmtFull(Math.round(avgCF))}/mo \u2014 you're building financial momentum.`:`Negative average cash flow of ${fmtFull(Math.abs(Math.round(avgCF)))}/mo \u2014 review expenses to reverse the trend.`,
+      text:avgCF>=0?`Positive average cash flow of ${fmtFull(Math.round(avgCF))}/mo \\u2014 you're building financial momentum.`:`Negative average cash flow of ${fmtFull(Math.abs(Math.round(avgCF)))}/mo \\u2014 review expenses to reverse the trend.`,
       good:avgCF>=0
     },
     {
       color:'rgba(200,169,110,0.1)',
       
       title:`Emergency Fund: ${liquidMonths.toFixed(1)} months`,
-      text:liquidMonths>=6?`${liquidMonths.toFixed(1)} months covered \u2014 your emergency fund is solid.`:`You have ${liquidMonths.toFixed(1)} months covered. Aim for 6+ months of expenses.`,
+      text:liquidMonths>=6?`${liquidMonths.toFixed(1)} months covered \\u2014 your emergency fund is solid.`:`You have ${liquidMonths.toFixed(1)} months covered. Aim for 6+ months of expenses.`,
       good:liquidMonths>=6
     },
     {
       color:'rgba(123,94,167,0.1)',
       
       title:`Retirement Contribution Rate: ${pct(retRate)}`,
-      text:retRate>=15?`${pct(retRate)} going to retirement \u2014 excellent habit!`:`Retirement contributions are at ${pct(retRate)} of income. Target 15%+ for long-term security.`,
+      text:retRate>=15?`${pct(retRate)} going to retirement \\u2014 excellent habit!`:`Retirement contributions are at ${pct(retRate)} of income. Target 15%+ for long-term security.`,
       good:retRate>=15
     },
     housingRatio>0&&{
       color:'rgba(192,57,43,0.1)',
       
       title:`Housing Cost Ratio: ${pct(housingRatio)}`,
-      text:housingRatio<=28?`Housing at ${pct(housingRatio)} of income \u2014 within recommended 28% limit.`:`Housing costs are ${pct(housingRatio)} of income, above the 28% guideline. Consider refinancing or reducing costs.`,
+      text:housingRatio<=28?`Housing at ${pct(housingRatio)} of income \\u2014 within recommended 28% limit.`:`Housing costs are ${pct(housingRatio)} of income, above the 28% guideline. Consider refinancing or reducing costs.`,
       good:housingRatio<=28
     },
   ].filter(Boolean);
@@ -2674,7 +2378,7 @@ function InsightsTab({data,setData}){
     {label:'Savings Rate',value:pct(savingsRate),fill:Math.min(100,savingsRate/30*100),color:savingsRate>=20?'#2A5C35':'#B88010',target:'Target: 20%+'},
     {label:'Emergency Fund',value:`${liquidMonths.toFixed(1)}mo`,fill:Math.min(100,liquidMonths/6*100),color:liquidMonths>=6?'#2A5C35':'#B88010',target:'Target: 6mo+'},
     {label:'Retirement Rate',value:pct(retRate),fill:Math.min(100,retRate/15*100),color:retRate>=15?'#2A5C35':'#B88010',target:'Target: 15%+'},
-    {label:'Housing Ratio',value:pct(housingRatio),fill:Math.min(100,housingRatio/28*100),color:housingRatio<=28?'#2A5C35':'#C0392B',target:'Target: \u226428%'},
+    {label:'Housing Ratio',value:pct(housingRatio),fill:Math.min(100,housingRatio/28*100),color:housingRatio<=28?'#2A5C35':'#C0392B',target:'Target: \\u226428%'},
   ];
 
   function saveGoals(){
@@ -2755,49 +2459,49 @@ function InsightsTab({data,setData}){
     ...[
       {
         title:'Real Return on Investment',
-        formula:'((1 + Nominal%) \u00f7 (1 + Currency Drag%) \u2212 1) \u00d7 100',
+        formula:'((1 + Nominal%) \\u00f7 (1 + Currency Drag%) \\u2212 1) \\u00d7 100',
         explain:'Adjusts your raw return for the currency depreciation drag. For example, 18% return in INR with 3.5% INR drag = 14.0% real USD return.',
         color:'#FFF8D0',border:'#A8D8AC',titleColor:'#2D5C32'
       },
       {
         title:'USD Conversion (Foreign Investments)',
-        formula:'USD Value = Local Amount \u00f7 Exchange Rate',
-        explain:'Exchange rate means "how many local units equal 1 USD". E.g. 1 USD = 84 INR \u2192 \u20b910,000,000 \u00f7 84 = $119,048 USD.',
+        formula:'USD Value = Local Amount \\u00f7 Exchange Rate',
+        explain:'Exchange rate means "how many local units equal 1 USD". E.g. 1 USD = 84 INR \\u2192 \\u20b910,000,000 \\u00f7 84 = $119,048 USD.',
         color:'#EEF3FA',border:'#C0D4EE',titleColor:'#1E4A7A'
       },
       {
         title:'Savings Rate',
-        formula:'Savings Rate = (Total Saved \u00f7 Total Income) \u00d7 100',
+        formula:'Savings Rate = (Total Saved \\u00f7 Total Income) \\u00d7 100',
         explain:'Total Saved = Take-home income minus all expenses. Income includes salary, rental, dividends and other sources.',
         color:'#FFFBF0',border:'#E8DCC8',titleColor:'#6B4A1E'
       },
       {
         title:'Cash Flow',
-        formula:'Cash Flow = Total Income \u2212 Total Expenses \u2212 Savings',
+        formula:'Cash Flow = Total Income \\u2212 Total Expenses \\u2212 Savings',
         explain:'What is left after all spending and saving. Positive means surplus; negative means you drew down on savings or credit.',
         color:'#F3EFFA',border:'#D4C8EE',titleColor:'#4A2E7A'
       },
       {
         title:'Net Operating Income (Real Estate)',
-        formula:'NOI = Monthly Rent \u2212 Property Tax/12 \u2212 (Value \u00d7 Maint%/12)',
+        formula:'NOI = Monthly Rent \\u2212 Property Tax/12 \\u2212 (Value \\u00d7 Maint%/12)',
         explain:'Income a property generates after operating costs but before mortgage. Used to calculate cap rate.',
         color:'#FFF8D0',border:'#A8D8AC',titleColor:'#2D5C32'
       },
       {
         title:'Cap Rate (Real Estate)',
-        formula:'Cap Rate = (NOI \u00d7 12) \u00f7 Property Value \u00d7 100',
-        explain:'Annualised return on a property ignoring financing. A higher cap rate = better unleveraged yield. 5\u20138% is typical.',
+        formula:'Cap Rate = (NOI \\u00d7 12) \\u00f7 Property Value \\u00d7 100',
+        explain:'Annualised return on a property ignoring financing. A higher cap rate = better unleveraged yield. 5\\u20138% is typical.',
         color:'#EEF3FA',border:'#C0D4EE',titleColor:'#1E4A7A'
       },
       {
-        title:'FIRE Number (25\u00d7 Rule)',
-        formula:'FIRE Number = Annual Expenses \u00d7 25',
-        explain:'Based on the 4% safe withdrawal rate. If you can live on 4% of your portfolio per year, you need 25\u00d7 your annual expenses invested.',
+        title:'FIRE Number (25\\u00d7 Rule)',
+        formula:'FIRE Number = Annual Expenses \\u00d7 25',
+        explain:'Based on the 4% safe withdrawal rate. If you can live on 4% of your portfolio per year, you need 25\\u00d7 your annual expenses invested.',
         color:'#FFF4EE',border:'#EED4C0',titleColor:'#7A3D1E'
       },
       {
-        title:'Federal Tax (2024\u201325)',
-        formula:'Tax = \u03a3 (Bracket Income \u00d7 Bracket Rate) \u2212 CTC \u2212 Withholding',
+        title:'Federal Tax (2024\\u201325)',
+        formula:'Tax = \\u03a3 (Bracket Income \\u00d7 Bracket Rate) \\u2212 CTC \\u2212 Withholding',
         explain:'Progressive brackets applied to taxable income (AGI minus standard deduction). Child Tax Credit reduces liability dollar-for-dollar.',
         color:'#FFFBF0',border:'#E8DCC8',titleColor:'#6B4A1E'
       },
@@ -2820,7 +2524,7 @@ function InsightsTab({data,setData}){
           e('div',{style:{fontSize:20,fontFamily:"'DM Sans',sans-serif",fontWeight:600,color:'#FFFFFF'}},fmtFull(annualExp))
         ),
         e('div',{style:{textAlign:'right'}},
-          e('div',{style:{fontSize:10,color:'rgba(255,255,255,0.55)'}},`FIRE Number (25\u00d7)`),
+          e('div',{style:{fontSize:10,color:'rgba(255,255,255,0.55)'}},`FIRE Number (25\\u00d7)`),
           e('div',{style:{fontSize:20,fontFamily:"'DM Sans',sans-serif",fontWeight:600,color:'#FFFFFF'}},fmt(fireNum))
         )
       ),
@@ -2838,78 +2542,78 @@ function InsightsTab({data,setData}){
     ...[
       {
         title:'Currency Conversion',
-        formula:'Local Amount \u00f7 Exchange Rate = USD Value',
-        desc:'Enter the rate as "1 USD = X foreign currency". e.g. if 1 USD = 84.14 INR, enter 84.14. So \u20b910,000,000 \u00f7 84.14 = $118,850 USD.'
+        formula:'Local Amount \\u00f7 Exchange Rate = USD Value',
+        desc:'Enter the rate as "1 USD = X foreign currency". e.g. if 1 USD = 84.14 INR, enter 84.14. So \\u20b910,000,000 \\u00f7 84.14 = $118,850 USD.'
       },
       {
         title:'Real Return (after currency drag)',
-        formula:'((1 + Nominal%) \u00f7 (1 + Currency Drag%)) \u2212 1',
+        formula:'((1 + Nominal%) \\u00f7 (1 + Currency Drag%)) \\u2212 1',
         desc:'Accounts for the annual depreciation of a foreign currency vs USD. e.g. 18% INR return with 3.5% drag = 14.0% real return.'
       },
       {
         title:'Currency Drag Rates',
-        formula:'INR 3.5% \u00b7 TRY 28% \u00b7 BRL 8% \u00b7 MXN 5% \u00b7 AUD 2.8% \u00b7 CAD 2.2% \u00b7 JPY 3% \u00b7 GBP 2% \u00b7 EUR 1.5% \u00b7 SGD 0.8% \u00b7 AED 0.2% \u00b7 USD 0%',
+        formula:'INR 3.5% \\u00b7 TRY 28% \\u00b7 BRL 8% \\u00b7 MXN 5% \\u00b7 AUD 2.8% \\u00b7 CAD 2.2% \\u00b7 JPY 3% \\u00b7 GBP 2% \\u00b7 EUR 1.5% \\u00b7 SGD 0.8% \\u00b7 AED 0.2% \\u00b7 USD 0%',
         desc:'Annual average depreciation of each currency against USD based on historical 10-year averages.'
       },
       {
         title:'Savings Rate',
-        formula:'(Total Saved \u00f7 Total Income) \u00d7 100',
-        desc:'Total Saved = Income \u2212 Expenses. Target is 20%+ for healthy financial progress.'
+        formula:'(Total Saved \\u00f7 Total Income) \\u00d7 100',
+        desc:'Total Saved = Income \\u2212 Expenses. Target is 20%+ for healthy financial progress.'
       },
       {
         title:'Investment Net Cash Flow',
-        formula:'Inv. Net CF = \u03a3 RE Cash Flows + \u03a3 Lending Monthly Interest',
-        desc:'Sum of all RE monthly cash flows (rent\u2212mort\u2212tax\u2212maint) plus monthly lending interest (Principal \u00d7 Rate \u00f7 12). Added to your salary cashflow for the total net cash flow shown in the hero card.'
+        formula:'Inv. Net CF = \\u03a3 RE Cash Flows + \\u03a3 Lending Monthly Interest',
+        desc:'Sum of all RE monthly cash flows (rent\\u2212mort\\u2212tax\\u2212maint) plus monthly lending interest (Principal \\u00d7 Rate \\u00f7 12). Added to your salary cashflow for the total net cash flow shown in the hero card.'
       },
       {
         title:'Total Monthly Income',
         formula:'Total Income = Salary/W2 + RE Monthly Rent + Lending Monthly Interest',
-        desc:'Salary from Monthly tab plus all rental income from RE properties plus interest income from active lending \u2014 as shown in the Income Breakdown in the hero card.'
+        desc:'Salary from Monthly tab plus all rental income from RE properties plus interest income from active lending \\u2014 as shown in the Income Breakdown in the hero card.'
       },
       {
         title:'Net Operating Income (Real Estate)',
-        formula:'NOI = Monthly Rent \u2212 (Annual Property Tax \u00f7 12) \u2212 (Property Value \u00d7 Maintenance% \u00f7 12)',
+        formula:'NOI = Monthly Rent \\u2212 (Annual Property Tax \\u00f7 12) \\u2212 (Property Value \\u00d7 Maintenance% \\u00f7 12)',
         desc:'Excludes mortgage payments. Represents true property earning power. Used to compute Cap Rate.'
       },
       {
         title:'Monthly Cash Flow (Real Estate)',
-        formula:'Cash Flow = Rent \u2212 Mortgage \u2212 Property Tax/mo \u2212 Maintenance/mo',
+        formula:'Cash Flow = Rent \\u2212 Mortgage \\u2212 Property Tax/mo \\u2212 Maintenance/mo',
         desc:'Cash actually in your pocket each month after every cost including mortgage. Negative CF means the property costs you money despite earning rent.'
       },
       {
         title:'Cap Rate',
-        formula:'Cap Rate = (NOI \u00d7 12) \u00f7 Current Property Value \u00d7 100',
-        desc:'How much the property earns relative to its value, ignoring how it was financed. Benchmark: 5\u20138% is typical for residential. Higher = better income-to-value ratio.'
+        formula:'Cap Rate = (NOI \\u00d7 12) \\u00f7 Current Property Value \\u00d7 100',
+        desc:'How much the property earns relative to its value, ignoring how it was financed. Benchmark: 5\\u20138% is typical for residential. Higher = better income-to-value ratio.'
       },
       {
         title:'Gross Yield',
-        formula:'Gross Yield = (Annual Rent \u00f7 Current Property Value) \u00d7 100',
-        desc:'Raw rental income as a % of property value \u2014 before any expenses. It does NOT change with expenses and reflects only rent vs. market value. Compare to cap rate to understand your expense ratio.'
+        formula:'Gross Yield = (Annual Rent \\u00f7 Current Property Value) \\u00d7 100',
+        desc:'Raw rental income as a % of property value \\u2014 before any expenses. It does NOT change with expenses and reflects only rent vs. market value. Compare to cap rate to understand your expense ratio.'
       },
       {
         title:'FCF Rate (Free Cash Flow Rate)',
-        formula:'FCF Rate = (Annual Cash Flow \u00f7 Purchase Price) \u00d7 100',
-        desc:'Annual net cash flow (rent minus all costs including mortgage) as a % of what you actually paid. Uses purchase price (not current value) so it reflects your actual cash-on-cash return. Also called Cash-on-Cash Return. Target: 6\u201310%+. Falls below 0% if you have negative monthly cash flow.'
+        formula:'FCF Rate = (Annual Cash Flow \\u00f7 Purchase Price) \\u00d7 100',
+        desc:'Annual net cash flow (rent minus all costs including mortgage) as a % of what you actually paid. Uses purchase price (not current value) so it reflects your actual cash-on-cash return. Also called Cash-on-Cash Return. Target: 6\\u201310%+. Falls below 0% if you have negative monthly cash flow.'
       },
       {
         title:'Private Lending Interest (Date-Accurate)',
-        formula:'Total Interest = Principal \u00d7 (Rate% \u00f7 100) \u00d7 (Actual Days \u00f7 365)',
+        formula:'Total Interest = Principal \\u00d7 (Rate% \\u00f7 100) \\u00d7 (Actual Days \\u00f7 365)',
         desc:'Interest is calculated using the exact number of calendar days between start and maturity dates divided by 365, not by a rounded term. E.g. Jan 1 to Aug 1 = 212 days = 0.581 years at 10%/yr.'
       },
       {
         title:'FIRE Number',
-        formula:'FIRE Number = Annual Expenses \u00d7 25',
-        desc:'Based on the 4% safe withdrawal rule. If your net worth = 25\u00d7 annual expenses, you can withdraw 4%/year indefinitely. Years to FIRE = (FIRE Number \u2212 Net Worth) \u00f7 Annual Savings.'
+        formula:'FIRE Number = Annual Expenses \\u00d7 25',
+        desc:'Based on the 4% safe withdrawal rule. If your net worth = 25\\u00d7 annual expenses, you can withdraw 4%/year indefinitely. Years to FIRE = (FIRE Number \\u2212 Net Worth) \\u00f7 Annual Savings.'
       },
       {
         title:'Federal Tax (2024)',
         formula:'Progressive brackets: 10%, 12%, 22%, 24%, 32%, 35%, 37%',
-        desc:'Taxable Income = AGI \u2212 Standard Deduction \u2212 Pre-tax deductions. Standard deductions: MFJ $29,200 \u00b7 Single/MFS $14,600 \u00b7 HOH $21,900. Child Tax Credit: $2,000/child.'
+        desc:'Taxable Income = AGI \\u2212 Standard Deduction \\u2212 Pre-tax deductions. Standard deductions: MFJ $29,200 \\u00b7 Single/MFS $14,600 \\u00b7 HOH $21,900. Child Tax Credit: $2,000/child.'
       },
       {
         title:'Housing Cost Ratio',
-        formula:'(Monthly Housing \u00f7 Monthly Income) \u00d7 100',
-        desc:'Recommended guideline is \u226428% of gross income for housing (mortgage/rent + taxes + insurance).'
+        formula:'(Monthly Housing \\u00f7 Monthly Income) \\u00d7 100',
+        desc:'Recommended guideline is \\u226428% of gross income for housing (mortgage/rent + taxes + insurance).'
       },
     ].map((f,i)=>
       e('div',{key:i,className:'card',style:{marginBottom:10}},
@@ -2934,7 +2638,7 @@ function InsightsTab({data,setData}){
   );
 }
 
-// \u2500\u2500\u2500 MAIN APP \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
 function App(){
   const [activeTab,setActiveTab]=useState(0);
   const [data,setData]=useState(()=>loadData());
@@ -2982,14 +2686,14 @@ function App(){
   );
 }
 
-// \u2500\u2500\u2500 Boot \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── Boot ─────────────────────────────────────────────────────────────────────
 function boot(){
   try{
     const container=document.getElementById('root');
     const root=ReactDOM.createRoot(container);
     root.render(e(App));
   }catch(err){
-    document.body.innerHTML='<div style="padding:40px;font-family:sans-serif;color:#fff;background:#1A1A2E;min-height:100vh"><h2>\u26a0\ufe0f Load Error</h2><p style="margin-top:12px;opacity:0.7">'+err.message+'</p><p style="margin-top:12px;opacity:0.5;font-size:13px">Please hard-refresh (hold reload button) or clear Safari cache.</p></div>';
+    document.body.innerHTML='<div style="padding:40px;font-family:sans-serif;color:#fff;background:#1A1A2E;min-height:100vh"><h2>\\u26a0\\ufe0f Load Error</h2><p style="margin-top:12px;opacity:0.7">'+err.message+'</p><p style="margin-top:12px;opacity:0.5;font-size:13px">Please hard-refresh (hold reload button) or clear Safari cache.</p></div>';
   }
 }
 if(document.readyState==='loading'){
