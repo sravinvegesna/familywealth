@@ -266,6 +266,45 @@ body{font-family:'DM Sans',sans-serif;color:#1C1C1E;-webkit-overflow-scrolling:t
 .re-snap-label{font-size:11px;color:#9E9A94;}
 .re-snap-value{font-size:12px;font-weight:600;color:#1C1C1E;}
 
+/* ── FAB ── */
+.fab{position:fixed;bottom:28px;right:calc(50% - 215px + 20px);width:52px;height:52px;border-radius:26px;background:#3D6E42;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(61,110,66,0.35),0 2px 6px rgba(0,0,0,0.12);z-index:200;transition:transform 0.15s,box-shadow 0.15s;-webkit-appearance:none;}
+.fab:active{transform:scale(0.93);box-shadow:0 2px 10px rgba(61,110,66,0.25);}
+
+/* ── Bottom sheet ── */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:300;display:flex;align-items:flex-end;justify-content:center;}
+.sheet{background:#FAFAF8;border-radius:20px 20px 0 0;width:100%;max-width:430px;padding:0 0 40px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.sheet-handle{width:36px;height:4px;background:#DEDBD5;border-radius:2px;margin:12px auto 0;}
+.sheet-header{padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F0EDE8;}
+.sheet-title{font-size:16px;font-weight:700;color:#1C1C1E;}
+.sheet-close{background:#F0EDE8;border:none;width:28px;height:28px;border-radius:14px;cursor:pointer;font-size:16px;color:#6B6663;display:flex;align-items:center;justify-content:center;line-height:1;}
+.sheet-body{padding:16px 20px;}
+
+/* ── Investment card v3 ── */
+.icard{background:#FFFFFF;border-radius:16px;border:1px solid #EDEBE6;margin-bottom:10px;overflow:hidden;}
+.icard-accent{height:3px;width:100%;}
+.icard-body{padding:14px 16px 10px;}
+.icard-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+.icard-name{font-size:15px;font-weight:600;color:#1C1C1E;line-height:1.3;}
+.icard-sub{font-size:11px;color:#9E9A94;margin-top:3px;}
+.icard-value{font-size:19px;font-weight:700;color:#1C1C1E;letter-spacing:-0.3px;font-family:‘DM Sans’,sans-serif;text-align:right;}
+.icard-ret{font-size:11px;font-weight:600;margin-top:2px;text-align:right;}
+.icard-metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.icard-metric{background:#F7F5F2;border-radius:10px;padding:8px 10px;}
+.icard-metric-label{font-size:9px;font-weight:700;color:#B0ABA5;text-transform:uppercase;letter-spacing:0.8px;}
+.icard-metric-value{font-size:13px;font-weight:700;color:#1C1C1E;margin-top:2px;letter-spacing:-0.2px;}
+.icard-actions{display:flex;gap:6px;padding:0 16px 14px;}
+.icard-btn{flex:1;padding:9px 0;border-radius:10px;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:‘DM Sans’,sans-serif;}
+.icard-btn:active{opacity:0.75;}
+.icard-btn-edit{background:#F0EDE8;color:#4B4845;}
+.icard-btn-log{background:#EFF5EF;color:#3D6E42;}
+.icard-btn-del{background:transparent;color:#C07070;border:1.5px solid #EDEBE6;}
+
+/* ── Type group header ── */
+.type-group-header{display:flex;align-items:center;gap:8px;margin:18px 0 8px;}
+.type-group-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0;}
+.type-group-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:#9E9A94;flex:1;}
+.type-group-total{font-size:12px;font-weight:700;color:#1C1C1E;}
+
 /* \u2500\u2500 Force light on iOS dark mode \u2500\u2500 */
 @media(prefers-color-scheme:dark){
 html,body,#root,.app,.content{background:#FAFAF8 !important;color:#1C1C1E !important;}
@@ -1678,81 +1717,136 @@ function TaxTab({data,setData}){
     e('button',{className:'btn btn-primary btn-full',onClick:handleSave},'Save Tax Data')
   );
 }
+// ─── QUICK LOG SHEET ─────────────────────────────────────────────────────────
+function QuickLogSheet({investments,onClose,onSave}){
+  const lendingInvs=investments.filter(i=>i.type==='Private Lending');
+  const reInvs=investments.filter(i=>i.type==='Real Estate');
+  const hasLending=lendingInvs.length>0;
+  const hasRE=reInvs.length>0;
+  const [logType,setLogType]=useState(hasLending?'lending':'expense');
+  const [selId,setSelId]=useState(String((hasLending?lendingInvs:reInvs)[0]?.id||''));
+  const [amount,setAmount]=useState('');
+  const [date,setDate]=useState(new Date().toISOString().slice(0,10));
+  const [notes,setNotes]=useState('');
+  function switchType(t){
+    setLogType(t);
+    const list=t==='lending'?lendingInvs:reInvs;
+    setSelId(String(list[0]?.id||''));
+    setAmount('');setNotes('');
+  }
+  function handleSave(){
+    if(!selId||!amount||!date){showToast('Fill in all fields');return;}
+    const updated=investments.map(inv=>{
+      if(String(inv.id)!==selId) return inv;
+      const entry={id:Date.now(),date,amount:+amount,notes};
+      if(logType==='lending') return {...inv,payments:[...(inv.payments||[]),entry]};
+      return {...inv,expenses:[...(inv.expenses||[]),entry]};
+    });
+    onSave(updated);
+    showToast(logType==='lending'?'Payment logged':'Expense logged');
+    onClose();
+  }
+  const list=logType==='lending'?lendingInvs:reInvs;
+  return e('div',{className:'sheet-overlay',onClick:onClose},
+    e('div',{className:'sheet',onClick:ev=>ev.stopPropagation()},
+      e('div',{className:'sheet-handle'}),
+      e('div',{className:'sheet-header'},
+        e('div',{className:'sheet-title'},'Quick Log'),
+        e('button',{className:'sheet-close',onClick:onClose},'×')
+      ),
+      e('div',{className:'sheet-body'},
+        (hasLending||hasRE)&&e('div',{className:'toggle-row',style:{marginBottom:16}},
+          hasLending&&e('button',{className:`toggle-btn ${logType==='lending'?'active':''}`,onClick:()=>switchType('lending')},'Lending Payment'),
+          hasRE&&e('button',{className:`toggle-btn ${logType==='expense'?'active':''}`,onClick:()=>switchType('expense')},'RE Expense')
+        ),
+        list.length===0&&e('div',{style:{fontSize:13,color:'#B0ABA5',textAlign:'center',padding:'24px 0'}},
+          'No '+(logType==='lending'?'private lending':'real estate')+' investments found.'
+        ),
+        list.length>0&&e('div',null,
+          e('div',{className:'form-group'},
+            e('label',{className:'form-label'},logType==='lending'?'Loan':'Property'),
+            e('select',{className:'form-select',value:selId,onChange:ev=>setSelId(ev.target.value)},
+              ...list.map(i=>e('option',{key:i.id,value:String(i.id)},i.name||'Unnamed'))
+            )
+          ),
+          e('div',{className:'grid-2'},
+            e('div',{className:'form-group'},
+              e('label',{className:'form-label'},'Amount (USD)'),
+              e('input',{className:'form-input',type:'number',placeholder:'0',value:amount,onChange:ev=>setAmount(ev.target.value)})
+            ),
+            e('div',{className:'form-group'},
+              e('label',{className:'form-label'},'Date'),
+              e('input',{className:'form-input',type:'date',value:date,onChange:ev=>setDate(ev.target.value)})
+            )
+          ),
+          e('div',{className:'form-group'},
+            e('label',{className:'form-label'},'Notes (optional)'),
+            e('input',{className:'form-input',type:'text',
+              placeholder:logType==='lending'?'e.g. partial payment':'e.g. plumbing repair',
+              value:notes,onChange:ev=>setNotes(ev.target.value)})
+          ),
+          e('button',{className:'btn btn-primary btn-full',onClick:handleSave},
+            logType==='lending'?'Log Payment':'Log Expense'
+          )
+        )
+      )
+    )
+  );
+}
+
 
 // \u2500\u2500\u2500 TAB: INVESTMENTS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function InvestTab({data,setData}){
   const [showForm,setShowForm]=useState(false);
   const [editId,setEditId]=useState(null);
+  const [showQuickLog,setShowQuickLog]=useState(false);
   const investments=data.investments||[];
 
-  // Max-concurrent for Private Lending — avoids double-counting sequential loans
+  const typeColors={'Private Lending':'#7B5EA7','Real Estate':'#3D7EAA','Plot / Land':'#B8926A','Gold / Silver':'#C8A96E','Stocks / ETF':'#4E7A52','Mutual Fund':'#4E7A52','Crypto':'#C0392B','Fixed Deposit':'#3D7EAA','Bonds':'#6B6663','Other':'#9E9A94'};
+
+  // Max-concurrent for Private Lending
   const lendingMaxConcurrent=(()=>{
     const loans=investments.filter(i=>i.type==='Private Lending').map(i=>({
       principal:+i.principalUSD||+i.amountUSD||0,
       start:i.startDate?new Date(i.startDate).getTime():null,
       end:i.maturityDate?new Date(i.maturityDate).getTime():null
     }));
-    if(loans.length===0) return 0;
+    if(!loans.length) return 0;
     const dated=loans.filter(l=>l.start!==null&&l.end!==null);
     const undated=loans.filter(l=>l.start===null||l.end===null);
-    if(dated.length===0) return loans.reduce((s,l)=>s+l.principal,0);
-    const points=[...new Set(dated.flatMap(l=>[l.start,l.end]))].sort((a,b)=>a-b);
-    let maxC=0;
-    for(let pi=0;pi<points.length-1;pi++){
-      const mid=(points[pi]+points[pi+1])/2;
+    if(!dated.length) return loans.reduce((s,l)=>s+l.principal,0);
+    const pts=[...new Set(dated.flatMap(l=>[l.start,l.end]))].sort((a,b)=>a-b);
+    let mx=0;
+    for(let pi=0;pi<pts.length-1;pi++){
+      const mid=(pts[pi]+pts[pi+1])/2;
       const c=dated.filter(l=>l.start<=mid&&l.end>mid).reduce((s,l)=>s+l.principal,0);
-      if(c>maxC) maxC=c;
+      if(c>mx) mx=c;
     }
-    const atLast=dated.filter(l=>l.start<=points[points.length-1]&&l.end>=points[points.length-1]).reduce((s,l)=>s+l.principal,0);
-    if(atLast>maxC) maxC=atLast;
-    return maxC+undated.reduce((s,l)=>s+l.principal,0);
+    const atLast=dated.filter(l=>l.start<=pts[pts.length-1]&&l.end>=pts[pts.length-1]).reduce((s,l)=>s+l.principal,0);
+    if(atLast>mx) mx=atLast;
+    return mx+undated.reduce((s,l)=>s+l.principal,0);
   })();
+
   const byType={};
   investments.forEach(i=>{const t=i.type||'Other';byType[t]=(byType[t]||0)+(+i.amountUSD||0);});
-  // Override Private Lending with max-concurrent value
   if(byType['Private Lending']) byType['Private Lending']=lendingMaxConcurrent;
   const totalUSD=Object.values(byType).reduce((s,v)=>s+v,0);
-  const typeColors={'Private Lending':'#7B5EA7','Real Estate':'#3D7EAA','Plot / Land':'#D47C0F','Gold / Silver':'#C8A96E','Stocks / ETF':'#7A9E7E','Mutual Fund':'#4E7A52','Crypto':'#C0392B','Fixed Deposit':'#A8C5AC','Bonds':'#6B6663','Other':'#C8C4BE'};
+
+  // Group investments by type
+  const typeOrder=['Private Lending','Real Estate','Plot / Land','Gold / Silver','Stocks / ETF','Mutual Fund','Crypto','Fixed Deposit','Bonds','Other'];
+  const grouped={};
+  investments.forEach(i=>{const t=i.type||'Other';if(!grouped[t])grouped[t]=[];grouped[t].push(i);});
 
   function handleDelete(id){
-    const newInv=investments.filter(i=>i.id!==id);
-    const nd={...data,investments:newInv};
-    setData(nd); saveData(nd);
-    showToast('Investment removed');
+    if(!confirm('Remove this investment?')) return;
+    const nd={...data,investments:investments.filter(i=>i.id!==id)};
+    setData(nd);saveData(nd);showToast('Investment removed');
   }
   function handleEdit(inv){setEditId(inv.id);setShowForm(true);}
   function handleFormClose(){setShowForm(false);setEditId(null);}
-
-  function handleExportInv(){
-    const json=JSON.stringify({investments},null,2);
-    const blob=new Blob([json],{type:'application/json'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=`investments-backup-${new Date().toISOString().slice(0,10)}.json`;
-    a.click();URL.revokeObjectURL(url);
-    showToast('Investments exported');
-  }
-  function handleImportInv(){
-    const input=document.createElement('input');
-    input.type='file';input.accept='.json';
-    input.onchange=ev=>{
-      const file=ev.target.files[0];
-      if(!file) return;
-      const reader=new FileReader();
-      reader.onload=re=>{
-        try{
-          const parsed=JSON.parse(re.target.result);
-          const imported=parsed.investments||[];
-          if(!Array.isArray(imported)) throw new Error('bad');
-          const merged=[...investments,...imported.filter(ni=>!investments.find(ei=>ei.id===ni.id))];
-          const nd={...data,investments:merged};
-          setData(nd);saveData(nd);
-          showToast(`Imported ${imported.length} investments`);
-        }catch(err){showToast('Invalid investments file');}
-      };
-      reader.readAsText(file);
-    };
-    input.click();
+  function handleQuickSave(updated){
+    const nd={...data,investments:updated};
+    setData(nd);saveData(nd);
   }
 
   if(showForm) return e(InvestForm,{
@@ -1761,84 +1855,156 @@ function InvestTab({data,setData}){
     onClose:handleFormClose
   });
 
+  const hasLoggable=investments.some(i=>i.type==='Private Lending'||i.type==='Real Estate');
+  const nowMs=Date.now();
+
   return e('div',null,
-    // Portfolio summary
+    // Quick Log Sheet
+    showQuickLog&&e(QuickLogSheet,{investments,onClose:()=>setShowQuickLog(false),onSave:handleQuickSave}),
+
+    // Portfolio hero
     e('div',{className:'hero-card'},
       e('div',{className:'hero-label'},'Total Portfolio'),
       e('div',{className:'hero-value'},fmtFull(totalUSD)),
-      e('div',{style:{marginTop:12}},
-        ...Object.entries(byType).map(([type,val])=>{
-          const p=totalUSD>0?(val/totalUSD*100):0;
-          return e('div',{key:type,style:{marginBottom:6}},
+      investments.length>0&&e('div',{style:{marginTop:14}},
+        ...typeOrder.filter(t=>byType[t]>0).map(t=>{
+          const val=byType[t], p=totalUSD>0?(val/totalUSD*100):0;
+          return e('div',{key:t,style:{marginBottom:7}},
             e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:3}},
-              e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.6)'}},type),
-              e('div',{style:{fontSize:11,color:'#B8926A'}},`${fmtFull(val)} \u00b7 ${p.toFixed(0)}%`)
+              e('div',{style:{display:'flex',alignItems:'center',gap:6}},
+                e('div',{style:{width:6,height:6,borderRadius:2,background:typeColors[t]||'#9E9A94'}}),
+                e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},t)
+              ),
+              e('div',{style:{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.9)'}},fmtFull(Math.round(val))+' · '+p.toFixed(0)+'%')
             ),
             e('div',{style:{height:4,background:'rgba(255,255,255,0.1)',borderRadius:2}},
-              e('div',{style:{height:'100%',width:`${p}%`,background:typeColors[type]||'#7A9E7E',borderRadius:2}})
+              e('div',{style:{height:'100%',width:p+'%',background:typeColors[t]||'#9E9A94',borderRadius:2}})
             )
           );
         })
       )
     ),
 
-    e('button',{className:'btn btn-primary btn-full',style:{marginBottom:14},onClick:()=>setShowForm(true)},'+ Add Investment'),
+    // Action bar
+    e('div',{style:{display:'flex',gap:8,marginBottom:16}},
+      e('button',{className:'btn btn-primary',style:{flex:1},onClick:()=>setShowForm(true)},'+ Add Investment'),
+      hasLoggable&&e('button',{
+        onClick:()=>setShowQuickLog(true),
+        style:{background:'#EFF5EF',border:'1.5px solid #C8DEC9',borderRadius:12,padding:'0 16px',cursor:'pointer',fontSize:13,fontWeight:600,color:'#3D6E42',flexShrink:0,display:'flex',alignItems:'center',gap:6}
+      },'+ Log')
+    ),
 
     investments.length===0&&e('div',{className:'empty-state'},
-      
       e('div',{className:'empty-state-title'},'No investments yet'),
       e('div',{className:'empty-state-sub'},'Add your first investment to start tracking your portfolio.')
     ),
 
-    ...investments.map(inv=>{
-      const realRet=calcRealReturn(+inv.nominalReturnPct||+inv.interestRate||0,inv.currency||'USD');
-      const drag=CURRENCY_RISK[inv.currency||'USD']||0;
-      const typeColor=typeColors[inv.type]||'#9E9A94';
-      const value=+inv.amountUSD||0;
-      // secondary metric per type
-      let metricLabel='', metricVal='', metricColor='#9E9A94';
-      if(inv.type==='Private Lending'){
-        metricLabel='Interest Rate'; metricVal=pct(+inv.interestRate||0)+'/yr';
-      } else if(inv.type==='Real Estate'){
-        const pv=+inv.propertyValue||value;
-        const rent=+inv.monthlyRent||0;
-        const yield_=pv>0?(rent*12/pv*100):0;
-        metricLabel='Gross Yield'; metricVal=pct(yield_);
-      } else if(inv.type==='Gold / Silver'){
-        metricLabel='Weight'; metricVal=inv.weightOz?(+inv.weightOz).toFixed(2)+' oz':'\u2014';
-      } else if(['Stocks / ETF','Mutual Fund'].includes(inv.type)){
-        const basis=+inv.costBasis||0;
-        const curr=+inv.currentMarketValue||value;
-        const gain=curr-basis;
-        if(basis>0){metricLabel='Gain/Loss';metricVal=(gain>=0?'+':'')+fmtFull(Math.round(gain));metricColor=gain>=0?'#3D6E42':'#B83030';}
-      }
-      return e('div',{key:inv.id,className:'inv-card'},
-        // Color bar top
-        e('div',{style:{height:3,background:typeColor,borderRadius:'16px 16px 0 0',margin:'-16px -16px 14px'}}),
-        e('div',{className:'inv-card-header'},
-          e('div',{style:{flex:1,minWidth:0}},
-            e('div',{className:'inv-card-name'},inv.name||'Investment'),
-            e('div',{style:{marginTop:4,display:'flex',gap:6,flexWrap:'wrap'}},
-              e('span',{className:'badge',style:{background:typeColor+'18',color:typeColor}},inv.type),
-              inv.currency&&inv.currency!=='USD'&&e('span',{className:'badge',style:{background:'#F9F5EE',color:'#8A6030'}},inv.currency)
-            )
-          ),
-          e('div',{style:{textAlign:'right',flexShrink:0,marginLeft:12}},
-            e('div',{className:'inv-card-value'},fmtFull(value)),
-            e('div',{style:{fontSize:11,color:realRet>=0?'#3D6E42':'#B83030',marginTop:2,fontWeight:600}},
-              `Real: ${pct(realRet)}/yr`
-            )
-          )
+    // Grouped investment cards
+    ...typeOrder.filter(t=>grouped[t]).map(t=>{
+      const invs=grouped[t];
+      const groupTotal=invs.reduce((s,i)=>s+(+i.amountUSD||0),0);
+      const color=typeColors[t]||'#9E9A94';
+      return e('div',{key:t},
+        e('div',{className:'type-group-header'},
+          e('div',{className:'type-group-dot',style:{background:color}}),
+          e('div',{className:'type-group-label'},t),
+          e('div',{className:'type-group-total'},fmtFull(Math.round(groupTotal)))
         ),
-        metricLabel&&e('div',{style:{display:'flex',justifyContent:'space-between',
-          background:'#F9FAF9',borderRadius:8,padding:'7px 10px',marginBottom:10}},
-          e('span',{style:{fontSize:11,color:'#9E9A94'}},metricLabel),
-          e('span',{style:{fontSize:11,fontWeight:700,color:metricColor}},metricVal)
-        ),
-        e('div',{style:{display:'flex',gap:8}},
-          e('button',{className:'btn btn-sm btn-outline',style:{flex:1},onClick:()=>handleEdit(inv)},'Edit'),
-          e('button',{className:'btn btn-sm btn-danger',onClick:()=>handleDelete(inv.id)},'Remove')
-        )
+        ...invs.map(inv=>{
+          const realRet=calcRealReturn(+inv.nominalReturnPct||+inv.interestRate||0,inv.currency||'USD');
+          const drag=CURRENCY_RISK[inv.currency||'USD']||0;
+          const value=+inv.amountUSD||0;
+          const isLending=inv.type==='Private Lending';
+          const isRE=inv.type==='Real Estate';
+          const isGold=inv.type==='Gold / Silver';
+          const isStocks=['Stocks / ETF','Mutual Fund'].includes(inv.type);
+          const canLog=isLending||isRE;
+
+          // Build 2-col metrics per type
+          let metrics=[];
+          if(isLending){
+            const startMs=inv.startDate?new Date(inv.startDate).getTime():null;
+            const endMs=inv.maturityDate?new Date(inv.maturityDate).getTime():null;
+            const isActive=startMs===null||endMs===null?true:(startMs<=nowMs&&endMs>=nowMs);
+            const isMatured=endMs!==null&&endMs<nowMs;
+            const principal=+inv.principalUSD||value;
+            const rate=+inv.interestRate||0;
+            const annualInt=principal*(rate/100);
+            const totalPaid=(inv.payments||[]).reduce((s,p)=>s+(+p.amount||0),0);
+            metrics=[
+              {label:'Interest Rate',value:pct(rate)+'/yr'},
+              {label:'Annual Income',value:fmtFull(Math.round(annualInt))},
+              {label:'Total Received',value:fmtFull(Math.round(totalPaid)),color:totalPaid>0?'#3D6E42':undefined},
+              {label:'Status',value:isMatured?'Matured':isActive?'Active':'Upcoming',color:isMatured?'#9E9A94':isActive?'#3D6E42':'#C8860A'},
+            ];
+          } else if(isRE){
+            const pv=+inv.propertyValue||value;
+            const rent=+inv.monthlyRent||0;
+            const mort=+inv.monthlyMortgage||0;
+            const maint=pv*(+inv.maintenancePct||1)/100/12;
+            const propTax=(+inv.propertyTax||0)/12;
+            const noi=rent-propTax-maint;
+            const cf=rent-mort-maint;
+            const capRate=pv>0?(noi*12/pv*100):0;
+            const equity=pv-(+inv.mortgageBalance||0);
+            metrics=[
+              {label:'Monthly CF',value:fmt(cf),color:cf>=0?'#3D6E42':'#B83030'},
+              {label:'Cap Rate',value:pct(capRate)},
+              {label:'Equity',value:fmtFull(Math.round(equity))},
+              {label:'Gross Yield',value:pv>0?pct(rent*12/pv*100):'—'},
+            ];
+          } else if(isGold){
+            metrics=[
+              {label:'Weight',value:(+inv.weightOz||0).toFixed(2)+' oz'},
+              {label:'Price/oz',value:fmtFull(+inv.pricePerOz||0)},
+            ];
+          } else if(isStocks){
+            const basis=+inv.costBasis||0;
+            const curr=+inv.currentMarketValue||value;
+            const gain=curr-basis;
+            const gainPct=basis>0?(gain/basis*100):0;
+            metrics=[
+              {label:'Cost Basis',value:fmtFull(Math.round(basis))},
+              {label:'Gain/Loss',value:(gain>=0?'+':'')+fmtFull(Math.round(gain)),color:gain>=0?'#3D6E42':'#B83030'},
+            ];
+            if(gainPct!==0) metrics.push({label:'Return',value:(gainPct>=0?'+':'')+gainPct.toFixed(1)+'%',color:gainPct>=0?'#3D6E42':'#B83030'});
+          } else {
+            metrics=[{label:'Expected Return',value:pct(+inv.nominalReturnPct||0)+'/yr'}];
+          }
+
+          return e('div',{key:inv.id,className:'icard'},
+            e('div',{className:'icard-accent',style:{background:color}}),
+            e('div',{className:'icard-body'},
+              e('div',{className:'icard-row'},
+                e('div',{style:{flex:1,minWidth:0}},
+                  e('div',{className:'icard-name'},inv.name||'Investment'),
+                  e('div',{className:'icard-sub'},
+                    (inv.currency&&inv.currency!=='USD'?inv.currency+' · ':'')+(drag>0?`${drag}% currency drag`:'USD asset')
+                  )
+                ),
+                e('div',{style:{flexShrink:0,marginLeft:12}},
+                  e('div',{className:'icard-value'},fmtFull(Math.round(value))),
+                  e('div',{className:'icard-ret',style:{color:realRet>=0?'#3D6E42':'#B83030'}},
+                    'Real: '+pct(realRet)+'/yr'
+                  )
+                )
+              ),
+              metrics.length>0&&e('div',{className:'icard-metrics'},
+                ...metrics.slice(0,4).map((m,mi)=>e('div',{key:mi,className:'icard-metric'},
+                  e('div',{className:'icard-metric-label'},m.label),
+                  e('div',{className:'icard-metric-value',style:{color:m.color||'#1C1C1E'}},m.value)
+                ))
+              )
+            ),
+            e('div',{className:'icard-actions'},
+              e('button',{className:'icard-btn icard-btn-edit',onClick:()=>handleEdit(inv)},'Edit'),
+              canLog&&e('button',{className:'icard-btn icard-btn-log',onClick:()=>{setShowQuickLog(true);}},
+                isLending?'+ Payment':'+ Expense'
+              ),
+              e('button',{className:'icard-btn icard-btn-del',style:{flex:'0 0 auto',padding:'9px 12px'},onClick:()=>handleDelete(inv.id)},'Remove')
+            )
+          );
+        })
       );
     })
   );
@@ -2059,6 +2225,48 @@ function InvestForm({data,setData,existing,onClose}){
       ),
       e('div',{style:{fontSize:10,color:'#9E9A94',marginTop:4,padding:'0 2px',lineHeight:1.5}},
         '\ud83d\udca1 Enter your total monthly payment (mortgage + escrow/tax) as one number. Annual Property Tax is optional \u2014 only used for Cap Rate and NOI calculations, not for cashflow.'
+      )
+    ),
+
+    // RE Expense Log — inline in edit form
+    isRE&&e('div',{className:'card'},
+      e(SectionHeader,{title:'Expense Log',action:
+        e('button',{
+          className:'btn btn-sm btn-outline',
+          onClick:()=>{
+            const newExp={id:Date.now(),date:new Date().toISOString().slice(0,10),amount:0,notes:''};
+            ff('expenses',[...(form.expenses||[]),newExp]);
+          }
+        },'+ Add Expense')
+      }),
+      (form.expenses||[]).length===0&&e('div',{style:{fontSize:12,color:'#B0ABA5',textAlign:'center',padding:'12px 0'}},'No expenses logged. Tap "+ Add Expense" to record a repair, fee, or one-off cost.'),
+      ...(form.expenses||[]).map((exp,ei)=>
+        e('div',{key:exp.id,style:{background:'#FFF8F8',borderRadius:12,padding:'12px 14px',marginBottom:8,border:'1px solid #FFE8E8'}},
+          e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
+            e('div',{style:{fontSize:12,fontWeight:600,color:'#1C1C1E'}},'Expense #'+(ei+1)),
+            e('button',{
+              onClick:()=>ff('expenses',(form.expenses||[]).filter((_,i)=>i!==ei)),
+              style:{background:'none',border:'none',color:'#B83030',fontSize:11,cursor:'pointer',fontWeight:600}
+            },'Remove')
+          ),
+          e('div',{className:'grid-2'},
+            e('div',{className:'form-group',style:{marginBottom:0}},
+              e('label',{className:'form-label'},'Date'),
+              e('input',{className:'form-input',type:'date',value:exp.date||'',
+                onChange:ev=>{const ex=[...(form.expenses||[])];ex[ei]={...ex[ei],date:ev.target.value};ff('expenses',ex);}})
+            ),
+            e('div',{className:'form-group',style:{marginBottom:0}},
+              e('label',{className:'form-label'},'Amount (USD)'),
+              e('input',{className:'form-input',type:'number',value:exp.amount||'',placeholder:'0',
+                onChange:ev=>{const ex=[...(form.expenses||[])];ex[ei]={...ex[ei],amount:+ev.target.value||0};ff('expenses',ex);}})
+            )
+          ),
+          e('div',{className:'form-group',style:{marginTop:8,marginBottom:0}},
+            e('label',{className:'form-label'},'Description'),
+            e('input',{className:'form-input',type:'text',value:exp.notes||'',placeholder:'e.g. plumbing repair, agent fee...',
+              onChange:ev=>{const ex=[...(form.expenses||[])];ex[ei]={...ex[ei],notes:ev.target.value};ff('expenses',ex);}})
+          )
+        )
       )
     ),
 
