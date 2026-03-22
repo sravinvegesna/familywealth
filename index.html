@@ -17,306 +17,308 @@
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
 <style>
-/* ── Reset ── */
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+/* ─── Design Tokens ─── */
 :root{color-scheme:light;}
-html,body{height:100%;overflow:hidden;background:#EEE9E1 !important;color:#1A1A1A !important;}
-body{font-family:'DM Sans',sans-serif;color:#1A1A1A;-webkit-overflow-scrolling:touch;}
-#root{height:100%;display:flex;flex-direction:column;background:#EEE9E1;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:#F7F3EE !important;color:#1A1714 !important;}
+body{font-family:'DM Sans',sans-serif;color:#1A1714;-webkit-overflow-scrolling:touch;}
+#root{height:100%;display:flex;flex-direction:column;background:#F7F3EE;}
 
-/* ── Splash ── */
-#splash{position:fixed;inset:0;background:#1C2B1E;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.5s ease;}
+/* ─── Splash ─── */
+#splash{position:fixed;inset:0;background:#162118;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.5s ease;}
 #splash.hide{opacity:0;pointer-events:none;}
-.splash-leaf{width:48px;height:48px;animation:leafpop 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards;}
-@keyframes leafpop{0%{opacity:0;transform:scale(0.4) rotate(-20deg);}100%{opacity:1;transform:scale(1) rotate(0deg);}}
-.splash-title{font-family:‘DM Sans’,sans-serif;color:#FFFFFF;font-size:26px;margin-top:14px;letter-spacing:-0.3px;font-weight:300;}
-.splash-word{color:#A8C5AC;font-family:‘DM Sans’,sans-serif;font-size:26px;font-style:normal;font-weight:300;margin-left:6px;}
-.splash-sub{color:rgba(168,197,172,0.6);font-size:13px;margin-top:8px;font-weight:400;letter-spacing:0.5px;}
-.splash-bar-bg{width:160px;height:2px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:48px;overflow:hidden;}
-.splash-bar{height:100%;background:#8BAF8F;border-radius:2px;animation:loadbar 1.4s ease forwards;}
+.splash-leaf{width:52px;height:52px;animation:leafpop 0.9s cubic-bezier(0.34,1.56,0.64,1) forwards;}
+@keyframes leafpop{0%{opacity:0;transform:scale(0.3) rotate(-15deg);}100%{opacity:1;transform:scale(1) rotate(0deg);}}
+.splash-title{font-family:‘DM Sans’,sans-serif;color:#FFFFFF;font-size:28px;margin-top:16px;letter-spacing:-0.5px;font-weight:300;}
+.splash-word{color:#A8C5AC;font-size:28px;font-weight:300;margin-left:4px;}
+.splash-sub{color:rgba(168,197,172,0.5);font-size:13px;margin-top:6px;font-weight:400;letter-spacing:0.8px;}
+.splash-bar-bg{width:140px;height:2px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:52px;overflow:hidden;}
+.splash-bar{height:100%;background:linear-gradient(90deg,#4A8A52,#7EC87E);border-radius:2px;animation:loadbar 1.6s ease forwards;}
 @keyframes loadbar{0%{width:0%;}100%{width:100%;}}
 
-/* ── App shell ── */
-.app{display:flex;flex-direction:column;height:100%;max-width:430px;margin:0 auto;background:#EEE9E1;}
+/* ─── App shell ─── */
+.app{display:flex;flex-direction:column;height:100%;max-width:430px;margin:0 auto;background:#F7F3EE;}
 
-/* ── Header ── */
-.header{background:#EEE9E1;padding:0 18px;position:sticky;top:0;z-index:100;flex-shrink:0;border-bottom:1.5px solid #DDD7CE;}
-.header-top{display:flex;align-items:center;justify-content:space-between;padding:14px 0 10px;}
-.header-title{font-family:‘DM Sans’,sans-serif;color:#1A1A1A;font-size:20px;font-weight:300;letter-spacing:-0.3px;}
-.header-title span{font-weight:800;color:#2D5A32;font-size:20px;margin-left:1px;}
-.year-badge{background:#2D5A32;color:#FFFFFF;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.3px;}
-.tab-bar{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:0;}
+/* ─── Header ─── */
+.header{padding:0 20px;position:sticky;top:0;z-index:100;flex-shrink:0;background:#F7F3EE;border-bottom:1px solid #E8E2D8;}
+.header-top{display:flex;align-items:center;justify-content:space-between;padding:14px 0 12px;}
+.header-title{font-family:‘DM Sans’,sans-serif;color:#1A1714;font-size:20px;font-weight:300;letter-spacing:-0.4px;}
+.header-title span{font-weight:800;color:#254D2A;font-size:20px;margin-left:2px;letter-spacing:-0.5px;}
+.year-badge{background:#254D2A;color:#FFFFFF;padding:5px 13px;border-radius:100px;font-size:11px;font-weight:700;letter-spacing:0.4px;}
+
+/* ─── Tab bar ─── */
+.tab-bar{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:2px;padding-bottom:0;}
 .tab-bar::-webkit-scrollbar{display:none;}
-.tab-btn{flex-shrink:0;padding:10px 16px 11px;font-family:‘DM Sans’,sans-serif;font-size:13px;font-weight:500;color:#9E9890;background:none;border:none;border-bottom:2.5px solid transparent;cursor:pointer;transition:color 0.15s,border-color 0.15s;white-space:nowrap;}
-.tab-btn.active{color:#1A1A1A;border-bottom-color:#2D5A32;font-weight:700;}
+.tab-btn{flex-shrink:0;padding:8px 14px 10px;font-family:‘DM Sans’,sans-serif;font-size:13px;font-weight:500;color:#A09888;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:color 0.15s,border-color 0.15s;white-space:nowrap;letter-spacing:0.1px;}
+.tab-btn.active{color:#1A1714;border-bottom-color:#254D2A;font-weight:700;}
 
-/* ── Content ── */
-.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 60px;background:#EEE9E1;}
+/* ─── Content ─── */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 64px;background:#F7F3EE;}
 
-/* ── Cards ── */
-.card{background:#FFFFFF;border-radius:22px;padding:20px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06),0 8px 24px rgba(0,0,0,0.05);}
-.card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.6px;color:#B8B2AA;margin-bottom:14px;}
-.card-value{font-family:‘DM Sans’,sans-serif;font-size:28px;color:#1A1A1A;line-height:1;letter-spacing:-0.4px;font-weight:700;}
-.card-sub{font-size:12px;color:#9E9890;margin-top:4px;}
+/* ─── Cards ─── */
+.card{background:#FFFFFF;border-radius:24px;padding:20px;margin-bottom:12px;box-shadow:0 1px 2px rgba(26,23,20,0.04),0 6px 20px rgba(26,23,20,0.06);}
+.card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.8px;color:#C0B8AE;margin-bottom:14px;}
+.card-value{font-family:‘DM Sans’,sans-serif;font-size:28px;color:#1A1714;line-height:1;letter-spacing:-0.5px;font-weight:700;}
+.card-sub{font-size:12px;color:#9E9488;margin-top:4px;}
 
-/* ── Hero card ── */
-.hero-card{background:linear-gradient(145deg,#1E3220 0%,#2A4430 55%,#1C2E1E 100%);border-radius:26px;padding:24px 22px;margin-bottom:12px;box-shadow:0 12px 40px rgba(28,46,30,0.30),0 4px 12px rgba(0,0,0,0.12);}
-.hero-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.8px;color:rgba(168,197,172,0.55);margin-bottom:6px;}
-.hero-value{font-family:‘DM Sans’,sans-serif;font-size:36px;color:#FFFFFF;line-height:1;letter-spacing:-0.8px;font-weight:700;}
-.hero-delta{font-size:12px;margin-top:7px;font-weight:500;}
-.hero-delta.pos{color:#7ECB8F;}
+/* ─── Hero card ─── */
+.hero-card{background:#162118;border-radius:28px;padding:26px 22px 22px;margin-bottom:12px;box-shadow:0 16px 48px rgba(22,33,24,0.32),0 4px 12px rgba(0,0,0,0.14);position:relative;overflow:hidden;}
+.hero-card::before{content:’’;position:absolute;top:-40px;right:-30px;width:180px;height:180px;background:radial-gradient(circle,rgba(74,138,82,0.15) 0%,transparent 70%);pointer-events:none;}
+.hero-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:rgba(168,197,172,0.45);margin-bottom:6px;}
+.hero-value{font-family:‘DM Sans’,sans-serif;font-size:38px;color:#FFFFFF;line-height:1;letter-spacing:-1px;font-weight:700;}
+.hero-delta{font-size:12px;margin-top:7px;font-weight:500;letter-spacing:0.1px;}
+.hero-delta.pos{color:#86D498;}
 .hero-delta.neg{color:#E07070;}
-.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px;}
-.hero-stat{background:rgba(255,255,255,0.08);border-radius:16px;padding:13px 14px;border:1px solid rgba(255,255,255,0.07);}
-.hero-stat-label{font-size:9px;color:rgba(255,255,255,0.38);font-weight:700;text-transform:uppercase;letter-spacing:1.1px;}
-.hero-stat-value{font-size:17px;font-family:‘DM Sans’,sans-serif;color:#FFFFFF;margin-top:5px;letter-spacing:-0.3px;font-weight:600;}
-.hero-stat-sub{font-size:10px;color:rgba(168,197,172,0.5);margin-top:2px;}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px;}
+.hero-stat{background:rgba(255,255,255,0.06);border-radius:18px;padding:14px;border:1px solid rgba(255,255,255,0.06);}
+.hero-stat-label{font-size:9px;color:rgba(255,255,255,0.32);font-weight:700;text-transform:uppercase;letter-spacing:1.2px;}
+.hero-stat-value{font-size:18px;font-family:‘DM Sans’,sans-serif;color:#FFFFFF;margin-top:5px;letter-spacing:-0.4px;font-weight:600;}
+.hero-stat-sub{font-size:10px;color:rgba(168,197,172,0.45);margin-top:2px;}
 
-/* ── Summary grid ── */
+/* ─── Summary grid ─── */
 .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-.summary-box{background:#FFFFFF;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06),0 6px 18px rgba(0,0,0,0.04);}
-.summary-box-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.3px;color:#B8B2AA;}
-.summary-box-value{font-family:‘DM Sans’,sans-serif;font-size:22px;color:#1A1A1A;margin-top:6px;letter-spacing:-0.3px;font-weight:700;}
-.summary-box-value.green{color:#2D5A32;}
+.summary-box{background:#FFFFFF;border-radius:20px;padding:16px;box-shadow:0 1px 2px rgba(26,23,20,0.04),0 4px 14px rgba(26,23,20,0.05);}
+.summary-box-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:#C0B8AE;}
+.summary-box-value{font-family:‘DM Sans’,sans-serif;font-size:22px;color:#1A1714;margin-top:6px;letter-spacing:-0.3px;font-weight:700;}
+.summary-box-value.green{color:#254D2A;}
 .summary-box-value.red{color:#B83030;}
 
-/* ── Grids ── */
+/* ─── Grids ─── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 
-/* ── Stat tiles ── */
-.stat-tile{background:#E8E2D9;border-radius:16px;padding:14px;}
-.stat-tile-label{font-size:9px;font-weight:700;color:#B0AA9E;text-transform:uppercase;letter-spacing:1px;}
-.stat-tile-value{font-family:‘DM Sans’,sans-serif;font-size:20px;color:#1A1A1A;margin-top:5px;letter-spacing:-0.2px;font-weight:600;}
-.stat-tile-sub{font-size:11px;color:#9E9890;margin-top:2px;}
+/* ─── Stat tiles ─── */
+.stat-tile{background:#F0EAE0;border-radius:18px;padding:14px 16px;}
+.stat-tile-label{font-size:9px;font-weight:700;color:#C0B8AE;text-transform:uppercase;letter-spacing:1.1px;}
+.stat-tile-value{font-family:‘DM Sans’,sans-serif;font-size:20px;color:#1A1714;margin-top:5px;letter-spacing:-0.2px;font-weight:600;}
+.stat-tile-sub{font-size:11px;color:#9E9488;margin-top:2px;}
 
-/* ── Bar chart ── */
-.bar-chart{display:flex;align-items:flex-end;gap:4px;height:76px;margin-top:10px;}
+/* ─── Bar chart ─── */
+.bar-chart{display:flex;align-items:flex-end;gap:5px;height:76px;margin-top:10px;}
 .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
 .bar-fill{width:100%;border-radius:6px 6px 0 0;min-height:3px;}
-.bar-label{font-size:9px;color:#B8B2AA;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
+.bar-label{font-size:9px;color:#C0B8AE;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
 
-/* ── Donut ── */
+/* ─── Donut ─── */
 .donut-canvas{width:110px;height:110px;flex-shrink:0;}
 .allocation-row{display:flex;align-items:center;margin-bottom:9px;}
 .allocation-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-right:9px;}
-.allocation-label{font-size:12px;color:#1A1A1A;flex:1;}
-.allocation-pct{font-size:12px;font-weight:600;color:#1A1A1A;}
+.allocation-label{font-size:12px;color:#1A1714;flex:1;}
+.allocation-pct{font-size:12px;font-weight:600;color:#1A1714;}
 
-/* ── Inputs ── */
+/* ─── Forms ─── */
 .form-group{margin-bottom:13px;}
-.form-label{font-size:10px;font-weight:700;color:#B8B2AA;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;}
-.form-input{width:100%;border:2px solid #E2DDD6;border-radius:14px;padding:13px 15px;font-family:‘DM Sans’,sans-serif;font-size:14px;color:#1A1A1A;background:#FFFFFF;outline:none;transition:border-color 0.15s,box-shadow 0.15s;-webkit-appearance:none;-webkit-text-fill-color:#1A1A1A;}
-.form-input:focus{border-color:#2D5A32;box-shadow:0 0 0 4px rgba(45,90,50,0.10);}
-.form-select{width:100%;border:2px solid #E2DDD6;border-radius:14px;padding:13px 36px 13px 15px;font-family:‘DM Sans’,sans-serif;font-size:14px;color:#1A1A1A;background:#FFFFFF;outline:none;-webkit-appearance:none;appearance:none;-webkit-text-fill-color:#1A1A1A;background-image:url(“data:image/svg+xml,%3Csvg xmlns=‘http://www.w3.org/2000/svg’ width=‘10’ height=‘7’ viewBox=‘0 0 10 7’%3E%3Cpath d=‘M1 1l4 4 4-4’ stroke=’%23B8B2AA’ stroke-width=‘1.5’ fill=‘none’ stroke-linecap=‘round’ stroke-linejoin=‘round’/%3E%3C/svg%3E”);background-repeat:no-repeat;background-position:right 15px center;}
-.form-select:focus{border-color:#2D5A32;box-shadow:0 0 0 4px rgba(45,90,50,0.10);}
-.form-textarea{width:100%;border:2px solid #E2DDD6;border-radius:14px;padding:13px 15px;font-family:‘DM Sans’,sans-serif;font-size:14px;color:#1A1A1A;background:#FFFFFF;outline:none;resize:none;min-height:80px;-webkit-text-fill-color:#1A1A1A;transition:border-color 0.15s,box-shadow 0.15s;}
-.form-textarea:focus{border-color:#2D5A32;box-shadow:0 0 0 4px rgba(45,90,50,0.10);}
-.form-input::placeholder,.form-textarea::placeholder{color:#CCC8C0;font-weight:400;}
+.form-label{font-size:10px;font-weight:700;color:#C0B8AE;text-transform:uppercase;letter-spacing:1.1px;display:block;margin-bottom:6px;}
+.form-input{width:100%;border:1.5px solid #E4DDD2;border-radius:14px;padding:13px 15px;font-family:‘DM Sans’,sans-serif;font-size:15px;color:#1A1714;background:#FFFFFF;outline:none;transition:border-color 0.15s,box-shadow 0.15s;-webkit-appearance:none;-webkit-text-fill-color:#1A1714;}
+.form-input:focus{border-color:#254D2A;box-shadow:0 0 0 3px rgba(37,77,42,0.10);}
+.form-select{width:100%;border:1.5px solid #E4DDD2;border-radius:14px;padding:13px 38px 13px 15px;font-family:‘DM Sans’,sans-serif;font-size:15px;color:#1A1714;background:#FFFFFF;outline:none;-webkit-appearance:none;appearance:none;-webkit-text-fill-color:#1A1714;background-image:url(“data:image/svg+xml,%3Csvg xmlns=‘http://www.w3.org/2000/svg’ width=‘10’ height=‘6’ viewBox=‘0 0 10 6’%3E%3Cpath d=‘M1 1l4 4 4-4’ stroke=’%23C0B8AE’ stroke-width=‘1.5’ fill=‘none’ stroke-linecap=‘round’ stroke-linejoin=‘round’/%3E%3C/svg%3E”);background-repeat:no-repeat;background-position:right 15px center;transition:border-color 0.15s;}
+.form-select:focus{border-color:#254D2A;box-shadow:0 0 0 3px rgba(37,77,42,0.10);}
+.form-textarea{width:100%;border:1.5px solid #E4DDD2;border-radius:14px;padding:13px 15px;font-family:‘DM Sans’,sans-serif;font-size:15px;color:#1A1714;background:#FFFFFF;outline:none;resize:none;min-height:80px;-webkit-text-fill-color:#1A1714;transition:border-color 0.15s;}
+.form-textarea:focus{border-color:#254D2A;box-shadow:0 0 0 3px rgba(37,77,42,0.10);}
+.form-input::placeholder,.form-textarea::placeholder{color:#CCC4B8;font-weight:400;}
 
-/* ── Section header ── */
-.section-header{font-size:10px;font-weight:700;color:#6E9E72;text-transform:uppercase;letter-spacing:1.6px;margin:20px 0 10px;padding-left:1px;}
+/* ─── Section header ─── */
+.section-header{font-size:10px;font-weight:700;color:#4A8050;text-transform:uppercase;letter-spacing:1.8px;margin:20px 0 10px;}
 
-/* ── Buttons ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:14px 24px;border-radius:16px;font-family:‘DM Sans’,sans-serif;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:opacity 0.15s,transform 0.12s;-webkit-appearance:none;}
-.btn:active{opacity:0.82;transform:scale(0.97);}
-.btn-primary{background:#2D5A32;color:#FFFFFF;box-shadow:0 4px 16px rgba(45,90,50,0.30);}
+/* ─── Buttons ─── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:14px 24px;border-radius:16px;font-family:‘DM Sans’,sans-serif;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:opacity 0.15s,transform 0.1s;-webkit-appearance:none;letter-spacing:0.1px;}
+.btn:active{opacity:0.8;transform:scale(0.97);}
+.btn-primary{background:#254D2A;color:#FFFFFF;box-shadow:0 4px 18px rgba(37,77,42,0.30);}
 .btn-full{width:100%;}
-.btn-sm{padding:9px 16px;font-size:12px;border-radius:12px;}
-.btn-outline{background:#FFFFFF;border:2px solid #DDD7CE;color:#4A5E4C;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,0.05);}
-.btn-danger{background:transparent;color:#C0B8B0;border:none;font-weight:500;font-size:13px;}
-.btn-gold{background:#2D5A32;color:#FFFFFF;box-shadow:0 4px 16px rgba(45,90,50,0.30);}
+.btn-sm{padding:9px 16px;font-size:12px;border-radius:12px;font-weight:600;}
+.btn-outline{background:#FFFFFF;border:1.5px solid #E4DDD2;color:#4A5E4C;font-weight:600;box-shadow:0 1px 4px rgba(26,23,20,0.06);}
+.btn-danger{background:transparent;color:#C0B0A8;border:none;font-weight:500;}
+.btn-gold{background:#254D2A;color:#FFFFFF;box-shadow:0 4px 18px rgba(37,77,42,0.30);}
 
-/* ── Progress bar ── */
-.progress-bg{background:#DDD7CE;border-radius:6px;height:6px;overflow:hidden;margin-top:8px;}
-.progress-fill{height:100%;border-radius:6px;transition:width 0.6s cubic-bezier(0.4,0,0.2,1);}
+/* ─── Progress ─── */
+.progress-bg{background:#E8E0D4;border-radius:100px;height:6px;overflow:hidden;margin-top:8px;}
+.progress-fill{height:100%;border-radius:100px;transition:width 0.7s cubic-bezier(0.4,0,0.2,1);}
 
-/* ── Toggle ── */
-.toggle-row{display:flex;background:#DDD7CE;border-radius:14px;padding:3px;margin-bottom:16px;}
-.toggle-btn{flex:1;padding:9px 8px;border-radius:12px;border:none;font-family:‘DM Sans’,sans-serif;font-size:12px;font-weight:600;color:#9E9890;background:transparent;cursor:pointer;transition:all 0.18s;}
-.toggle-btn.active{background:#FFFFFF;color:#1A1A1A;box-shadow:0 2px 8px rgba(0,0,0,0.10);}
+/* ─── Toggle ─── */
+.toggle-row{display:flex;background:#EDE5D8;border-radius:16px;padding:4px;margin-bottom:16px;}
+.toggle-btn{flex:1;padding:9px 8px;border-radius:13px;border:none;font-family:‘DM Sans’,sans-serif;font-size:12px;font-weight:600;color:#9E9488;background:transparent;cursor:pointer;transition:all 0.2s;}
+.toggle-btn.active{background:#FFFFFF;color:#1A1714;box-shadow:0 2px 10px rgba(26,23,20,0.10);}
 
-/* ── Live panel ── */
-.live-panel{background:linear-gradient(145deg,#1E3220,#1C2E1E);border-radius:18px;padding:18px 20px;margin-top:12px;box-shadow:0 6px 20px rgba(28,46,30,0.20);}
-.live-panel-label{font-size:9px;color:rgba(168,197,172,0.5);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:4px;}
-.live-panel-row{display:flex;justify-content:space-between;align-items:center;margin-top:9px;}
-.live-panel-key{font-size:12px;color:rgba(255,255,255,0.42);}
+/* ─── Live panel ─── */
+.live-panel{background:#162118;border-radius:20px;padding:18px 20px;margin-top:12px;box-shadow:0 8px 28px rgba(22,33,24,0.20);}
+.live-panel-label{font-size:9px;color:rgba(168,197,172,0.45);text-transform:uppercase;letter-spacing:1.4px;font-weight:700;margin-bottom:4px;}
+.live-panel-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+.live-panel-key{font-size:12px;color:rgba(255,255,255,0.38);}
 .live-panel-val{font-size:13px;font-weight:600;color:#FFFFFF;}
 .live-panel-val.gold{color:#C8A96E;}
-.live-panel-val.green{color:#7ECB8F;}
+.live-panel-val.green{color:#86D498;}
 .live-panel-val.red{color:#E07070;}
 
-/* ── List items ── */
-.list-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #EAE4DC;}
+/* ─── List items ─── */
+.list-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #EDE5D8;}
 .list-item:last-child{border-bottom:none;}
 .list-item-left{flex:1;min-width:0;padding-right:10px;}
-.list-item-title{font-size:14px;font-weight:500;color:#1A1A1A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.list-item-sub{font-size:11px;color:#9E9890;margin-top:2px;}
+.list-item-title{font-size:14px;font-weight:500;color:#1A1714;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-item-sub{font-size:11px;color:#9E9488;margin-top:2px;}
 .list-item-right{text-align:right;flex-shrink:0;}
-.list-item-value{font-size:14px;font-weight:600;color:#1A1A1A;}
+.list-item-value{font-size:14px;font-weight:600;color:#1A1714;}
 
-/* ── Badges ── */
-.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.3px;}
-.badge-sage{background:#DDF0DD;color:#2D5A32;}
-.badge-gold{background:#FBF4E8;color:#8A6030;}
-.badge-red{background:#FFF0EF;color:#B83030;}
-.badge-blue{background:#EEF3FA;color:#2D5E8E;}
-.badge-purple{background:#F3EFFA;color:#5B3E8A;}
+/* ─── Badges ─── */
+.badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:0.3px;}
+.badge-sage{background:#D8EDDA;color:#254D2A;}
+.badge-gold{background:#F8F0E0;color:#8A6030;}
+.badge-red{background:#FDECEA;color:#B83030;}
+.badge-blue{background:#E8F0F8;color:#2D5E8E;}
+.badge-purple{background:#F0ECFA;color:#5B3E8A;}
 
-/* ── Toast ── */
-.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:#1C2E1E;color:#FFFFFF;padding:13px 24px;border-radius:26px;font-size:13px;font-weight:600;z-index:999;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;box-shadow:0 8px 28px rgba(0,0,0,0.22);}
+/* ─── Toast ─── */
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(90px);background:#162118;color:#FFFFFF;padding:13px 26px;border-radius:100px;font-size:13px;font-weight:600;z-index:999;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,0.25);}
 .toast.show{transform:translateX(-50%) translateY(0);}
 
-/* ── Insight cards ── */
-.insight-card{border-radius:18px;padding:16px;margin-bottom:10px;border:1px solid rgba(0,0,0,0.05);}
-.insight-title{font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:4px;}
-.insight-text{font-size:12px;color:#6B6663;line-height:1.6;}
+/* ─── Insight cards ─── */
+.insight-card{border-radius:20px;padding:18px;margin-bottom:10px;border:none;}
+.insight-title{font-size:13px;font-weight:700;color:#1A1714;margin-bottom:5px;}
+.insight-text{font-size:12px;color:#6B6258;line-height:1.6;}
 
-/* ── Tax ── */
-.tax-summary{background:linear-gradient(145deg,#1E3220,#1C2E1E);border-radius:22px;padding:22px;color:#FFFFFF;margin-bottom:14px;box-shadow:0 8px 28px rgba(28,46,30,0.24);}
-.tax-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:rgba(255,255,255,0.78);}
+/* ─── Tax ─── */
+.tax-summary{background:#162118;border-radius:24px;padding:22px;color:#FFFFFF;margin-bottom:14px;box-shadow:0 10px 36px rgba(22,33,24,0.24);}
+.tax-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:rgba(255,255,255,0.72);}
 .tax-row.total{border-top:1px solid rgba(255,255,255,0.08);margin-top:8px;padding-top:12px;font-weight:700;color:#FFFFFF;}
-.tax-refund{text-align:center;margin-top:14px;padding:16px;background:rgba(255,255,255,0.06);border-radius:16px;border:1px solid rgba(255,255,255,0.08);}
-.tax-refund-label{font-size:9px;color:rgba(255,255,255,0.38);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;}
-.tax-refund-value{font-family:‘DM Sans’,sans-serif;font-size:32px;margin-top:6px;font-weight:700;letter-spacing:-0.5px;}
+.tax-refund{text-align:center;margin-top:16px;padding:16px;background:rgba(255,255,255,0.05);border-radius:18px;border:1px solid rgba(255,255,255,0.07);}
+.tax-refund-label{font-size:9px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.4px;font-weight:700;}
+.tax-refund-value{font-family:‘DM Sans’,sans-serif;font-size:32px;margin-top:6px;font-weight:700;letter-spacing:-0.6px;}
 
-/* ── Investment cards ── */
-.inv-card{background:#FFFFFF;border-radius:20px;padding:18px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06),0 6px 20px rgba(0,0,0,0.05);}
+/* ─── Investment cards ─── */
+.inv-card{background:#FFFFFF;border-radius:22px;padding:18px;margin-bottom:10px;box-shadow:0 1px 2px rgba(26,23,20,0.04),0 6px 20px rgba(26,23,20,0.06);}
 .inv-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
-.inv-card-name{font-size:15px;font-weight:600;color:#1A1A1A;}
-.inv-card-type{font-size:11px;color:#9E9890;margin-top:2px;}
-.inv-card-value{font-family:‘DM Sans’,sans-serif;font-size:20px;color:#1A1A1A;text-align:right;letter-spacing:-0.2px;font-weight:700;}
+.inv-card-name{font-size:15px;font-weight:600;color:#1A1714;}
+.inv-card-type{font-size:11px;color:#9E9488;margin-top:2px;}
+.inv-card-value{font-family:‘DM Sans’,sans-serif;font-size:20px;color:#1A1714;text-align:right;letter-spacing:-0.3px;font-weight:700;}
 .inv-card-ret{font-size:11px;text-align:right;margin-top:2px;font-weight:600;}
 
-/* ── Investment card v3 ── */
-.icard{background:#FFFFFF;border-radius:20px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06),0 6px 20px rgba(0,0,0,0.05);}
+/* ─── Investment card v3 ─── */
+.icard{background:#FFFFFF;border-radius:22px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 2px rgba(26,23,20,0.04),0 6px 20px rgba(26,23,20,0.06);}
 .icard-accent{height:4px;width:100%;}
 .icard-body{padding:16px 18px 10px;}
 .icard-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
-.icard-name{font-size:15px;font-weight:600;color:#1A1A1A;line-height:1.3;}
-.icard-sub{font-size:11px;color:#9E9890;margin-top:3px;}
-.icard-value{font-size:19px;font-weight:700;color:#1A1A1A;letter-spacing:-0.3px;font-family:‘DM Sans’,sans-serif;text-align:right;}
+.icard-name{font-size:15px;font-weight:600;color:#1A1714;line-height:1.3;}
+.icard-sub{font-size:11px;color:#9E9488;margin-top:3px;}
+.icard-value{font-size:20px;font-weight:700;color:#1A1714;letter-spacing:-0.4px;font-family:‘DM Sans’,sans-serif;text-align:right;}
 .icard-ret{font-size:11px;font-weight:600;margin-top:2px;text-align:right;}
 .icard-metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px;}
-.icard-metric{background:#EEE9E1;border-radius:12px;padding:10px 12px;}
-.icard-metric-label{font-size:9px;font-weight:700;color:#B8B2AA;text-transform:uppercase;letter-spacing:0.8px;}
-.icard-metric-value{font-size:13px;font-weight:700;color:#1A1A1A;margin-top:3px;letter-spacing:-0.2px;}
+.icard-metric{background:#F7F3EE;border-radius:14px;padding:10px 12px;}
+.icard-metric-label{font-size:9px;font-weight:700;color:#C0B8AE;text-transform:uppercase;letter-spacing:0.8px;}
+.icard-metric-value{font-size:14px;font-weight:700;color:#1A1714;margin-top:3px;letter-spacing:-0.2px;}
 .icard-actions{display:flex;gap:7px;padding:0 18px 16px;}
-.icard-btn{flex:1;padding:10px 0;border-radius:12px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:‘DM Sans’,sans-serif;transition:opacity 0.15s;}
-.icard-btn:active{opacity:0.72;}
-.icard-btn-edit{background:#EEE9E1;color:#4A4540;}
-.icard-btn-log{background:#DDF0DD;color:#2D5A32;}
-.icard-btn-del{background:transparent;color:#C4A0A0;border:2px solid #E8E2D9;}
+.icard-btn{flex:1;padding:10px 0;border-radius:13px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:‘DM Sans’,sans-serif;transition:opacity 0.15s;}
+.icard-btn:active{opacity:0.7;}
+.icard-btn-edit{background:#F0EAE0;color:#4A4038;}
+.icard-btn-log{background:#D8EDDA;color:#254D2A;}
+.icard-btn-del{background:transparent;color:#C0A8A0;border:1.5px solid #EDE5D8;}
 
-/* ── Type group header ── */
+/* ─── Type group header ─── */
 .type-group-header{display:flex;align-items:center;gap:8px;margin:20px 0 9px;}
 .type-group-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0;}
-.type-group-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#A8A49E;flex:1;}
-.type-group-total{font-size:12px;font-weight:700;color:#1A1A1A;}
+.type-group-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.6px;color:#A09888;flex:1;}
+.type-group-total{font-size:13px;font-weight:700;color:#1A1714;}
 
-/* ── Collapsible ── */
-.collapsible-header{width:100%;background:none;border:none;cursor:pointer;padding:16px 20px;display:flex;align-items:center;gap:12px;text-align:left;}
-.collapsible-body{border-top:1px solid #EAE4DC;padding:16px 20px;}
+/* ─── Timeline ─── */
+.timeline-bg{height:5px;background:#EDE5D8;border-radius:100px;margin:9px 0;}
+.timeline-fill{height:100%;border-radius:100px;background:#4A8050;}
 
-/* ── Timeline ── */
-.timeline-bg{height:5px;background:#DDD7CE;border-radius:3px;margin:9px 0;}
-.timeline-fill{height:100%;border-radius:3px;background:#6E9E72;}
+/* ─── Info banner ─── */
+.info-banner{background:#D8EDDA;border:1px solid #B4D8B8;border-radius:16px;padding:12px 16px;font-size:12px;color:#254D2A;margin-bottom:12px;}
 
-/* ── Info banner ── */
-.info-banner{background:#DDF0DD;border:1px solid #B8DDB8;border-radius:14px;padding:11px 15px;font-size:12px;color:#2D5A32;margin-bottom:12px;}
+/* ─── FIRE ─── */
+.fire-card{background:#162118;border-radius:24px;padding:22px;color:#FFFFFF;margin-bottom:12px;box-shadow:0 10px 36px rgba(22,33,24,0.22);}
 
-/* ── FIRE ── */
-.fire-card{background:linear-gradient(145deg,#1E3220,#1C2E1E);border-radius:22px;padding:22px;color:#FFFFFF;margin-bottom:12px;box-shadow:0 8px 28px rgba(28,46,30,0.22);}
-
-/* ── History ── */
-.hist-item{background:#FFFFFF;border-radius:18px;padding:15px 18px;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.05),0 4px 14px rgba(0,0,0,0.04);}
+/* ─── History ─── */
+.hist-item{background:#FFFFFF;border-radius:20px;padding:16px 18px;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 2px rgba(26,23,20,0.04),0 4px 14px rgba(26,23,20,0.05);}
 .hist-item-left{flex:1;min-width:0;padding-right:10px;}
-.hist-item-title{font-size:14px;font-weight:600;color:#1A1A1A;}
-.hist-item-sub{font-size:11px;color:#9E9890;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hist-item-title{font-size:14px;font-weight:600;color:#1A1714;}
+.hist-item-sub{font-size:11px;color:#9E9488;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-/* ── Divider ── */
-.divider{height:1px;background:#E2DDD6;margin:14px 0;}
+/* ─── Divider ─── */
+.divider{height:1px;background:#EDE5D8;margin:14px 0;}
 
-/* ── NW ── */
+/* ─── NW ─── */
 .asset-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
-.nw-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #EAE4DC;}
+.nw-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #EDE5D8;}
 .nw-row:last-child{border-bottom:none;}
-.nw-row-label{font-size:12px;color:#6B6663;display:flex;align-items:center;gap:6px;}
+.nw-row-label{font-size:12px;color:#6B6258;display:flex;align-items:center;gap:6px;}
 .nw-row-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.nw-row-value{font-size:13px;font-weight:600;color:#1A1A1A;}
-.nw-row-value.green{color:#2D5A32;}
+.nw-row-value{font-size:13px;font-weight:600;color:#1A1714;}
+.nw-row-value.green{color:#254D2A;}
 .nw-row-value.red{color:#B83030;}
 
-/* ── RE snapshot ── */
-.re-snap{background:#EEE9E1;border-radius:14px;padding:13px 15px;margin-top:9px;}
+/* ─── RE snapshot ─── */
+.re-snap{background:#F7F3EE;border-radius:16px;padding:13px 15px;margin-top:9px;}
 .re-snap-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
 .re-snap-row:last-child{margin-bottom:0;}
-.re-snap-label{font-size:11px;color:#9E9890;}
-.re-snap-value{font-size:12px;font-weight:600;color:#1A1A1A;}
+.re-snap-label{font-size:11px;color:#9E9488;}
+.re-snap-value{font-size:12px;font-weight:600;color:#1A1714;}
 
-/* ── Inv card v2 compat ── */
-.inv-card-v2{background:#FFFFFF;border-radius:20px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06),0 6px 20px rgba(0,0,0,0.05);}
-.inv-card-v2-header{padding:16px 18px 12px;border-bottom:1px solid #EAE4DC;}
+/* ─── Inv card v2 compat ─── */
+.inv-card-v2{background:#FFFFFF;border-radius:22px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 2px rgba(26,23,20,0.04),0 6px 20px rgba(26,23,20,0.06);}
+.inv-card-v2-header{padding:16px 18px 12px;border-bottom:1px solid #EDE5D8;}
 .inv-card-v2-body{padding:14px 18px;}
 .inv-card-v2-actions{padding:10px 18px 16px;display:flex;gap:8px;}
 
-/* ── Empty state ── */
-.empty-state{text-align:center;padding:48px 24px;}
-.empty-state-title{font-size:16px;font-weight:600;color:#1A1A1A;margin-bottom:6px;}
-.empty-state-sub{font-size:13px;color:#9E9890;line-height:1.6;}
+/* ─── Empty state ─── */
+.empty-state{text-align:center;padding:52px 24px;}
+.empty-state-title{font-size:16px;font-weight:600;color:#1A1714;margin-bottom:6px;}
+.empty-state-sub{font-size:13px;color:#9E9488;line-height:1.6;}
 
-/* ── Benchmarks ── */
+/* ─── Benchmarks ─── */
 .bench-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
-.bench-label{font-size:12px;color:#1A1A1A;flex:1;}
+.bench-label{font-size:12px;color:#1A1714;flex:1;}
 .bench-value{font-size:12px;font-weight:700;min-width:44px;text-align:right;}
-.bench-bar-bg{flex:2;height:5px;background:#DDD7CE;border-radius:3px;}
-.bench-bar-fill{height:100%;border-radius:3px;}
+.bench-bar-bg{flex:2;height:5px;background:#EDE5D8;border-radius:100px;}
+.bench-bar-fill{height:100%;border-radius:100px;}
 
-/* ── Pickers ── */
+/* ─── Pickers ─── */
 .picker-row{display:flex;gap:10px;margin-bottom:16px;}
 .picker-row .form-group{flex:1;margin-bottom:0;}
 
-/* ── Payment table ── */
+/* ─── Payment table ─── */
 .pay-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;}
-.pay-table th{text-align:left;color:#B8B2AA;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.8px;padding:0 6px 8px 0;border-bottom:1px solid #DDD7CE;}
+.pay-table th{text-align:left;color:#C0B8AE;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.9px;padding:0 6px 9px 0;border-bottom:1px solid #EDE5D8;}
 .pay-table th:last-child{text-align:right;}
-.pay-table td{padding:8px 6px 8px 0;border-bottom:1px solid #EAE4DC;color:#1A1A1A;vertical-align:middle;}
+.pay-table td{padding:9px 6px 9px 0;border-bottom:1px solid #F4EFE8;color:#1A1714;vertical-align:middle;}
 .pay-table td:last-child{text-align:right;}
 .pay-table tr:last-child td{border-bottom:none;}
-.pay-badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;}
-.pay-done{background:#DDF0DD;color:#2D5A32;}
-.pay-exp{background:#FBF4E8;color:#8A6030;}
-.pay-miss{background:#FFF0EF;color:#B83030;}
-.pay-late{background:#FFF0EF;color:#B83030;}
-.pay-early{background:#DDF0DD;color:#2D5A32;}
-.pay-partial{background:#FBF4E8;color:#8A6030;}
-.pay-fut{background:#EEE9E1;color:#9E9890;}
+.pay-badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;}
+.pay-done{background:#D8EDDA;color:#254D2A;}
+.pay-exp{background:#F8F0E0;color:#8A6030;}
+.pay-miss{background:#FDECEA;color:#B83030;}
+.pay-late{background:#FDECEA;color:#B83030;}
+.pay-early{background:#D8EDDA;color:#254D2A;}
+.pay-partial{background:#F8F0E0;color:#8A6030;}
+.pay-fut{background:#F4EFE8;color:#9E9488;}
 
-/* ── FAB ── */
-.fab{position:fixed;bottom:28px;right:calc(50% - 215px + 18px);width:54px;height:54px;border-radius:27px;background:#2D5A32;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(45,90,50,0.40),0 2px 8px rgba(0,0,0,0.12);z-index:200;transition:transform 0.15s;-webkit-appearance:none;}
-.fab:active{transform:scale(0.91);}
+/* ─── FAB ─── */
+.fab{position:fixed;bottom:30px;right:calc(50% - 215px + 20px);width:54px;height:54px;border-radius:27px;background:#254D2A;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(37,77,42,0.40),0 2px 8px rgba(0,0,0,0.10);z-index:200;transition:transform 0.15s;-webkit-appearance:none;}
+.fab:active{transform:scale(0.90);}
 
-/* ── Bottom sheet ── */
-.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.36);z-index:300;display:flex;align-items:flex-end;justify-content:center;}
-.sheet{background:#EEE9E1;border-radius:24px 24px 0 0;width:100%;max-width:430px;padding:0 0 44px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.sheet-handle{width:36px;height:4px;background:#CCC8C0;border-radius:2px;margin:14px auto 0;}
-.sheet-header{padding:16px 22px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid #DDD7CE;}
-.sheet-title{font-size:17px;font-weight:700;color:#1A1A1A;}
-.sheet-close{background:#DDD7CE;border:none;width:30px;height:30px;border-radius:15px;cursor:pointer;font-size:18px;color:#6B6663;display:flex;align-items:center;justify-content:center;line-height:1;}
+/* ─── Bottom sheet ─── */
+.sheet-overlay{position:fixed;inset:0;background:rgba(22,33,24,0.40);z-index:300;display:flex;align-items:flex-end;justify-content:center;}
+.sheet{background:#F7F3EE;border-radius:28px 28px 0 0;width:100%;max-width:430px;padding:0 0 48px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.sheet-handle{width:40px;height:4px;background:#D8D0C4;border-radius:100px;margin:14px auto 0;}
+.sheet-header{padding:18px 22px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #EDE5D8;}
+.sheet-title{font-size:18px;font-weight:700;color:#1A1714;}
+.sheet-close{background:#EDE5D8;border:none;width:32px;height:32px;border-radius:100px;cursor:pointer;font-size:18px;color:#6B6258;display:flex;align-items:center;justify-content:center;line-height:1;}
 .sheet-body{padding:20px 22px;}
 
-/* ── Dark mode override (force light) ── */
+/* ─── Collapsible ─── */
+.collapsible-body{border-top:1px solid #EDE5D8;padding:16px 20px;background:#FDFAF6;}
+
+/* ─── iOS dark mode override ─── */
 @media(prefers-color-scheme:dark){
-html,body,#root,.app,.content{background:#EEE9E1 !important;color:#1A1A1A !important;}
-.card,.summary-box,.inv-card,.icard,.hist-item,.form-input,.form-select,.form-textarea{background:#FFFFFF !important;-webkit-text-fill-color:#1A1A1A !important;color:#1A1A1A !important;border-color:#E2DDD6 !important;}
-.stat-tile,.icard-metric,.re-snap{background:#E8E2D9 !important;}
-.toggle-row,.progress-bg,.bench-bar-bg,.timeline-bg{background:#DDD7CE !important;}
-.toggle-btn.active{background:#FFFFFF !important;color:#1A1A1A !important;}
-.header{background:#EEE9E1 !important;border-bottom-color:#DDD7CE !important;}
-.tab-btn{color:#9E9890 !important;}
-.tab-btn.active{color:#1A1A1A !important;}
-.card-title,.form-label,.bar-label,.stat-tile-label,.summary-box-label,.list-item-sub,.hist-item-sub,.empty-state-sub,.insight-text,.allocation-pct{color:#B8B2AA !important;}
-.card-value,.stat-tile-value,.summary-box-value,.list-item-title,.list-item-value,.inv-card-name,.inv-card-value,.icard-name,.icard-value,.hist-item-title,.empty-state-title,.insight-title,.bench-label,.allocation-label,.header-title{color:#1A1A1A !important;}
+html,body,#root,.app,.content{background:#F7F3EE !important;color:#1A1714 !important;}
+.card,.summary-box,.inv-card,.icard,.hist-item,.form-input,.form-select,.form-textarea{background:#FFFFFF !important;-webkit-text-fill-color:#1A1714 !important;color:#1A1714 !important;border-color:#E4DDD2 !important;}
+.stat-tile,.icard-metric,.re-snap{background:#F0EAE0 !important;}
+.toggle-row,.progress-bg,.bench-bar-bg,.timeline-bg{background:#EDE5D8 !important;}
+.toggle-btn.active{background:#FFFFFF !important;color:#1A1714 !important;}
+.header{background:#F7F3EE !important;border-bottom-color:#E8E2D8 !important;}
+.tab-btn{color:#A09888 !important;}
+.tab-btn.active{color:#1A1714 !important;}
+.card-title,.form-label,.bar-label,.stat-tile-label,.summary-box-label,.list-item-sub,.hist-item-sub,.empty-state-sub,.insight-text,.allocation-pct{color:#C0B8AE !important;}
+.card-value,.stat-tile-value,.summary-box-value,.list-item-title,.list-item-value,.inv-card-name,.inv-card-value,.icard-name,.icard-value,.hist-item-title,.empty-state-title,.insight-title,.bench-label,.allocation-label,.header-title{color:#1A1714 !important;}
 }
 </style>
 
@@ -324,7 +326,7 @@ html,body,#root,.app,.content{background:#EEE9E1 !important;color:#1A1A1A !impor
 <body>
 <div id="splash">
   <svg class="splash-leaf" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M24 44C24 44 8 32 8 18C8 10.268 15.163 4 24 4C32.837 4 40 10.268 40 18C40 32 24 44 24 44Z" fill="#3D6E42"/>
+    <path d="M24 44C24 44 8 32 8 18C8 10.268 15.163 4 24 4C32.837 4 40 10.268 40 18C40 32 24 44 24 44Z" fill="#254D2A"/>
     <path d="M24 44C24 44 8 32 8 18C8 10.268 15.163 4 24 4" fill="#5A9460"/>
     <path d="M24 44L24 20" stroke="#A8C5AC" stroke-width="1.5" stroke-linecap="round"/>
   </svg>
@@ -349,7 +351,7 @@ const CURRENCY_RISK = {USD:0,INR:3.5,EUR:1.5,GBP:2.0,AED:0.2,SGD:0.8,CAD:2.2,AUD
 const ALLOC_COLORS = [
   {key:'retirement',label:'Retirement',color:'#7B5EA7'},
   {key:'realEstate',label:'Real Estate',color:'#3D7EAA'},
-  {key:'liquid',label:'Liquid',color:'#7A9E7E'},
+  {key:'liquid',label:'Liquid',color:'#4A8050'},
   {key:'investments',label:'Investments',color:'#C8A96E'},
   {key:'otherAssets',label:'Other',color:'#C8C4BE'},
 ];
@@ -435,7 +437,7 @@ function Toast(){
   return e('div',{id:'toast-el',className:'toast'});
 }
 
-function BarChart({data,height=80,color='#7A9E7E',color2}){
+function BarChart({data,height=80,color='#4A8050',color2}){
   if(!data||!data.length) return null;
   // Use absolute values for bar heights; negative values still render
   const absVals = data.map(d=>Math.abs(d.v||0));
@@ -488,7 +490,7 @@ function DonutChart({data,size=120}){
   return e('canvas',{ref:canvasRef,className:'donut-canvas',style:{width:size,height:size}});
 }
 
-function ProgressBar({value,max,color='#7A9E7E',height=8}){
+function ProgressBar({value,max,color='#4A8050',height=8}){
   const pct=Math.min(100,Math.max(0,(value/Math.max(max,1))*100));
   return e('div',{className:'progress-bg',style:{height}},
     e('div',{className:'progress-fill',style:{width:`${pct}%`,background:color,height}})
@@ -549,28 +551,28 @@ function CollapsibleSection({title,count,total,subtitle,accentColor,children}){
       // Text block
       e('div',{style:{flex:1,minWidth:0}},
         e('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:2}},
-          e('div',{style:{fontSize:14,fontWeight:600,color:'#1C1C1E'}},title),
+          e('div',{style:{fontSize:14,fontWeight:600,color:'#1A1714'}},title),
           e('div',{style:{
             fontSize:10,fontWeight:700,color:accentColor,
             background:accentColor+'18',borderRadius:20,padding:'2px 8px'
           }},count+' item'+(count===1?'':'s'))
         ),
         e('div',{style:{display:'flex',alignItems:'center',gap:8}},
-          e('div',{style:{fontSize:13,fontWeight:700,color:'#2D5A32'}},total),
-          subtitle&&e('div',{style:{fontSize:11,color:'#9E9890'}},subtitle)
+          e('div',{style:{fontSize:13,fontWeight:700,color:'#254D2A'}},total),
+          subtitle&&e('div',{style:{fontSize:11,color:'#9E9488'}},subtitle)
         )
       ),
       // Chevron
       e('div',{style:{
-        fontSize:11,color:'#B8B2AA',fontWeight:600,flexShrink:0,
+        fontSize:11,color:'#C0B8AE',fontWeight:600,flexShrink:0,
         transform:open?'rotate(180deg)':'rotate(0deg)',
         transition:'transform 0.2s'
       }},'\u25bc')
     ),
     // Collapsible body
     open&&e('div',{style:{
-      borderTop:'1px solid #F4F1EC',
-      padding:'14px 16px',background:'#FAFAF9'
+      borderTop:'1px solid #F7F3EE',
+      padding:'14px 16px',background:'#FDFAF6'
     }}, ...React.Children.toArray(children))
   );
 }
@@ -711,13 +713,13 @@ function HomeTab({data}){
 
   // Asset breakdown for detail panel
   const homeAssets = [
-    {label:'Checking & Emergency',value:(+nwA.ck||0)+(+nwA.em||0),color:'#7A9E7E'},
+    {label:'Checking & Emergency',value:(+nwA.ck||0)+(+nwA.em||0),color:'#4A8050'},
     {label:'Retirement (401k/IRA)',value:(+nwA.k4||0)+(+nwA.ro||0),color:'#7B5EA7'},
     {label:'Real Estate',          value:liveInvRE+(+nwA.hm||0)+(+nwA.rp||0),color:'#3D7EAA'},
     {label:'Private Lending',      value:liveInvLending,color:'#C8A96E'},
-    {label:'Stocks & Funds',       value:liveInvStocks+(+nwA.br||0),color:'#2D5A32'},
+    {label:'Stocks & Funds',       value:liveInvStocks+(+nwA.br||0),color:'#254D2A'},
     {label:'Gold & Metals',        value:liveInvGold,color:'#B8926A'},
-    {label:'Other',                value:(+nwA.ti||0)+(+nwA.s5||0)+(+nwA.oa||0)+(+nwA.bz||0)+(+nwA.cr||0)+(+nwA.vc||0),color:'#B8B2AA'},
+    {label:'Other',                value:(+nwA.ti||0)+(+nwA.s5||0)+(+nwA.oa||0)+(+nwA.bz||0)+(+nwA.cr||0)+(+nwA.vc||0),color:'#C0B8AE'},
   ].filter(a=>a.value>0);
   const homeLiabs = [
     {label:'Primary Mortgage',    value:+nwL.mg||0,color:'#B83030'},
@@ -728,10 +730,10 @@ function HomeTab({data}){
 
   // Income sources for detail panel & chart
   const incomeItems = [];
-  if(salaryIncome>0) incomeItems.push({label:'Salary / W2',val:salaryIncome,color:'#7A9E7E'});
+  if(salaryIncome>0) incomeItems.push({label:'Salary / W2',val:salaryIncome,color:'#4A8050'});
   reBreakdown.filter(r=>r.rent>0).forEach(r=>incomeItems.push({label:r.name+' (rent)',val:r.rent,color:'#3D7EAA'}));
   lendingBreakdown.filter(l=>l.isActive&&l.accrualMonthly>0).forEach(l=>incomeItems.push({label:l.name+' (interest)',val:l.accrualMonthly,color:'#C8A96E'}));
-  if(latestM){['div','oi','rental'].forEach(k=>{if(+latestM[k]>0) incomeItems.push({label:k==='div'?'Dividends':k==='oi'?'Other Income':'Rental (manual)',val:+latestM[k],color:'#9E9890'});});}
+  if(latestM){['div','oi','rental'].forEach(k=>{if(+latestM[k]>0) incomeItems.push({label:k==='div'?'Dividends':k==='oi'?'Other Income':'Rental (manual)',val:+latestM[k],color:'#9E9488'});});}
 
   // Expense breakdown for detail
   const expFields=[['hs','Housing'],['fd','Food'],['tr','Transport'],['ins','Insurance'],['ut','Utilities'],['cc','Credit Cards'],['hc','Healthcare'],['sb','Subscriptions'],['dn','Dining'],['tv','Travel'],['ps','Personal'],['db','Debt Payments'],['rm','Rent'],['ox','Other']];
@@ -787,7 +789,7 @@ function HomeTab({data}){
     const panels = {
       assets:{
         title:'Asset Breakdown',
-        color:'#2D5A32',
+        color:'#254D2A',
         items:homeAssets,
         total:liveTotal,
         totalLabel:'Total Assets',
@@ -823,9 +825,9 @@ function HomeTab({data}){
         title:'Savings Details',
         color:'#7B5EA7',
         items:[
-          {label:'Cash / Emergency',value:+latestM?.cs||0,color:'#7A9E7E'},
+          {label:'Cash / Emergency',value:+latestM?.cs||0,color:'#4A8050'},
           {label:'401k / IRA',value:+latestM?.k||0,color:'#7B5EA7'},
-          {label:'Brokerage',value:+latestM?.br||0,color:'#2D5A32'},
+          {label:'Brokerage',value:+latestM?.br||0,color:'#254D2A'},
           {label:'529 Plan',value:+latestM?.s5||0,color:'#3D7EAA'},
         ].filter(x=>x.value>0),
         total:augSaved,
@@ -841,14 +843,14 @@ function HomeTab({data}){
       e('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:16}},
         e('button',{
           onClick:()=>setDetailPanel(null),
-          style:{background:'none',border:'none',fontSize:14,color:'#2D5A32',fontWeight:700,cursor:'pointer',padding:'6px 0',display:'flex',alignItems:'center',gap:4}
+          style:{background:'none',border:'none',fontSize:14,color:'#254D2A',fontWeight:700,cursor:'pointer',padding:'6px 0',display:'flex',alignItems:'center',gap:4}
         },'\u2190 Dashboard'),
-        e('div',{style:{fontSize:16,fontWeight:700,color:'#1C1C1E'}},p.title)
+        e('div',{style:{fontSize:16,fontWeight:700,color:'#1A1714'}},p.title)
       ),
       // Total chip
-      e('div',{style:{background:p.positive?'#EFF5EF':'#FFF0EF',borderRadius:20,padding:'14px 18px',marginBottom:14,display:'flex',justifyContent:'space-between',alignItems:'center'}},
-        e('div',{style:{fontSize:12,color:'#9E9890',fontWeight:600}},p.totalLabel+(p.period?' \u2014 '+p.period:'')),
-        e('div',{style:{fontSize:22,fontWeight:700,color:p.positive?'#3D6E42':'#B83030',letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmtFull(Math.round(p.total)))
+      e('div',{style:{background:p.positive?'#D8EDDA':'#FFF0EF',borderRadius:20,padding:'14px 18px',marginBottom:14,display:'flex',justifyContent:'space-between',alignItems:'center'}},
+        e('div',{style:{fontSize:12,color:'#9E9488',fontWeight:600}},p.totalLabel+(p.period?' \u2014 '+p.period:'')),
+        e('div',{style:{fontSize:22,fontWeight:700,color:p.positive?'#254D2A':'#B83030',letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmtFull(Math.round(p.total)))
       ),
       // Donut + list
       p.items.length>0&&e('div',{className:'card'},
@@ -858,14 +860,14 @@ function HomeTab({data}){
             ...p.items.map((a,i)=>{
               const v=a.value||a.val||0;
               const pct2=panelTotal>0?(v/panelTotal*100):0;
-              return e('div',{key:i,style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'5px 0',borderBottom:i<p.items.length-1?'1px solid #F4F2EE':'none'}},
+              return e('div',{key:i,style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'5px 0',borderBottom:i<p.items.length-1?'1px solid #F7F3EE':'none'}},
                 e('div',{style:{display:'flex',alignItems:'center',gap:7,flex:1,minWidth:0}},
                   e('div',{style:{width:8,height:8,borderRadius:2,background:a.color||p.color,flexShrink:0}}),
                   e('div',{style:{fontSize:11,color:'#4A4540',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},a.label)
                 ),
                 e('div',{style:{textAlign:'right',flexShrink:0,marginLeft:6}},
-                  e('div',{style:{fontSize:12,fontWeight:700,color:'#1C1C1E'}},fmtFull(Math.round(v))),
-                  e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600}},pct2.toFixed(0)+'%')
+                  e('div',{style:{fontSize:12,fontWeight:700,color:'#1A1714'}},fmtFull(Math.round(v))),
+                  e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600}},pct2.toFixed(0)+'%')
                 )
               );
             })
@@ -879,11 +881,11 @@ function HomeTab({data}){
             e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:3}},
               e('div',{style:{display:'flex',alignItems:'center',gap:5}},
                 e('div',{style:{width:6,height:6,borderRadius:1,background:a.color||p.color}}),
-                e('div',{style:{fontSize:11,color:'#6B6663'}},a.label)
+                e('div',{style:{fontSize:11,color:'#6B6258'}},a.label)
               ),
-              e('div',{style:{fontSize:11,fontWeight:600,color:'#1C1C1E'}},fmtFull(Math.round(v)))
+              e('div',{style:{fontSize:11,fontWeight:600,color:'#1A1714'}},fmtFull(Math.round(v)))
             ),
-            e('div',{style:{height:5,background:'#E8E2D9',borderRadius:3,overflow:'hidden'}},
+            e('div',{style:{height:5,background:'#EDE5D8',borderRadius:3,overflow:'hidden'}},
               e('div',{style:{height:'100%',width:pct2+'%',background:a.color||p.color,borderRadius:3,transition:'width 0.5s'}})
             )
           );
@@ -907,7 +909,7 @@ function HomeTab({data}){
       e('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:16}},
         e('button',{
           onClick:()=>setDetailPanel('assets'),
-          style:{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:16,padding:'12px 14px',textAlign:'left',cursor:'pointer'}
+          style:{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:20,padding:'12px 14px',textAlign:'left',cursor:'pointer'}
         },
           e('div',{style:{fontSize:9,color:'rgba(168,197,172,0.6)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px'}},'Total Assets'),
           e('div',{style:{fontSize:18,fontWeight:700,color:'#FFFFFF',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(liveTotal)),
@@ -915,7 +917,7 @@ function HomeTab({data}){
         ),
         e('button',{
           onClick:()=>setDetailPanel('liabilities'),
-          style:{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:16,padding:'12px 14px',textAlign:'left',cursor:'pointer'}
+          style:{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:20,padding:'12px 14px',textAlign:'left',cursor:'pointer'}
         },
           e('div',{style:{fontSize:9,color:'rgba(224,112,112,0.7)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px'}},'Total Liabilities'),
           e('div',{style:{fontSize:18,fontWeight:700,color:'#E07070',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(liveLiabs)),
@@ -925,7 +927,7 @@ function HomeTab({data}){
       // Equity bar
       liveTotal>0&&e('div',{style:{marginTop:14}},
         e('div',{style:{height:5,background:'rgba(255,255,255,0.1)',borderRadius:3,overflow:'hidden'}},
-          e('div',{style:{height:'100%',width:Math.min(100,Math.max(0,(nwValue/liveTotal)*100))+'%',background:'linear-gradient(90deg,#4E9A5A,#7ECB8F)',borderRadius:3}})
+          e('div',{style:{height:'100%',width:Math.min(100,Math.max(0,(nwValue/liveTotal)*100))+'%',background:'linear-gradient(90deg,#4E9A5A,#86D498)',borderRadius:3}})
         ),
         e('div',{style:{display:'flex',justifyContent:'space-between',marginTop:5,fontSize:10,color:'rgba(255,255,255,0.35)'}},
           e('span',null,`Equity ${liveTotal>0?((nwValue/liveTotal)*100).toFixed(0):0}%`),
@@ -936,36 +938,36 @@ function HomeTab({data}){
 
     // ── 2. Monthly Snapshot (tappable) ────────────────────────────────────
     (latestM||invRentalIncome>0||invLendingAccrual>0)&&e('div',{className:'card',style:{padding:0,overflow:'hidden'}},
-      e('div',{style:{padding:'14px 16px 12px',borderBottom:'1px solid #EAE4DC'}},
+      e('div',{style:{padding:'14px 16px 12px',borderBottom:'1px solid #EDE5D8'}},
         e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
           e('div',{style:{fontSize:10,fontWeight:700,color:'#4A8050',textTransform:'uppercase',letterSpacing:'1.4px'}},'This Month'),
-          latestMKey&&e('div',{style:{fontSize:11,color:'#9E9890'}},new Date(latestMKey+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'}))
+          latestMKey&&e('div',{style:{fontSize:11,color:'#9E9488'}},new Date(latestMKey+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'}))
         )
       ),
       e('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0}},
         // Income tile
-        e('button',{onClick:()=>setDetailPanel('income'),style:{background:'none',border:'none',borderRight:'1px solid #EAE4DC',borderBottom:'1px solid #EAE4DC',padding:'14px 16px',textAlign:'left',cursor:'pointer'}},
-          e('div',{style:{fontSize:9,fontWeight:700,color:'#B8B2AA',textTransform:'uppercase',letterSpacing:'1px'}},'Income'),
-          e('div',{style:{fontSize:20,fontWeight:700,color:'#1C1C1E',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(augIncome)),
-          e('div',{style:{fontSize:10,color:'#9E9890',marginTop:3}},'Tap for sources \u2192')
+        e('button',{onClick:()=>setDetailPanel('income'),style:{background:'none',border:'none',borderRight:'1px solid #EDE5D8',borderBottom:'1px solid #EDE5D8',padding:'14px 16px',textAlign:'left',cursor:'pointer'}},
+          e('div',{style:{fontSize:9,fontWeight:700,color:'#C0B8AE',textTransform:'uppercase',letterSpacing:'1px'}},'Income'),
+          e('div',{style:{fontSize:20,fontWeight:700,color:'#1A1714',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(augIncome)),
+          e('div',{style:{fontSize:10,color:'#9E9488',marginTop:3}},'Tap for sources \u2192')
         ),
         // Expenses tile
-        e('button',{onClick:()=>setDetailPanel('expenses'),style:{background:'none',border:'none',borderBottom:'1px solid #EAE4DC',padding:'14px 16px',textAlign:'left',cursor:'pointer'}},
-          e('div',{style:{fontSize:9,fontWeight:700,color:'#B8B2AA',textTransform:'uppercase',letterSpacing:'1px'}},'Expenses'),
+        e('button',{onClick:()=>setDetailPanel('expenses'),style:{background:'none',border:'none',borderBottom:'1px solid #EDE5D8',padding:'14px 16px',textAlign:'left',cursor:'pointer'}},
+          e('div',{style:{fontSize:9,fontWeight:700,color:'#C0B8AE',textTransform:'uppercase',letterSpacing:'1px'}},'Expenses'),
           e('div',{style:{fontSize:20,fontWeight:700,color:'#B83030',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(augExpenses)),
-          e('div',{style:{fontSize:10,color:'#9E9890',marginTop:3}},'Tap for details \u2192')
+          e('div',{style:{fontSize:10,color:'#9E9488',marginTop:3}},'Tap for details \u2192')
         ),
         // Saved tile
-        e('button',{onClick:()=>setDetailPanel('savings'),style:{background:'none',border:'none',borderRight:'1px solid #EAE4DC',padding:'14px 16px',textAlign:'left',cursor:'pointer'}},
-          e('div',{style:{fontSize:9,fontWeight:700,color:'#B8B2AA',textTransform:'uppercase',letterSpacing:'1px'}},'Saved'),
-          e('div',{style:{fontSize:20,fontWeight:700,color:'#2D5A32',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(augSaved)),
-          e('div',{style:{fontSize:10,color:'#9E9890',marginTop:3}},`${augSavingsRate.toFixed(0)}% rate`)
+        e('button',{onClick:()=>setDetailPanel('savings'),style:{background:'none',border:'none',borderRight:'1px solid #EDE5D8',padding:'14px 16px',textAlign:'left',cursor:'pointer'}},
+          e('div',{style:{fontSize:9,fontWeight:700,color:'#C0B8AE',textTransform:'uppercase',letterSpacing:'1px'}},'Saved'),
+          e('div',{style:{fontSize:20,fontWeight:700,color:'#254D2A',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(augSaved)),
+          e('div',{style:{fontSize:10,color:'#9E9488',marginTop:3}},`${augSavingsRate.toFixed(0)}% rate`)
         ),
         // Cash flow tile
         e('div',{style:{padding:'14px 16px'}},
-          e('div',{style:{fontSize:9,fontWeight:700,color:'#B8B2AA',textTransform:'uppercase',letterSpacing:'1px'}},'Net Cash Flow'),
-          e('div',{style:{fontSize:20,fontWeight:700,color:accrualCashflow>=0?'#3D6E42':'#B83030',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(accrualCashflow)),
-          e('div',{style:{fontSize:10,color:'#9E9890',marginTop:3}},'Accrual basis')
+          e('div',{style:{fontSize:9,fontWeight:700,color:'#C0B8AE',textTransform:'uppercase',letterSpacing:'1px'}},'Net Cash Flow'),
+          e('div',{style:{fontSize:20,fontWeight:700,color:accrualCashflow>=0?'#254D2A':'#B83030',marginTop:4,letterSpacing:'-0.3px',fontFamily:"'DM Sans',sans-serif"}},fmt(accrualCashflow)),
+          e('div',{style:{fontSize:10,color:'#9E9488',marginTop:3}},'Accrual basis')
         )
       )
     ),
@@ -974,19 +976,19 @@ function HomeTab({data}){
     nwTrend.length>=1&&e('div',{className:'card'},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
         e('div',{className:'card-title',style:{marginBottom:0}},'Net Worth Trend'),
-        e('div',{style:{fontSize:11,fontWeight:700,color:nwDelta>=0?'#3D6E42':'#B83030'}},
+        e('div',{style:{fontSize:11,fontWeight:700,color:nwDelta>=0?'#254D2A':'#B83030'}},
           nwDelta!==0?(nwDelta>=0?'+':'')+fmtFull(Math.round(nwDelta)):''
         )
       ),
       e(BarChart,{data:nwTrend,color:'#7B5EA7'}),
-      e('div',{style:{fontSize:10,color:'#B8B2AA',textAlign:'center',marginTop:4}},'Values in $K \u00b7 Last '+nwTrend.length+' snapshots')
+      e('div',{style:{fontSize:10,color:'#C0B8AE',textAlign:'center',marginTop:4}},'Values in $K \u00b7 Last '+nwTrend.length+' snapshots')
     ),
 
     // ── 4. Income Sources Chart ────────────────────────────────────────────
     (incomeTrend.some(m=>m.salary>0||m.rent>0||m.lending>0)||(invRentalIncome>0||invLendingAccrual>0||salaryIncome>0))&&e('div',{className:'card'},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
         e('div',{className:'card-title',style:{marginBottom:0}},'Monthly Income Sources'),
-        e('div',{style:{fontSize:11,fontWeight:700,color:'#2D5A32'}},fmt(augIncome)+'/mo')
+        e('div',{style:{fontSize:11,fontWeight:700,color:'#254D2A'}},fmt(augIncome)+'/mo')
       ),
       // Stacked visual bars per month
       e('div',{style:{display:'flex',alignItems:'flex-end',gap:4,height:72}},
@@ -1001,16 +1003,16 @@ function HomeTab({data}){
             e('div',{style:{display:'flex',flexDirection:'column',justifyContent:'flex-end',height:64,width:'100%',gap:1}},
               lp>0&&e('div',{style:{height:lp,background:'#C8A96E',borderRadius:sp>0||rp>0?'0':'3px 3px 0 0',minHeight:2}}),
               rp>0&&e('div',{style:{height:rp,background:'#3D7EAA',borderRadius:lp>0?'0':sp>0?'0':'3px 3px 0 0',minHeight:2}}),
-              sp>0&&e('div',{style:{height:sp,background:'#7A9E7E',borderRadius:'3px 3px 0 0',minHeight:2}})
+              sp>0&&e('div',{style:{height:sp,background:'#4A8050',borderRadius:'3px 3px 0 0',minHeight:2}})
             ),
-            e('div',{style:{fontSize:9,color:'#B8B2AA',marginTop:3}},m.label)
+            e('div',{style:{fontSize:9,color:'#C0B8AE',marginTop:3}},m.label)
           );
         })
       ),
       e('div',{style:{display:'flex',gap:12,marginTop:8}},
-        e('div',{style:{display:'flex',alignItems:'center',gap:4}},e('div',{style:{width:8,height:8,borderRadius:2,background:'#7A9E7E'}}),e('div',{style:{fontSize:10,color:'#9E9890'}},'Salary')),
-        e('div',{style:{display:'flex',alignItems:'center',gap:4}},e('div',{style:{width:8,height:8,borderRadius:2,background:'#3D7EAA'}}),e('div',{style:{fontSize:10,color:'#9E9890'}},'Rental')),
-        e('div',{style:{display:'flex',alignItems:'center',gap:4}},e('div',{style:{width:8,height:8,borderRadius:2,background:'#C8A96E'}}),e('div',{style:{fontSize:10,color:'#9E9890'}},'Lending'))
+        e('div',{style:{display:'flex',alignItems:'center',gap:4}},e('div',{style:{width:8,height:8,borderRadius:2,background:'#4A8050'}}),e('div',{style:{fontSize:10,color:'#9E9488'}},'Salary')),
+        e('div',{style:{display:'flex',alignItems:'center',gap:4}},e('div',{style:{width:8,height:8,borderRadius:2,background:'#3D7EAA'}}),e('div',{style:{fontSize:10,color:'#9E9488'}},'Rental')),
+        e('div',{style:{display:'flex',alignItems:'center',gap:4}},e('div',{style:{width:8,height:8,borderRadius:2,background:'#C8A96E'}}),e('div',{style:{fontSize:10,color:'#9E9488'}},'Lending'))
       )
     ),
 
@@ -1018,29 +1020,29 @@ function HomeTab({data}){
     savingsTrend.filter(s=>s.v>0).length>=1&&e('div',{className:'card'},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
         e('div',{className:'card-title',style:{marginBottom:0}},'Monthly Savings'),
-        e('div',{style:{fontSize:11,fontWeight:700,color:'#2D5A32'}},augSavingsRate.toFixed(0)+'% rate')
+        e('div',{style:{fontSize:11,fontWeight:700,color:'#254D2A'}},augSavingsRate.toFixed(0)+'% rate')
       ),
       e(BarChart,{data:savingsTrend,color:'#4A8050'}),
-      e('div',{style:{fontSize:10,color:'#B8B2AA',textAlign:'center',marginTop:4}},'Values in $K')
+      e('div',{style:{fontSize:10,color:'#C0B8AE',textAlign:'center',marginTop:4}},'Values in $K')
     ),
 
     // ── 6. Investment Income Summary (compact) ─────────────────────────────
     (invRentalIncome>0||invLendingAccrual>0)&&e('div',{className:'card'},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
         e('div',{className:'card-title',style:{marginBottom:0}},'Investment Income'),
-        e('div',{style:{fontSize:13,fontWeight:700,color:'#2D5A32'}},fmt(invRentalIncome+invLendingAccrual)+'/mo')
+        e('div',{style:{fontSize:13,fontWeight:700,color:'#254D2A'}},fmt(invRentalIncome+invLendingAccrual)+'/mo')
       ),
-      invRentalIncome>0&&e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:invLendingAccrual>0?'1px solid #F4F2EE':'none'}},
+      invRentalIncome>0&&e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:invLendingAccrual>0?'1px solid #F7F3EE':'none'}},
         e('div',{style:{display:'flex',alignItems:'center',gap:8}},
           e('div',{style:{width:8,height:8,borderRadius:2,background:'#3D7EAA'}}),
-          e('div',{style:{fontSize:13,color:'#1C1C1E'}},'Rental Income')
+          e('div',{style:{fontSize:13,color:'#1A1714'}},'Rental Income')
         ),
         e('div',{style:{fontSize:13,fontWeight:700,color:'#3D7EAA'}},fmt(invRentalIncome)+'/mo')
       ),
       invLendingAccrual>0&&e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0'}},
         e('div',{style:{display:'flex',alignItems:'center',gap:8}},
           e('div',{style:{width:8,height:8,borderRadius:2,background:'#C8A96E'}}),
-          e('div',{style:{fontSize:13,color:'#1C1C1E'}},'Lending Interest')
+          e('div',{style:{fontSize:13,color:'#1A1714'}},'Lending Interest')
         ),
         e('div',{style:{fontSize:13,fontWeight:700,color:'#C8A96E'}},fmt(invLendingAccrual)+'/mo')
       )
@@ -1063,7 +1065,7 @@ function HomeTab({data}){
     !latestNW&&!latestM&&investments.length===0&&e('div',{className:'empty-state'},
       e('div',{style:{width:40,height:40,margin:'0 auto 16px',opacity:0.3}},
         e('svg',{viewBox:'0 0 48 48',fill:'none',xmlns:'http://www.w3.org/2000/svg'},
-          e('path',{d:'M24 44C24 44 8 32 8 18C8 10.268 15.163 4 24 4C32.837 4 40 10.268 40 18C40 32 24 44 24 44Z',fill:'#3D6E42'}),
+          e('path',{d:'M24 44C24 44 8 32 8 18C8 10.268 15.163 4 24 4C32.837 4 40 10.268 40 18C40 32 24 44 24 44Z',fill:'#254D2A'}),
           e('path',{d:'M24 44L24 20',stroke:'#A8C5AC',strokeWidth:'2',strokeLinecap:'round'})
         )
       ),
@@ -1205,33 +1207,33 @@ function LoanCard({inv}){
   const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '\u2014';
   const intervalLabel = {1:'Monthly',2:'2-Monthly',3:'Quarterly',6:'Half-Yearly',12:'Annual',24:'2-Yearly'}[intervalMo]||`${intervalMo}mo`;
 
-  return e('div',{style:{marginBottom:12,paddingBottom:12,borderBottom:'1px solid #EAE4DC'}},
+  return e('div',{style:{marginBottom:12,paddingBottom:12,borderBottom:'1px solid #EDE5D8'}},
     // Header
     e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}},
       e('div',null,
-        e('div',{style:{fontSize:14,fontWeight:600,color:'#1C1C1E'}},inv.name||'Loan'),
-        e('div',{style:{fontSize:11,color:'#9E9890',marginTop:2}},
+        e('div',{style:{fontSize:14,fontWeight:600,color:'#1A1714'}},inv.name||'Loan'),
+        e('div',{style:{fontSize:11,color:'#9E9488',marginTop:2}},
           `${inv.currency||'USD'} \u00b7 ${rate}% p.a. \u00b7 ${intervalLabel} payments`)
       ),
       e('div',{style:{textAlign:'right'}},
-        e('div',{style:{fontSize:16,fontWeight:700,color:'#1C1C1E',fontFamily:"'DM Sans',sans-serif"}},fmtFull(principal)),
-        e('div',{style:{fontSize:11,color:realRet>=0?'#3D6E42':'#B83030',marginTop:2}},`Real: ${pct(realRet)}/yr`)
+        e('div',{style:{fontSize:16,fontWeight:700,color:'#1A1714',fontFamily:"'DM Sans',sans-serif"}},fmtFull(principal)),
+        e('div',{style:{fontSize:11,color:realRet>=0?'#254D2A':'#B83030',marginTop:2}},`Real: ${pct(realRet)}/yr`)
       )
     ),
 
     // 3-stat row using actual date-based values
     e('div',{style:{display:'flex',gap:6,marginBottom:10}},
-      e('div',{style:{flex:1,background:'#E8E2D9',borderRadius:14,padding:'8px 10px'}},
-        e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Total Interest'),
-        e('div',{style:{fontSize:13,fontWeight:700,color:'#2D5A32',marginTop:3}},fmtFull(Math.round(totalInterest)))
+      e('div',{style:{flex:1,background:'#EDE5D8',borderRadius:16,padding:'8px 10px'}},
+        e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Total Interest'),
+        e('div',{style:{fontSize:13,fontWeight:700,color:'#254D2A',marginTop:3}},fmtFull(Math.round(totalInterest)))
       ),
-      e('div',{style:{flex:1,background:'#E8E2D9',borderRadius:14,padding:'8px 10px'}},
-        e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Accrued Today'),
+      e('div',{style:{flex:1,background:'#EDE5D8',borderRadius:16,padding:'8px 10px'}},
+        e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Accrued Today'),
         e('div',{style:{fontSize:13,fontWeight:700,color:'#B8926A',marginTop:3}},fmtFull(Math.round(accrued)))
       ),
-      e('div',{style:{flex:1,background:'#E8E2D9',borderRadius:14,padding:'8px 10px'}},
-        e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Active Period'),
-        e('div',{style:{fontSize:13,fontWeight:700,color:'#1C1C1E',marginTop:3}},
+      e('div',{style:{flex:1,background:'#EDE5D8',borderRadius:16,padding:'8px 10px'}},
+        e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Active Period'),
+        e('div',{style:{fontSize:13,fontWeight:700,color:'#1A1714',marginTop:3}},
           `${yearsActive.toFixed(2)}yr`)
       )
     ),
@@ -1241,7 +1243,7 @@ function LoanCard({inv}){
       e('div',{className:'timeline-bg'},
         e('div',{className:'timeline-fill',style:{width:`${pctElapsed}%`}})
       ),
-      e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:10,color:'#B8B2AA',marginTop:4}},
+      e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:10,color:'#C0B8AE',marginTop:4}},
         e('span',null,fmtDate(start)),
         e('span',null,`${pctElapsed.toFixed(0)}% \u00b7 ${daysLeft}d left`),
         e('span',null,fmtDate(mat))
@@ -1259,19 +1261,19 @@ function LoanCard({inv}){
       showTable&&e('div',{style:{marginTop:10}},
         // Summary of logged vs expected
         e('div',{style:{display:'flex',gap:8,marginBottom:10}},
-          e('div',{style:{flex:1,background:'#DDF0DD',borderRadius:10,padding:'7px 10px'}},
+          e('div',{style:{flex:1,background:'#D8EDDA',borderRadius:12,padding:'7px 10px'}},
             e('div',{style:{fontSize:9,color:'#4A8050',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px'}},'Received'),
-            e('div',{style:{fontSize:13,fontWeight:700,color:'#2D5A32',marginTop:2}},
+            e('div',{style:{fontSize:13,fontWeight:700,color:'#254D2A',marginTop:2}},
               fmtFull(Math.round(schedule.reduce((s,r)=>s+r.totalPaid,0))))
           ),
-          e('div',{style:{flex:1,background:'#FBF4E8',borderRadius:10,padding:'7px 10px'}},
+          e('div',{style:{flex:1,background:'#F8F0E0',borderRadius:12,padding:'7px 10px'}},
             e('div',{style:{fontSize:9,color:'#8A6030',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px'}},'Expected'),
             e('div',{style:{fontSize:13,fontWeight:700,color:'#8A6030',marginTop:2}},
               fmtFull(Math.round(totalInterest+principal)))
           ),
-          e('div',{style:{flex:1,background:'#E8E2D9',borderRadius:10,padding:'7px 10px'}},
-            e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px'}},'Remaining'),
-            e('div',{style:{fontSize:13,fontWeight:700,color:'#1C1C1E',marginTop:2}},
+          e('div',{style:{flex:1,background:'#EDE5D8',borderRadius:12,padding:'7px 10px'}},
+            e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px'}},'Remaining'),
+            e('div',{style:{fontSize:13,fontWeight:700,color:'#1A1714',marginTop:2}},
               fmtFull(Math.round(Math.max(0,totalInterest+principal-schedule.reduce((s,r)=>s+r.totalPaid,0)))))
           )
         ),
@@ -1280,41 +1282,41 @@ function LoanCard({inv}){
         ...schedule.map((r,ri)=>{
           const nearMaturity = r.isFinal || (daysLeft<=30);
           return e('div',{key:ri,style:{
-            background: r.status==='missed'?'#FFF8F8': r.status==='due'?'#FFFBF0': r.status==='paid'||r.status==='early'?'#F8FBF8':'#F4F1EC',
-            borderRadius:14,padding:'10px 12px',marginBottom:6,
-            border: r.status==='missed'?'1px solid #FFE5E5': r.status==='due'?'1px solid #FFE8A0': '1px solid #EDEBE6'
+            background: r.status==='missed'?'#FDF0EE': r.status==='due'?'#FFFBF0': r.status==='paid'||r.status==='early'?'#F8FBF8':'#F7F3EE',
+            borderRadius:16,padding:'10px 12px',marginBottom:6,
+            border: r.status==='missed'?'1px solid #FFE5E5': r.status==='due'?'1px solid #FFE8A0': '1px solid #EDE5D8'
           }},
             // Row header: payment number, due date, status
             e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
               e('div',null,
-                e('div',{style:{fontSize:12,fontWeight:700,color:'#1C1C1E'}},
+                e('div',{style:{fontSize:12,fontWeight:700,color:'#1A1714'}},
                   `Payment ${r.num}`+(r.isFinal?' (Final)':'')),
-                e('div',{style:{fontSize:10,color:'#9E9890',marginTop:1}},`Due: ${fmtDate(r.dueDate)} \u00b7 ${r.slotDays}d period`)
+                e('div',{style:{fontSize:10,color:'#9E9488',marginTop:1}},`Due: ${fmtDate(r.dueDate)} \u00b7 ${r.slotDays}d period`)
               ),
               statusBadge(r.status)
             ),
             // Amounts due
             e('div',{style:{display:'flex',gap:6}},
               e('div',{style:{flex:1,background:'rgba(0,0,0,0.03)',borderRadius:7,padding:'6px 8px'}},
-                e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600,textTransform:'uppercase'}},'Interest'),
-                e('div',{style:{fontSize:12,fontWeight:700,color:'#1C1C1E',marginTop:2}},fmtFull(Math.round(r.interest)))
+                e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600,textTransform:'uppercase'}},'Interest'),
+                e('div',{style:{fontSize:12,fontWeight:700,color:'#1A1714',marginTop:2}},fmtFull(Math.round(r.interest)))
               ),
               nearMaturity&&r.isFinal&&e('div',{style:{flex:1,background:'rgba(184,146,106,0.1)',borderRadius:7,padding:'6px 8px'}},
-                e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600,textTransform:'uppercase'}},'Principal'),
+                e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600,textTransform:'uppercase'}},'Principal'),
                 e('div',{style:{fontSize:12,fontWeight:700,color:'#B8926A',marginTop:2}},fmtFull(Math.round(r.principalDue)))
               ),
               e('div',{style:{flex:1,background:'rgba(0,0,0,0.03)',borderRadius:7,padding:'6px 8px'}},
-                e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600,textTransform:'uppercase'}},'Total Due'),
-                e('div',{style:{fontSize:12,fontWeight:700,color:'#1C1C1E',marginTop:2}},fmtFull(Math.round(r.totalDue)))
+                e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600,textTransform:'uppercase'}},'Total Due'),
+                e('div',{style:{fontSize:12,fontWeight:700,color:'#1A1714',marginTop:2}},fmtFull(Math.round(r.totalDue)))
               ),
               (r.status==='paid'||r.status==='early'||r.status==='late'||r.status==='partial')&&
-                e('div',{style:{flex:1,background:'rgba(61,110,66,0.08)',borderRadius:7,padding:'6px 8px'}},
+                e('div',{style:{flex:1,background:'rgba(37,77,42,0.08)',borderRadius:7,padding:'6px 8px'}},
                   e('div',{style:{fontSize:9,color:'#4A8050',fontWeight:600,textTransform:'uppercase'}},'Received'),
-                  e('div',{style:{fontSize:12,fontWeight:700,color:'#2D5A32',marginTop:2}},fmtFull(Math.round(r.totalPaid)))
+                  e('div',{style:{fontSize:12,fontWeight:700,color:'#254D2A',marginTop:2}},fmtFull(Math.round(r.totalPaid)))
                 )
             ),
             // Show paid date if logged
-            r.loggedDate&&e('div',{style:{marginTop:6,fontSize:10,color:'#9E9890'}},
+            r.loggedDate&&e('div',{style:{marginTop:6,fontSize:10,color:'#9E9488'}},
               `Received on: ${fmtDate(r.loggedDate)}`+(r.status==='early'?' \u00b7 Paid early':r.status==='late'?' \u00b7 Paid late':'')
             )
           );
@@ -1337,26 +1339,26 @@ function RECard({inv}){
   const annualAppreciationPct = years>0&&purchasePrice>0 ? (appreciationPct/years) : 0;
 
   if(isPlot){
-    return e('div',{style:{marginBottom:10,paddingBottom:10,borderBottom:'1px solid #EAE4DC'}},
+    return e('div',{style:{marginBottom:10,paddingBottom:10,borderBottom:'1px solid #EDE5D8'}},
       e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
         e('div',null,
-          e('div',{style:{fontSize:14,fontWeight:600,color:'#1C1C1E'}},inv.name||'Plot'),
-          e('div',{style:{fontSize:11,color:'#9E9890',marginTop:2}},`${years.toFixed(1)} yrs held \u00b7 ${inv.currency||'USD'}`)
+          e('div',{style:{fontSize:14,fontWeight:600,color:'#1A1714'}},inv.name||'Plot'),
+          e('div',{style:{fontSize:11,color:'#9E9488',marginTop:2}},`${years.toFixed(1)} yrs held \u00b7 ${inv.currency||'USD'}`)
         ),
         e('div',{style:{textAlign:'right'}},
-          e('div',{style:{fontSize:16,fontWeight:700,color:'#1C1C1E',fontFamily:"'DM Sans',sans-serif"}},fmtFull(currentVal)),
-          purchasePrice>0&&e('div',{style:{fontSize:11,color:appreciation>=0?'#3D6E42':'#B83030',marginTop:2}},
+          e('div',{style:{fontSize:16,fontWeight:700,color:'#1A1714',fontFamily:"'DM Sans',sans-serif"}},fmtFull(currentVal)),
+          purchasePrice>0&&e('div',{style:{fontSize:11,color:appreciation>=0?'#254D2A':'#B83030',marginTop:2}},
             `${appreciation>=0?'+':''}${fmtFull(Math.round(appreciation))} (${annualAppreciationPct.toFixed(1)}%/yr)`)
         )
       ),
       purchasePrice>0&&e('div',{style:{display:'flex',gap:8}},
-        e('div',{style:{flex:1,background:'#E8E2D9',borderRadius:14,padding:'8px 10px'}},
-          e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Purchase Price'),
-          e('div',{style:{fontSize:13,fontWeight:700,color:'#1C1C1E',marginTop:3}},fmtFull(purchasePrice))
+        e('div',{style:{flex:1,background:'#EDE5D8',borderRadius:16,padding:'8px 10px'}},
+          e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Purchase Price'),
+          e('div',{style:{fontSize:13,fontWeight:700,color:'#1A1714',marginTop:3}},fmtFull(purchasePrice))
         ),
-        e('div',{style:{flex:1,background:'#DDF0DD',borderRadius:14,padding:'8px 10px'}},
-          e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Total Gain'),
-          e('div',{style:{fontSize:13,fontWeight:700,color:'#2D5A32',marginTop:3}},
+        e('div',{style:{flex:1,background:'#D8EDDA',borderRadius:16,padding:'8px 10px'}},
+          e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.8px'}},'Total Gain'),
+          e('div',{style:{fontSize:13,fontWeight:700,color:'#254D2A',marginTop:3}},
             `${appreciation>=0?'+':''}${fmtFull(Math.round(appreciation))}`)
         )
       )
@@ -1381,38 +1383,38 @@ function RECard({inv}){
   const fcfRate=fcfBase>0?(annualCF/fcfBase*100):0;
   const totalReturn=appreciation+(annualNOI*(years||1));
 
-  return e('div',{style:{marginBottom:10,paddingBottom:10,borderBottom:'1px solid #EAE4DC'}},
+  return e('div',{style:{marginBottom:10,paddingBottom:10,borderBottom:'1px solid #EDE5D8'}},
     e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}},
       e('div',null,
-        e('div',{style:{fontSize:14,fontWeight:600,color:'#1C1C1E'}},inv.name||'Property'),
-        e('div',{style:{fontSize:11,color:'#9E9890',marginTop:2}},
+        e('div',{style:{fontSize:14,fontWeight:600,color:'#1A1714'}},inv.name||'Property'),
+        e('div',{style:{fontSize:11,color:'#9E9488',marginTop:2}},
           `${inv.currency||'USD'} \u00b7 ${start?years.toFixed(1)+' yrs held (since '+start.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+')':''}${rent>0?' \u00b7 Rental':' \u00b7 No rent data'}`)
       ),
       e('div',{style:{textAlign:'right'}},
-        e('div',{style:{fontSize:16,fontWeight:700,color:'#1C1C1E',fontFamily:"'DM Sans',sans-serif"}},fmtFull(currentVal)),
-        e('div',{style:{fontSize:11,color:'#2D5A32',marginTop:2}},`Equity: ${fmtFull(equity)}`)
+        e('div',{style:{fontSize:16,fontWeight:700,color:'#1A1714',fontFamily:"'DM Sans',sans-serif"}},fmtFull(currentVal)),
+        e('div',{style:{fontSize:11,color:'#254D2A',marginTop:2}},`Equity: ${fmtFull(equity)}`)
       )
     ),
     // 4-metric 2x2 grid
     e('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}},
-      e('div',{style:{background:'#E8E2D9',borderRadius:14,padding:'9px 10px'}},
-        e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Mo. Cash Flow'),
-        e('div',{style:{fontSize:15,fontWeight:700,color:cf>=0?'#3D6E42':'#B83030',marginTop:3,letterSpacing:'-0.2px'}},fmt(cf)),
+      e('div',{style:{background:'#EDE5D8',borderRadius:16,padding:'9px 10px'}},
+        e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Mo. Cash Flow'),
+        e('div',{style:{fontSize:15,fontWeight:700,color:cf>=0?'#254D2A':'#B83030',marginTop:3,letterSpacing:'-0.2px'}},fmt(cf)),
         e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},'Rent\u2212Mort\u2212Tax\u2212Maint')
       ),
-      e('div',{style:{background:'#E8E2D9',borderRadius:14,padding:'9px 10px'}},
-        e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'FCF Rate'),
-        e('div',{style:{fontSize:15,fontWeight:700,color:fcfRate>=0?'#3D6E42':'#B83030',marginTop:3,letterSpacing:'-0.2px'}},pct(fcfRate)),
+      e('div',{style:{background:'#EDE5D8',borderRadius:16,padding:'9px 10px'}},
+        e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'FCF Rate'),
+        e('div',{style:{fontSize:15,fontWeight:700,color:fcfRate>=0?'#254D2A':'#B83030',marginTop:3,letterSpacing:'-0.2px'}},pct(fcfRate)),
         e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},`Ann.CF\u00f7${purchasePrice>0?'PurchPrice':'Value'}`)
       ),
-      e('div',{style:{background:'#E8E2D9',borderRadius:14,padding:'9px 10px'}},
-        e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Cap Rate'),
-        e('div',{style:{fontSize:15,fontWeight:700,color:'#1C1C1E',marginTop:3,letterSpacing:'-0.2px'}},pct(capRate)),
+      e('div',{style:{background:'#EDE5D8',borderRadius:16,padding:'9px 10px'}},
+        e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Cap Rate'),
+        e('div',{style:{fontSize:15,fontWeight:700,color:'#1A1714',marginTop:3,letterSpacing:'-0.2px'}},pct(capRate)),
         e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},'NOI\u00f7Value (excl. mort.)')
       ),
-      e('div',{style:{background:'#E8E2D9',borderRadius:14,padding:'9px 10px'}},
-        e('div',{style:{fontSize:9,color:'#B8B2AA',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Gross Yield'),
-        e('div',{style:{fontSize:15,fontWeight:700,color:'#1C1C1E',marginTop:3,letterSpacing:'-0.2px'}},pct(grossYield)),
+      e('div',{style:{background:'#EDE5D8',borderRadius:16,padding:'9px 10px'}},
+        e('div',{style:{fontSize:9,color:'#C0B8AE',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}},'Gross Yield'),
+        e('div',{style:{fontSize:15,fontWeight:700,color:'#1A1714',marginTop:3,letterSpacing:'-0.2px'}},pct(grossYield)),
         e('div',{style:{fontSize:8,color:'#C8C4BC',marginTop:1}},'Ann.Rent\u00f7CurrValue')
       )
     ),
@@ -1428,7 +1430,7 @@ function RECard({inv}){
       ),
       e('div',{className:'re-snap-row'},
         e('div',{className:'re-snap-label'},'Net NOI/mo'),
-        e('div',{className:`re-snap-value`,style:{color:noi>=0?'#3D6E42':'#B83030'}},fmtFull(Math.round(noi)))
+        e('div',{className:`re-snap-value`,style:{color:noi>=0?'#254D2A':'#B83030'}},fmtFull(Math.round(noi)))
       ),
       e('div',{className:'re-snap-row'},
         e('div',{className:'re-snap-label'},'Annual Rental Income'),
@@ -1436,7 +1438,7 @@ function RECard({inv}){
       ),
       purchasePrice>0&&e('div',{className:'re-snap-row'},
         e('div',{className:'re-snap-label'},'Appreciation vs Purchase'),
-        e('div',{className:'re-snap-value',style:{color:appreciation>=0?'#3D6E42':'#B83030'}},
+        e('div',{className:'re-snap-value',style:{color:appreciation>=0?'#254D2A':'#B83030'}},
           `${appreciation>=0?'+':''}${fmtFull(Math.round(appreciation))} (${appreciationPct.toFixed(1)}%)`)
       )
     )
@@ -1519,8 +1521,8 @@ function MonthlyTab({data,setData}){
     ),
     e('div',{className:'card',style:{marginBottom:14}},
       e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
-        e('div',{style:{fontSize:12,color:'#9E9890'}},`Savings Rate`),
-        e('div',{style:{fontSize:14,fontWeight:700,color:'#2D5A32'}},pct(savingsRate))
+        e('div',{style:{fontSize:12,color:'#9E9488'}},`Savings Rate`),
+        e('div',{style:{fontSize:14,fontWeight:700,color:'#254D2A'}},pct(savingsRate))
       ),
       e(ProgressBar,{value:savingsRate,max:100,color:'#4A8050'})
     ),
@@ -1642,7 +1644,7 @@ function TaxTab({data,setData}){
       e('div',{className:'tax-row'},e('span',null,'Withheld + Est.'),e('span',null,fmtFull(withheld))),
       e('div',{className:'tax-refund'},
         e('div',{className:'tax-refund-label'},refund>=0?'Estimated Refund':'Estimated Owed'),
-        e('div',{className:'tax-refund-value',style:{color:refund>=0?'#7ECB8F':'#E07070'}},
+        e('div',{className:'tax-refund-value',style:{color:refund>=0?'#86D498':'#E07070'}},
           `${refund>=0?'+':'-'}${fmtFull(Math.abs(refund))}`
         ),
         e('div',{style:{fontSize:12,color:'rgba(255,255,255,0.5)',marginTop:4}},`Eff. Rate: ${pct(effRate)}`)
@@ -1759,7 +1761,7 @@ function QuickLogSheet({investments,onClose,onSave}){
           hasLending&&e('button',{className:`toggle-btn ${logType==='lending'?'active':''}`,onClick:()=>switchType('lending')},'Lending Payment'),
           hasRE&&e('button',{className:`toggle-btn ${logType==='expense'?'active':''}`,onClick:()=>switchType('expense')},'RE Expense')
         ),
-        list.length===0&&e('div',{style:{fontSize:13,color:'#B8B2AA',textAlign:'center',padding:'24px 0'}},
+        list.length===0&&e('div',{style:{fontSize:13,color:'#C0B8AE',textAlign:'center',padding:'24px 0'}},
           'No '+(logType==='lending'?'private lending':'real estate')+' investments found.'
         ),
         list.length>0&&e('div',null,
@@ -1802,7 +1804,7 @@ function InvestTab({data,setData}){
   const [showQuickLog,setShowQuickLog]=useState(false);
   const investments=data.investments||[];
 
-  const typeColors={'Private Lending':'#7B5EA7','Real Estate':'#3D7EAA','Plot / Land':'#B8926A','Gold / Silver':'#C8A96E','Stocks / ETF':'#4E7A52','Mutual Fund':'#4E7A52','Crypto':'#C0392B','Fixed Deposit':'#3D7EAA','Bonds':'#6B6663','Other':'#9E9A94'};
+  const typeColors={'Private Lending':'#7B5EA7','Real Estate':'#3D7EAA','Plot / Land':'#B8926A','Gold / Silver':'#C8A96E','Stocks / ETF':'#4A8050','Mutual Fund':'#4A8050','Crypto':'#C0392B','Fixed Deposit':'#3D7EAA','Bonds':'#6B6258','Other':'#9E9488'};
 
   // Max-concurrent for Private Lending
   const lendingMaxConcurrent=(()=>{
@@ -1872,13 +1874,13 @@ function InvestTab({data,setData}){
           return e('div',{key:t,style:{marginBottom:7}},
             e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:3}},
               e('div',{style:{display:'flex',alignItems:'center',gap:6}},
-                e('div',{style:{width:6,height:6,borderRadius:2,background:typeColors[t]||'#9E9A94'}}),
+                e('div',{style:{width:6,height:6,borderRadius:2,background:typeColors[t]||'#9E9488'}}),
                 e('div',{style:{fontSize:11,color:'rgba(255,255,255,0.65)'}},t)
               ),
               e('div',{style:{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.9)'}},fmtFull(Math.round(val))+' · '+p.toFixed(0)+'%')
             ),
             e('div',{style:{height:4,background:'rgba(255,255,255,0.1)',borderRadius:2}},
-              e('div',{style:{height:'100%',width:p+'%',background:typeColors[t]||'#9E9A94',borderRadius:2}})
+              e('div',{style:{height:'100%',width:p+'%',background:typeColors[t]||'#9E9488',borderRadius:2}})
             )
           );
         })
@@ -1890,7 +1892,7 @@ function InvestTab({data,setData}){
       e('button',{className:'btn btn-primary',style:{flex:1},onClick:()=>setShowForm(true)},'+ Add Investment'),
       hasLoggable&&e('button',{
         onClick:()=>setShowQuickLog(true),
-        style:{background:'#DDF0DD',border:'1.5px solid #C8DEC9',borderRadius:16,padding:'0 16px',cursor:'pointer',fontSize:13,fontWeight:600,color:'#2D5A32',flexShrink:0,display:'flex',alignItems:'center',gap:6}
+        style:{background:'#D8EDDA',border:'1.5px solid #B4D8B8',borderRadius:20,padding:'0 16px',cursor:'pointer',fontSize:13,fontWeight:600,color:'#254D2A',flexShrink:0,display:'flex',alignItems:'center',gap:6}
       },'+ Log')
     ),
 
@@ -1903,7 +1905,7 @@ function InvestTab({data,setData}){
     ...typeOrder.filter(t=>grouped[t]).map(t=>{
       const invs=grouped[t];
       const groupTotal=invs.reduce((s,i)=>s+(+i.amountUSD||0),0);
-      const color=typeColors[t]||'#9E9A94';
+      const color=typeColors[t]||'#9E9488';
       return e('div',{key:t},
         e('div',{className:'type-group-header'},
           e('div',{className:'type-group-dot',style:{background:color}}),
@@ -1934,8 +1936,8 @@ function InvestTab({data,setData}){
             metrics=[
               {label:'Interest Rate',value:pct(rate)+'/yr'},
               {label:'Annual Income',value:fmtFull(Math.round(annualInt))},
-              {label:'Total Received',value:fmtFull(Math.round(totalPaid)),color:totalPaid>0?'#3D6E42':undefined},
-              {label:'Status',value:isMatured?'Matured':isActive?'Active':'Upcoming',color:isMatured?'#9E9A94':isActive?'#3D6E42':'#C8860A'},
+              {label:'Total Received',value:fmtFull(Math.round(totalPaid)),color:totalPaid>0?'#254D2A':undefined},
+              {label:'Status',value:isMatured?'Matured':isActive?'Active':'Upcoming',color:isMatured?'#9E9488':isActive?'#254D2A':'#C8860A'},
             ];
           } else if(isRE){
             const pv=+inv.propertyValue||value;
@@ -1948,7 +1950,7 @@ function InvestTab({data,setData}){
             const capRate=pv>0?(noi*12/pv*100):0;
             const equity=pv-(+inv.mortgageBalance||0);
             metrics=[
-              {label:'Monthly CF',value:fmt(cf),color:cf>=0?'#3D6E42':'#B83030'},
+              {label:'Monthly CF',value:fmt(cf),color:cf>=0?'#254D2A':'#B83030'},
               {label:'Cap Rate',value:pct(capRate)},
               {label:'Equity',value:fmtFull(Math.round(equity))},
               {label:'Gross Yield',value:pv>0?pct(rent*12/pv*100):'—'},
@@ -1965,9 +1967,9 @@ function InvestTab({data,setData}){
             const gainPct=basis>0?(gain/basis*100):0;
             metrics=[
               {label:'Cost Basis',value:fmtFull(Math.round(basis))},
-              {label:'Gain/Loss',value:(gain>=0?'+':'')+fmtFull(Math.round(gain)),color:gain>=0?'#3D6E42':'#B83030'},
+              {label:'Gain/Loss',value:(gain>=0?'+':'')+fmtFull(Math.round(gain)),color:gain>=0?'#254D2A':'#B83030'},
             ];
-            if(gainPct!==0) metrics.push({label:'Return',value:(gainPct>=0?'+':'')+gainPct.toFixed(1)+'%',color:gainPct>=0?'#3D6E42':'#B83030'});
+            if(gainPct!==0) metrics.push({label:'Return',value:(gainPct>=0?'+':'')+gainPct.toFixed(1)+'%',color:gainPct>=0?'#254D2A':'#B83030'});
           } else {
             metrics=[{label:'Expected Return',value:pct(+inv.nominalReturnPct||0)+'/yr'}];
           }
@@ -1984,7 +1986,7 @@ function InvestTab({data,setData}){
                 ),
                 e('div',{style:{flexShrink:0,marginLeft:12}},
                   e('div',{className:'icard-value'},fmtFull(Math.round(value))),
-                  e('div',{className:'icard-ret',style:{color:realRet>=0?'#3D6E42':'#B83030'}},
+                  e('div',{className:'icard-ret',style:{color:realRet>=0?'#254D2A':'#B83030'}},
                     'Real: '+pct(realRet)+'/yr'
                   )
                 )
@@ -1992,7 +1994,7 @@ function InvestTab({data,setData}){
               metrics.length>0&&e('div',{className:'icard-metrics'},
                 ...metrics.slice(0,4).map((m,mi)=>e('div',{key:mi,className:'icard-metric'},
                   e('div',{className:'icard-metric-label'},m.label),
-                  e('div',{className:'icard-metric-value',style:{color:m.color||'#1C1C1E'}},m.value)
+                  e('div',{className:'icard-metric-value',style:{color:m.color||'#1A1714'}},m.value)
                 ))
               )
             ),
@@ -2075,7 +2077,7 @@ function InvestForm({data,setData,existing,onClose}){
   return e('div',null,
     e('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:16}},
       e('button',{className:'btn btn-sm btn-outline',onClick:onClose},'\u2190 Back'),
-      e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:18,color:'#1C1C1E'}},
+      e('div',{style:{fontFamily:"'DM Sans',sans-serif",fontSize:18,color:'#1A1714'}},
         existing?'Edit Investment':'New Investment'
       )
     ),
@@ -2107,10 +2109,10 @@ function InvestForm({data,setData,existing,onClose}){
           e(FormInput,{label:`Principal (${form.currency})`,value:form.amountLocal,onChange:v=>ff('amountLocal',v)}),
           e(FormInput,{label:`1 USD = ? ${form.currency}`,value:form.exchangeRate,onChange:v=>ff('exchangeRate',v),step:0.01})
         ),
-        e('div',{style:{background:'#DDF0DD',border:'1px solid #C8DEC9',borderRadius:14,padding:'8px 14px',
+        e('div',{style:{background:'#D8EDDA',border:'1px solid #B4D8B8',borderRadius:16,padding:'8px 14px',
           display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
-          e('span',{style:{fontSize:11,color:'#2D5A32',fontWeight:600}},'= USD Value'),
-          e('span',{style:{fontSize:15,fontWeight:700,color:'#1C1C1E',fontFamily:"'DM Sans',sans-serif"}},
+          e('span',{style:{fontSize:11,color:'#254D2A',fontWeight:600}},'= USD Value'),
+          e('span',{style:{fontSize:15,fontWeight:700,color:'#1A1714',fontFamily:"'DM Sans',sans-serif"}},
             form.amountLocal&&form.exchangeRate?
               `$${(+form.amountLocal / +form.exchangeRate).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
               :'\u2014'
@@ -2148,7 +2150,7 @@ function InvestForm({data,setData,existing,onClose}){
         const intervalMonths=+form.payIntervalMonths||12;
         const intervalYears=intervalMonths/12;
         const perPayment=p*(r/100)*intervalYears;
-        return e('div',{style:{background:'#1A2B1C',borderRadius:16,padding:'12px 14px',marginTop:4}},
+        return e('div',{style:{background:'#162118',borderRadius:20,padding:'12px 14px',marginTop:4}},
           e('div',{style:{fontSize:9,color:'rgba(168,197,172,0.6)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.2px',marginBottom:8}},'Interest Preview (date-adjusted)'),
           e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
             e('span',{style:{fontSize:11,color:'rgba(255,255,255,0.55)'}},'Active Period'),
@@ -2156,7 +2158,7 @@ function InvestForm({data,setData,existing,onClose}){
           ),
           e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
             e('span',{style:{fontSize:11,color:'rgba(255,255,255,0.55)'}},'Total Interest'),
-            e('span',{style:{fontSize:12,fontWeight:700,color:'#7ECB8F'}},`$${Math.round(totalInterest).toLocaleString()}`)
+            e('span',{style:{fontSize:12,fontWeight:700,color:'#86D498'}},`$${Math.round(totalInterest).toLocaleString()}`)
           ),
           e('div',{style:{display:'flex',justifyContent:'space-between'}},
             e('span',{style:{fontSize:11,color:'rgba(255,255,255,0.55)'}},'Per Payment (every '+intervalMonths+' mo)'),
@@ -2176,11 +2178,11 @@ function InvestForm({data,setData,existing,onClose}){
           }
         },'+ Log Payment')
       }),
-      (form.payments||[]).length===0&&e('div',{style:{fontSize:12,color:'#B8B2AA',textAlign:'center',padding:'12px 0'}},'No payments logged yet. Tap "+ Log Payment" to record a received payment.'),
+      (form.payments||[]).length===0&&e('div',{style:{fontSize:12,color:'#C0B8AE',textAlign:'center',padding:'12px 0'}},'No payments logged yet. Tap "+ Log Payment" to record a received payment.'),
       ...(form.payments||[]).map((pay,pi)=>
-        e('div',{key:pay.id,style:{background:'#EEE9E1',borderRadius:16,padding:'12px 14px',marginBottom:8}},
+        e('div',{key:pay.id,style:{background:'#EEE9E1',borderRadius:20,padding:'12px 14px',marginBottom:8}},
           e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
-            e('div',{style:{fontSize:12,fontWeight:600,color:'#1C1C1E'}},`Payment #${pi+1}`),
+            e('div',{style:{fontSize:12,fontWeight:600,color:'#1A1714'}},`Payment #${pi+1}`),
             e('button',{
               onClick:()=>ff('payments',(form.payments||[]).filter((_,i)=>i!==pi)),
               style:{background:'none',border:'none',color:'#B83030',fontSize:11,cursor:'pointer',fontWeight:600}
@@ -2223,7 +2225,7 @@ function InvestForm({data,setData,existing,onClose}){
         e(FormInput,{label:'Maintenance %/yr',value:form.maintenancePct,onChange:v=>ff('maintenancePct',v),step:0.1,placeholder:'e.g. 1'}),
         e(FormInput,{label:'Purchase Date',value:form.startDate,onChange:v=>ff('startDate',v),type:'date'})
       ),
-      e('div',{style:{fontSize:10,color:'#9E9890',marginTop:4,padding:'0 2px',lineHeight:1.5}},
+      e('div',{style:{fontSize:10,color:'#9E9488',marginTop:4,padding:'0 2px',lineHeight:1.5}},
         '\ud83d\udca1 Enter your total monthly payment (mortgage + escrow/tax) as one number. Annual Property Tax is optional \u2014 only used for Cap Rate and NOI calculations, not for cashflow.'
       )
     ),
@@ -2239,11 +2241,11 @@ function InvestForm({data,setData,existing,onClose}){
           }
         },'+ Add Expense')
       }),
-      (form.expenses||[]).length===0&&e('div',{style:{fontSize:12,color:'#B8B2AA',textAlign:'center',padding:'12px 0'}},'No expenses logged. Tap "+ Add Expense" to record a repair, fee, or one-off cost.'),
+      (form.expenses||[]).length===0&&e('div',{style:{fontSize:12,color:'#C0B8AE',textAlign:'center',padding:'12px 0'}},'No expenses logged. Tap "+ Add Expense" to record a repair, fee, or one-off cost.'),
       ...(form.expenses||[]).map((exp,ei)=>
-        e('div',{key:exp.id,style:{background:'#FFF8F8',borderRadius:16,padding:'12px 14px',marginBottom:8,border:'1px solid #FFE8E8'}},
+        e('div',{key:exp.id,style:{background:'#FDF0EE',borderRadius:20,padding:'12px 14px',marginBottom:8,border:'1px solid #FFE8E8'}},
           e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
-            e('div',{style:{fontSize:12,fontWeight:600,color:'#1C1C1E'}},'Expense #'+(ei+1)),
+            e('div',{style:{fontSize:12,fontWeight:600,color:'#1A1714'}},'Expense #'+(ei+1)),
             e('button',{
               onClick:()=>ff('expenses',(form.expenses||[]).filter((_,i)=>i!==ei)),
               style:{background:'none',border:'none',color:'#B83030',fontSize:11,cursor:'pointer',fontWeight:600}
@@ -2291,7 +2293,7 @@ function InvestForm({data,setData,existing,onClose}){
         e(FormInput,{label:'Price per oz (USD)',value:form.pricePerOz,onChange:v=>ff('pricePerOz',v)})
       ),
       e('div',{style:{
-        background:'#F9F5EE',border:'1px solid #E8DCC8',borderRadius:14,
+        background:'#F7F3EE',border:'1px solid #E8DCC8',borderRadius:16,
         padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',
         marginTop:4
       }},
@@ -2671,10 +2673,10 @@ function InsightsTab({data,setData}){
   ].filter(Boolean);
 
   const benchmarks=[
-    {label:'Savings Rate',value:pct(savingsRate),fill:Math.min(100,savingsRate/30*100),color:savingsRate>=20?'#6E9E72':'#C8860A',target:'Target: 20%+'},
-    {label:'Emergency Fund',value:`${liquidMonths.toFixed(1)}mo`,fill:Math.min(100,liquidMonths/6*100),color:liquidMonths>=6?'#6E9E72':'#C8860A',target:'Target: 6mo+'},
-    {label:'Retirement Rate',value:pct(retRate),fill:Math.min(100,retRate/15*100),color:retRate>=15?'#6E9E72':'#C8860A',target:'Target: 15%+'},
-    {label:'Housing Ratio',value:pct(housingRatio),fill:Math.min(100,housingRatio/28*100),color:housingRatio<=28?'#6E9E72':'#B83030',target:'Target: \u226428%'},
+    {label:'Savings Rate',value:pct(savingsRate),fill:Math.min(100,savingsRate/30*100),color:savingsRate>=20?'#4A8050':'#C8860A',target:'Target: 20%+'},
+    {label:'Emergency Fund',value:`${liquidMonths.toFixed(1)}mo`,fill:Math.min(100,liquidMonths/6*100),color:liquidMonths>=6?'#4A8050':'#C8860A',target:'Target: 6mo+'},
+    {label:'Retirement Rate',value:pct(retRate),fill:Math.min(100,retRate/15*100),color:retRate>=15?'#4A8050':'#C8860A',target:'Target: 15%+'},
+    {label:'Housing Ratio',value:pct(housingRatio),fill:Math.min(100,housingRatio/28*100),color:housingRatio<=28?'#4A8050':'#B83030',target:'Target: \u226428%'},
   ];
 
   function saveGoals(){
@@ -2711,7 +2713,7 @@ function InsightsTab({data,setData}){
             e('div',{className:'bench-bar-bg'},
               e('div',{className:'bench-bar-fill',style:{width:`${b.fill}%`,background:b.color}})
             ),
-            e('div',{style:{fontSize:10,color:'#9E9890',marginTop:2}},b.target)
+            e('div',{style:{fontSize:10,color:'#9E9488',marginTop:2}},b.target)
           )
         )
       )
@@ -2729,21 +2731,21 @@ function InsightsTab({data,setData}){
       e('div',{className:'divider'}),
       goalForm.savings>0&&e('div',{style:{marginBottom:12}},
         e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
-          e('span',{style:{fontSize:12,color:'#1C1C1E',fontWeight:500}},'YTD Savings'),
-          e('span',{style:{fontSize:12,fontWeight:700,color:'#2D5A32'}},`${fmtFull(ytdSavings)} / ${fmtFull(+goalForm.savings||0)}`)
+          e('span',{style:{fontSize:12,color:'#1A1714',fontWeight:500}},'YTD Savings'),
+          e('span',{style:{fontSize:12,fontWeight:700,color:'#254D2A'}},`${fmtFull(ytdSavings)} / ${fmtFull(+goalForm.savings||0)}`)
         ),
         e(ProgressBar,{value:ytdSavings,max:+goalForm.savings||1,color:'#4A8050'})
       ),
       goalForm.nw>0&&e('div',{style:{marginBottom:12}},
         e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
-          e('span',{style:{fontSize:12,color:'#1C1C1E',fontWeight:500}},'Net Worth'),
+          e('span',{style:{fontSize:12,color:'#1A1714',fontWeight:500}},'Net Worth'),
           e('span',{style:{fontSize:12,fontWeight:700,color:'#3D7EAA'}},`${fmtFull(nwVal)} / ${fmtFull(+goalForm.nw||0)}`)
         ),
         e(ProgressBar,{value:nwVal,max:+goalForm.nw||1,color:'#3D7EAA'})
       ),
       goalForm.invest>0&&e('div',null,
         e('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
-          e('span',{style:{fontSize:12,color:'#1C1C1E',fontWeight:500}},'Investments'),
+          e('span',{style:{fontSize:12,color:'#1A1714',fontWeight:500}},'Investments'),
           e('span',{style:{fontSize:12,fontWeight:700,color:'#7B5EA7'}},`${fmtFull(totalInvest)} / ${fmtFull(+goalForm.invest||0)}`)
         ),
         e(ProgressBar,{value:totalInvest,max:+goalForm.invest||1,color:'#7B5EA7'})
@@ -2757,7 +2759,7 @@ function InsightsTab({data,setData}){
         title:'Real Return on Investment',
         formula:'((1 + Nominal%) \u00f7 (1 + Currency Drag%) \u2212 1) \u00d7 100',
         explain:'Adjusts your raw return for the currency depreciation drag. For example, 18% return in INR with 3.5% INR drag = 14.0% real USD return.',
-        color:'#EFF5EF',border:'#C8DEC9',titleColor:'#2D5C32'
+        color:'#D8EDDA',border:'#B4D8B8',titleColor:'#2D5C32'
       },
       {
         title:'USD Conversion (Foreign Investments)',
@@ -2769,7 +2771,7 @@ function InsightsTab({data,setData}){
         title:'Savings Rate',
         formula:'Savings Rate = (Total Saved \u00f7 Total Income) \u00d7 100',
         explain:'Total Saved = Take-home income minus all expenses. Income includes salary, rental, dividends and other sources.',
-        color:'#F9F5EE',border:'#E8DCC8',titleColor:'#6B4A1E'
+        color:'#F7F3EE',border:'#E8DCC8',titleColor:'#6B4A1E'
       },
       {
         title:'Cash Flow',
@@ -2781,7 +2783,7 @@ function InsightsTab({data,setData}){
         title:'Net Operating Income (Real Estate)',
         formula:'NOI = Monthly Rent \u2212 Property Tax/12 \u2212 (Value \u00d7 Maint%/12)',
         explain:'Income a property generates after operating costs but before mortgage. Used to calculate cap rate.',
-        color:'#EFF5EF',border:'#C8DEC9',titleColor:'#2D5C32'
+        color:'#D8EDDA',border:'#B4D8B8',titleColor:'#2D5C32'
       },
       {
         title:'Cap Rate (Real Estate)',
@@ -2799,14 +2801,14 @@ function InsightsTab({data,setData}){
         title:'Federal Tax (2024\u201325)',
         formula:'Tax = \u03a3 (Bracket Income \u00d7 Bracket Rate) \u2212 CTC \u2212 Withholding',
         explain:'Progressive brackets applied to taxable income (AGI minus standard deduction). Child Tax Credit reduces liability dollar-for-dollar.',
-        color:'#F9F5EE',border:'#E8DCC8',titleColor:'#6B4A1E'
+        color:'#F7F3EE',border:'#E8DCC8',titleColor:'#6B4A1E'
       },
     ].map((f,i)=>
       e('div',{key:i,style:{background:f.color,border:`1px solid ${f.border}`,borderRadius:20,padding:'14px 16px',marginBottom:10}},
         e('div',{style:{fontSize:12,fontWeight:700,color:f.titleColor,marginBottom:6}},f.title),
-        e('div',{style:{fontSize:11,fontFamily:"'DM Sans',sans-serif",color:'#1C1C1E',background:'rgba(0,0,0,0.04)',
-          borderRadius:10,padding:'7px 10px',marginBottom:8,letterSpacing:'0.1px',lineHeight:1.5}},f.formula),
-        e('div',{style:{fontSize:11,color:'#6B6663',lineHeight:1.6}},f.explain)
+        e('div',{style:{fontSize:11,fontFamily:"'DM Sans',sans-serif",color:'#1A1714',background:'rgba(0,0,0,0.04)',
+          borderRadius:12,padding:'7px 10px',marginBottom:8,letterSpacing:'0.1px',lineHeight:1.5}},f.formula),
+        e('div',{style:{fontSize:11,color:'#6B6258',lineHeight:1.6}},f.explain)
       )
     ),
 
@@ -2915,18 +2917,18 @@ function InsightsTab({data,setData}){
       e('div',{key:i,className:'card',style:{marginBottom:10}},
         e('div',{style:{display:'flex',alignItems:'flex-start',gap:12}},
           e('div',{style:{
-            width:28,height:28,borderRadius:10,background:'#DDF0DD',
+            width:28,height:28,borderRadius:12,background:'#D8EDDA',
             display:'flex',alignItems:'center',justifyContent:'center',
-            fontSize:12,fontWeight:700,color:'#2D5A32',flexShrink:0,marginTop:1
+            fontSize:12,fontWeight:700,color:'#254D2A',flexShrink:0,marginTop:1
           }},String(i+1)),
           e('div',{style:{flex:1}},
-            e('div',{style:{fontSize:13,fontWeight:700,color:'#1C1C1E',marginBottom:5}},f.title),
+            e('div',{style:{fontSize:13,fontWeight:700,color:'#1A1714',marginBottom:5}},f.title),
             e('div',{style:{
-              background:'#E8E2D9',borderRadius:10,padding:'8px 12px',
-              fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'#2D5A32',
+              background:'#EDE5D8',borderRadius:12,padding:'8px 12px',
+              fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'#254D2A',
               fontWeight:600,letterSpacing:0.1,marginBottom:6,lineHeight:1.5
             }},f.formula),
-            e('div',{style:{fontSize:12,color:'#9E9890',lineHeight:1.6}},f.desc)
+            e('div',{style:{fontSize:12,color:'#9E9488',lineHeight:1.6}},f.desc)
           )
         )
       )
