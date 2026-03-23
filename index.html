@@ -30,7 +30,7 @@ body{font-family:‘DM Sans’,sans-serif;color:#1A1040;-webkit-overflow-scrolli
 #root{height:100%;display:flex;flex-direction:column;background:#F0EDFF;}
 
 /* ── SPLASH ── */
-#splash{position:fixed;inset:0;background:linear-gradient(160deg,#7B5EA7 0%,#9B6FD4 50%,#B48FE8 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.6s ease;}
+#splash{position:fixed;inset:0;background:linear-gradient(160deg,#7B5EA7 0%,#9B6FD4 50%,#B48FE8 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.4s ease;}
 #splash.hide{opacity:0;pointer-events:none;}
 .splash-pig{font-size:64px;animation:pigpop 1s cubic-bezier(0.34,1.56,0.64,1) forwards;opacity:0;}
 @keyframes pigpop{0%{opacity:0;transform:scale(0.4) translateY(20px);}100%{opacity:1;transform:scale(1) translateY(0);}}
@@ -57,7 +57,7 @@ body{font-family:‘DM Sans’,sans-serif;color:#1A1040;-webkit-overflow-scrolli
 .app-year-chip{background:rgba(255,255,255,0.18);color:#FFF;padding:5px 14px;border-radius:100px;font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,0.25);backdrop-filter:blur(8px);}
 
 /* ── CONTENT ── */
-.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 16px 16px;background:#F0EDFF;margin-bottom:72px;}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 16px 16px;background:#F0EDFF;padding-bottom:80px;}
 
 /* ── BOTTOM NAV ── */
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#FFFFFF;border-top:1px solid #EAE4F8;display:flex;z-index:200;padding:4px 0 10px;box-shadow:0 -4px 24px rgba(123,94,167,0.10);}
@@ -2995,11 +2995,23 @@ const [activeTab,setActiveTab]=useState(0);
 const [data,setData]=useState(()=>loadData());
 
 useEffect(()=>{
-setTimeout(()=>{
-const splash=document.getElementById(‘splash’);
-if(splash) splash.classList.add(‘hide’);
-setTimeout(()=>{if(splash) splash.style.display=‘none’;},500);
-},1600);
+const hideSplash = () => {
+const sp=document.getElementById(‘splash’);
+if(sp){
+sp.style.transition=‘opacity 0.4s ease’;
+sp.style.opacity=‘0’;
+sp.style.pointerEvents=‘none’;
+setTimeout(()=>{if(sp)sp.style.display=‘none’;},450);
+}
+};
+// Primary: hide after 800ms
+const t1 = setTimeout(hideSplash, 800);
+// Nuclear fallback: force hide after 3s no matter what
+const t2 = setTimeout(()=>{
+const sp=document.getElementById(‘splash’);
+if(sp){sp.style.display=‘none’;}
+}, 3000);
+return ()=>{ clearTimeout(t1); clearTimeout(t2); };
 },[]);
 
 // Tab order: Home(0), Portfolio/Invest(1), Monthly(2), Tax(3), Worth(4), History(5), Insights(6)
@@ -3063,11 +3075,18 @@ e(Toast)
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 function boot(){
+// Hard fallback: always hide splash after 5s even if React crashes
+setTimeout(function(){
+var sp=document.getElementById(‘splash’);
+if(sp){sp.style.opacity=‘0’;sp.style.pointerEvents=‘none’;setTimeout(function(){if(sp)sp.style.display=‘none’;},600);}
+},5000);
 try{
 const container=document.getElementById(‘root’);
 const root=ReactDOM.createRoot(container);
 root.render(e(App));
 }catch(err){
+var sp2=document.getElementById(‘splash’);
+if(sp2)sp2.style.display=‘none’;
 document.body.innerHTML=’<div style="padding:40px;font-family:sans-serif;color:#fff;background:#1A1A2E;min-height:100vh"><h2>\u26a0\ufe0f Load Error</h2><p style="margin-top:12px;opacity:0.7">’+err.message+’</p><p style="margin-top:12px;opacity:0.5;font-size:13px">Please hard-refresh (hold reload button) or clear Safari cache.</p></div>’;
 }
 }
