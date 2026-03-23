@@ -60,7 +60,7 @@ body{font-family:‘DM Sans’,sans-serif;color:#1A1040;-webkit-overflow-scrolli
 .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 16px 16px;background:#F0EDFF;margin-bottom:72px;}
 
 /* ── BOTTOM NAV ── */
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#FFFFFF;border-top:1px solid #EAE4F8;display:flex;z-index:200;padding:4px 0 max(8px,env(safe-area-inset-bottom));box-shadow:0 -4px 24px rgba(123,94,167,0.10);}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#FFFFFF;border-top:1px solid #EAE4F8;display:flex;z-index:200;padding:4px 0 10px;box-shadow:0 -4px 24px rgba(123,94,167,0.10);}
 .bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border:none;background:none;cursor:pointer;color:#B0A0CC;transition:color .15s;}
 .bottom-nav-btn.active{color:#7B5EA7;}
 .bottom-nav-icon{width:26px;height:26px;display:flex;align-items:center;justify-content:center;transition:transform .15s;}
@@ -359,8 +359,6 @@ html,body,#root,.app,.content{background:#F0EDFF !important;color:#1A1040 !impor
 <div id="root"></div>
 <script>
 'use strict';
-
-‘use strict’;
 const e = React.createElement;
 const {useState,useEffect,useRef,useCallback,useMemo} = React;
 
